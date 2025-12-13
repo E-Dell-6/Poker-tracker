@@ -1,0 +1,11 @@
+
+/* Layout: sidebar + main content */
+.app-layout {
+  display: flex;
+}
+
+/* Main content fills remaining space */
+.main-content {
+  flex: 1;             /* fill all remaining width */
+  padding: 20px 40px;  /* space inside content */
+}

@@ -1,0 +1,136 @@
+/* History.css */
+
+.history-container {
+  /* Inherit padding from .main-content in App.css */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Filter Styles --- */
+
+.game-filter {
+  margin-bottom: 30px;
+  padding: 15px;
+  border-bottom: 1px solid #eee; /* Light separator */
+}
+
+.game-filter h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: #333; /* Darker text for main content */
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 15px; /* Spacing between buttons */
+}
+
+.filter-buttons button {
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  color: #333;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.2s ease-in-out;
+  min-width: 100px; /* Consistent button width */
+}
+
+.filter-buttons button:hover:not(.active) {
+  background-color: #e0e0e0;
+  border-color: #aaa;
+}
+
+.filter-buttons button.active {
+  /* Using a primary blue color for active state */
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+}
+
+/* --- Sessions List View Styles --- */
+
+.sessions-list-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #007bff;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+.sessions-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between list items */
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.session-item:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.session-info {
+  display: flex;
+  gap: 30px;
+  font-size: 1em;
+}
+
+.session-date {
+  font-weight: bold;
+  color: #555;
+  min-width: 120px;
+}
+
+.session-game-type {
+  font-style: italic;
+  color: #007bff;
+  min-width: 100px;
+}
+
+.session-duration {
+  color: #777;
+}
+
+.session-profit {
+  font-size: 1.4em;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.session-profit.win {
+  color: #28a745; /* Green for profit */
+}
+
+.session-profit.loss {
+  color: #dc3545; /* Red for loss */
+}
+
+/* No Sessions Message */
+.sessions-list-container > p {
+  padding: 20px;
+  background-color: #fff3cd; /* Light warning yellow */
+  border: 1px solid #ffeeba;
+  color: #856404;
+  border-radius: 5px;
+  text-align: center;
+}
