@@ -1,357 +1,230 @@
 import { parse } from 'csv-parse/sync';
-import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas';
-import { findHero } from './findHero';
+import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas.js';
 
-export function parsePokerNowLog(csvContent){
+export function parsePokerNowLog(csvContent) {
     const records = parse(csvContent, {
-    columns: true,
-    skip_empty_lines: true
+        columns: true,
+        skip_empty_lines: true
     });
 
-    let sortedRecords = records.sort((a, b) => {
-        return Number(a.order) - Number(b.order);
-    });
-
-
-    let heroName = detectHeroName(sortedRecords);
-    if (!heroName){
-        console.warn("⚠️ Warning: Could not auto-detect Hero (Hero never showed cards).");
-        console.warn("Falling back to manual config name...");
-        process.exit(1);
+    if (records.length > 0 && records[0].entry === undefined) {
+        throw new Error("CSV missing 'entry' column.");
     }
-    console.log(`✅ Hero identified as: ${heroName}`);
 
-    let recordsLength = sortedRecords.length;
+    const sortedRecords = records.sort((a, b) => Number(a.order) - Number(b.order));
+
+    // --- STEP 1: IDENTIFY THE GLOBAL HERO (PERSISTENT FIX) ---
+    let globalHeroName = null;
+    let tempHeroCards = null;
+
+    for (const record of sortedRecords) {
+        const line = String(record.entry || "");
+        if (line.startsWith("Your hand is ")) {
+            tempHeroCards = getHoleCards(line).sort().join(',');
+        }
+        if (line.includes(" shows ") && tempHeroCards) {
+            const shownCards = extractShownCards(line).sort().join(',');
+            if (shownCards === tempHeroCards) {
+                globalHeroName = getPlayerName(line);
+                break; 
+            }
+        }
+        if (line.toLowerCase().startsWith("-- ending hand")) tempHeroCards = null;
+    }
+
+    // --- STEP 2: MAIN PARSING ---
+    const hands = [];
+    let currentHand = null;
     let handNumber = 1;
+    let currentStreet = 'PREFLOP';
 
-    for (i = 0; i < recordLength; i++){
-        let entry = sortedRecordsrecords[i].entry;
+    for (const record of sortedRecords) {
+        const line = String(record.entry || "");
+        if (line === "" || line.startsWith("Game Config") || line.startsWith("The admin") || line.startsWith("*")) continue;
 
-        if (entry.startsWith("-- starting Hand")){
-            let currentHand = createEmptyHand();
-            currentHand.handIndex = handNumber;
-            handNumber++;  
-            currentHand.datePlayed = sortedRecords[i].at;
-            if (getGameName(entry) === "No Limit Texas Hold'em"){
-                currentHand.gameType = 'NLH';
-            }
-            if (getGameName(entry) === "Pot Limit Omaha"){
-                currentHand.gameType = 'PLO';
-            }
-
-            i++;
-            entry = sortedRecords[i].entry;
-        }
-        while (entry.includes("joined the game with a stack of")){
-            i++;
-            entry = sortedRecords[i].entry;
-        }
-        if (entry.startsWith("Player stacks:")){
-            let originalString = entry;
-            let prefixToRemove = "Player stacks: ";  
-            let newEntry = originalString.substring(prefixToRemove.length);
-
-            currentHand.players = parsePlayers(newEntry, heroName);
-            i++;
-            entry = sortedRecords[i].entry;
-        }
-        if (entry.startsWith("Your hand is ")){
-            const heroCards = getHoleCards(entry);
-            const heroPlayer = currentHand.players.find(player => player.isHero === true); 
-
-            if (heroPlayer) {
-                heroPlayer.holeCards = heroCards;
-            }
-            i++;
-            entry = sortedRecords[i].entry;
-        }  
-        let street = 'PREFLOP';
-        const actionArr = [];
-        while (entry.includes(" calls ") || entry.includes(" raises ") || entry.includes(" posts ") || entry.includes(" folds ")) {
-            getAction(entry, actionArr, street);
-            i++; 
-            entry = sortedRecords[i].entry;
-            if (entry.includes("FLOP:")){
-                currentHand.board.flop = extractBoardCards(entry);
-                street = "FLOP";
-                i++;
-                entry = sortedRecords[i].entry;
-                continue;
-            }
-            if (entry.includes("TURN:")){
-                currentHand.board.turn = extractBoardCards(entry);
-                street = "TURN";
-                i++;
-                entry = sortedRecords[i].entry;
-                continue;
-            }
-            if (entry.includes("RIVER:")){
-                currentHand.board.river = extractBoardCards(entry);
-                street = "RIVER";
-                i++;
-                entry = sortedRecords[i].entry;
-                continue;
-            }
-        }
-        const winnerArr = [];
-        let potSize = 0;
-        while (entry.includes("collected")) {
-            const winnerName = getPlayerName(entry);
-
-            const textAfterCollected = entry.split(" collected ")[1];
-            let amountStr = textAfterCollected.split(" ")[0];
-            amountStr = amountStr.split(',').join('');
-            const winAmount = parseInt(amountStr);
-
-            winnerArr.push(winnerName);
-            potsize += winAmount;
+        if (line.startsWith("-- starting hand")) {
+            if (currentHand) hands.push(currentHand);
+            currentHand = createEmptyHand();
+            currentHand.handIndex = handNumber++;
+            currentHand.datePlayed = record.at;
             
-            i++;
-            entry = sortedRecords[i].entry;
-        }
-        if (entry.startsWith("Uncalled bet of")){
-            const winnerName = getPlayerName(entry);
-
-            const amountPart = entry.split("Uncalled bet of ")[1];
-            let amountStr = amountPart.split(" returned to")[0];
-            amountStr = amountStr.split(',').join('').trim();
-            const winAmount = parseInt(amountStr);
- 
-            winnerArr.push(winnerName);
-            potsize += winAmount;
-
-            i++;
-            entry = sortedRecords[i].entry;
+            const gameTypeStr = getGameType(line);
+            currentHand.gameType = gameTypeStr === "No Limit Texas Hold'em" ? 'NLH' : 'PLO';
+            currentStreet = 'PREFLOP';
+            
+            // Extract and store dealer name
+            const dealerName = getDealerName(line);
+            if (dealerName) currentHand.dealerName = dealerName;
+            
+            if (globalHeroName) currentHand.heroName = globalHeroName;
+            continue;
         }
 
+        if (!currentHand) continue;
 
-        currentHand.winners = winnerArr;
-        currentHand.finalPotSize = potSize;
-        if (entry.startsWith(-- endingHand)){
-            i++;
-        }
-        if (entry.includes("shows a ")){
-            const showerName = getPlayerName(entry);
-            if (showerName = heroName){
-                i++; 
-                entry = sortedRecords[i].entry;
-                continue;
+        if (line.startsWith("Player stacks:")) {
+            currentHand.players = parsePlayerStacks(line.substring(15));
+            
+            // Apply Global Hero flag
+            if (globalHeroName) {
+                const hp = currentHand.players.find(p => p.name === globalHeroName);
+                if (hp) hp.isHero = true;
             }
-            else{
-                let cardString = entry.split(" shows a ")[1];
-
-                if (cardString && cardString.endsWith('.')) {
-                    cardString = cardString.slice(0, -1);
-                }
-                if (cardString) {
-                    const cardsArray = cardString.split(',').map(card => card.trim());
-                    
-                    const winnerObj = currentHand.players.find(p => p.playerName === showerName);
-                    
-                    if (winnerObj) {
-                        winnerObj.showedHand = cardsArray;
-                    }
-                }
-
+            
+            // Set isDealer flag based on dealer name
+            if (currentHand.dealerName) {
+                const dp = currentHand.players.find(p => p.name === currentHand.dealerName);
+                if (dp) dp.isDealer = true;
+            }
+            continue;
         }
 
-        
+        if (line.startsWith("Your hand is ")) {
+            const cards = getHoleCards(line);
+            if (globalHeroName) {
+                const hp = currentHand.players?.find(p => p.name === globalHeroName);
+                if (hp) {
+                    hp.holeCards = cards;
+                    hp.isHero = true;
+                }
+            }
+            continue;
+        }
+
+        // --- BOARD CARDS (REVERTED TO CUMULATIVE) ---
+        if (line.startsWith("Flop:")) {
+            currentHand.board.flop = extractBoardCards(line);
+            currentStreet = "FLOP";
+            continue;
+        }
+        if (line.startsWith("Turn:")) {
+            currentHand.board.turn = extractBoardCards(line);
+            currentStreet = "TURN";
+            continue;
+        }
+        if (line.startsWith("River:")) {
+            currentHand.board.river = extractBoardCards(line);
+            currentStreet = "RIVER";
+            continue;
+        }
+
+        // --- ACTIONS ---
+        if (/calls|raises|posts|bets|checks|folds/.test(line)) {
+            getAction(line, currentHand.actions, currentStreet);
+            continue;
+        }
+
+        // --- WINNERS ---
+        if (line.includes(" collected ") || line.startsWith("Uncalled bet of")) {
+            let winnerName = getPlayerName(line);
+            let amountStr = line.includes("collected") 
+                ? line.split(" collected ")[1].split(" ")[0] 
+                : line.split("Uncalled bet of ")[1].split(" returned")[0];
+            let winAmount = parseInt(amountStr.replace(/,/g, ''), 10);
+
+            if (winnerName) {
+                if (!currentHand.winners.includes(winnerName)) currentHand.winners.push(winnerName);
+                const wp = currentHand.players.find(p => p.name === winnerName);
+                if (wp) wp.winnings = (wp.winnings || 0) + winAmount;
+                currentHand.finalPotSize += winAmount;
+            }
+            continue;
+        }
+
+        if (line.toLowerCase().startsWith("-- ending hand")) {
+            hands.push(currentHand);
+            currentHand = null;
+            continue;
+        }
     }
-    console.log(sortedRecords.length);
+
+    if (currentHand) hands.push(currentHand);
+    return hands;
+}
+
+// --- HELPERS ---
+
+function getDealerName(entry) {
+    // Extract dealer from: "-- starting hand #186 (id: xxx) No Limit Texas Hold'em (dealer: "Name @ ID") --"
+    const dealerMatch = entry.match(/\(dealer:\s*"([^"]+)"\)/);
+    if (!dealerMatch) return null;
+    return dealerMatch[1].split(' @ ')[0].trim();
+}
+
+export function extractBoardCards(entry) {
+    let cardPart = entry;
+    const colonIndex = entry.indexOf(':');
+    if (colonIndex !== -1) cardPart = entry.substring(colonIndex + 1);
+
+    return cardPart
+        .replace('[', ',')
+        .replace(']', '')
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c.length > 0)
+        .map(convertToStandardNotation);
+}
+
+function extractShownCards(entry) {
+    const cardPart = entry.split(" shows a ")[1];
+    if (!cardPart) return [];
+    return cardPart.replace('.', '').split(', ').map(convertToStandardNotation);
 }
 
 function getPlayerName(entry) {
-    // 1. Find the start and end of the quoted section
-    const startQuote = entry.indexOf('"');
-    const endQuote = entry.lastIndexOf('"');
-
-    // Safety check: if no quotes, it's not a player line
-    if (startQuote === -1 || endQuote === -1) return null;
-
-    // 2. Extract the full string (e.g., "Nate Higgers @ s9p1qZMXYl")
-    const fullString = entry.substring(startQuote + 1, endQuote);
-
-    // 3. Find the separator " @ " from the right side
-    const separatorIndex = fullString.lastIndexOf(' @ ');
-
-    // 4. If separator exists, cut it off. Otherwise, take the whole string.
-    if (separatorIndex !== -1) {
-        return fullString.substring(0, separatorIndex).trim();
-    }
-    
-    return fullString.trim();
+    const match = entry.match(/"([^"]+)"/);
+    if (!match) return null;
+    return match[1].split(' @ ')[0].trim();
 }
 
-function getGameType(entry){
-    const firstParenEnd = entry.indexOf(') ('); 
-
-    if (firstParenEnd === -1) {
-        return "Unknown Game Type";
-    }
-
-    const gameTypeStart = firstParenEnd + 3; 
-    const gameTypeEnd = entry.indexOf(')', gameTypeStart);
-    if (gameTypeEnd === -1) {
-        return "Unknown Game Type";
-    }
- 
-    const gameType = entry.substring(gameTypeStart, gameTypeEnd).trim();
-    return gameType;
+function getHoleCards(entry) {
+    return entry.substring(13).trim().split(', ').map(convertToStandardNotation);
 }
 
+const suitMap = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
+function convertToStandardNotation(card) {
+    const suit = card.slice(-1);
+    let rank = card.slice(0, -1);
+    if (rank === '10') rank = 'T';
+    return `${rank}${suitMap[suit] || suit}`;
+}
 
+function getGameType(entry) {
+    const parts = entry.split(') ');
+    return parts[1] ? parts[1].split(' (dealer')[0].trim() : "";
+}
 
-function parsePlayerStacks(playerString, heroName){
-    const playerStringArr = playerString.split (" | ");
+function parsePlayerStacks(playerString) {
+    return playerString.split(" | ").map(pStr => {
+        const p = createEmptyPlayer();
+        const seatMatch = pStr.match(/#(\d+)/);
+        const nameMatch = pStr.match(/"([^"]+)"/);
+        const stackMatch = pStr.match(/\((\d+,?\d*)\)/);
 
-    const players = [];
-    
-    playerStringArr.forEach((playerStr) => {
-        const newPlayer = createEmptyPlayer();
-
-        const seatEndIndex = playerStr.indexOf(' ');
-        const seatNumber = parseInt(playerStr.substring(1, seatEndIndex));
-        newPlayer.seat = seatNumber;
-
-        const quoteStart = playerStr.indexOf('"') + 1;
-        const quoteEnd = playerStr.lastIndexOf('"');
-        const nameWithID = playerStr.substring(quoteStart, quoteEnd);
-
-        const atIndex = nameWithID.lastIndexOf(' @ ');
-        const displayName = nameWithID.substring(0, atIndex).trim();
-        newPlayer.name = displayName;
-        if (displayName = heroName){
-            newPlayer.isDealer = true;
-        }
-
-        const stackStart = playerStr.lastIndexOf('(') + 1;
-        const stackEnd = playerStr.lastIndexOf(')');
-        const stackSize = parseInt(playerStr.substring(stackStart, stackEnd));
-        newPlayer.stack = stackSize;
-
-        players.push(newPlayer);
+        if (seatMatch) p.seat = parseInt(seatMatch[1]);
+        if (nameMatch) p.name = nameMatch[1].split(' @ ')[0].trim();
+        if (stackMatch) p.stack = parseInt(stackMatch[1].replace(',', ''));
+        return p;
     });
-    return players;
-}
-
-const suitMap = {
-    '♥': 'h', // Hearts
-    '♦': 'd', // Diamonds
-    '♣': 'c', // Clubs
-    '♠': 's', // Spades
-};
-function getHoleCards (entry){
-    let prefixToRemove = "Your hand is ";  
-    const cardsString = entry.substring(prefixToRemove.length).trim();
-
-    const symbolicCards = cardsString.split(', ');
-
-    const holeCards = symbolicCards.map(convertToStandardNotation);
-    return holeCards;
 }
 
 function getAction(entry, actionArr, street) {
-    const newAction = createEmptyAction();
-    newAction.street = street;
-    newAction.player = getPlayerName(entry);
-
-    // --- 1. Determine Action Type ---
-    if (entry.includes("small blind")) newAction.actionType = "POST_SB";
-    else if (entry.includes("big blind")) newAction.actionType = "POST_BB";
-    else if (entry.includes("calls")) newAction.actionType = "CALL";
-    else if (entry.includes("raises")) newAction.actionType = "RAISE";
-    else if (entry.includes("bets")) newAction.actionType = "BET";
-    else if (entry.includes("folds")) newAction.actionType = "FOLD";
-    else if (entry.includes("checks")) newAction.actionType = "CHECK";
-    else if (entry.includes("shows")) newAction.actionType = "SHOW_HAND";
-    else if (entry.includes("mucks")) newAction.actionType = "MUCK";
-    else return; 
-
-    // --- 2. Extract the Number (Raw) ---
-    const words = entry.trim().split(" ");
-    let extractedAmount = 0;
+    const action = createEmptyAction();
+    action.street = street;
+    action.player = getPlayerName(entry);
     
-    // Scan backwards for number
-    for (let i = words.length - 1; i >= 0; i--) {
-        let cleanWord = words[i];
-        if (cleanWord.endsWith('.')) cleanWord = cleanWord.slice(0, -1);
-        
-        const val = parseInt(cleanWord, 10);
-        if (!isNaN(val)) {
-            extractedAmount = val;
-            break;
-        }
-    }
-    newAction.amount = extractedAmount;
+    if (entry.includes("small blind")) action.actionType = "POST_SB";
+    else if (entry.includes("big blind")) action.actionType = "POST_BB";
+    else if (entry.includes("calls")) action.actionType = "CALL";
+    else if (entry.includes("raises")) action.actionType = "RAISE";
+    else if (entry.includes("bets")) action.actionType = "BET";
+    else if (entry.includes("folds")) action.actionType = "FOLD";
+    else action.actionType = "CHECK";
+
+    const amtMatch = entry.match(/\d+,?\d*/g);
+    action.amount = amtMatch ? parseInt(amtMatch[amtMatch.length - 1].replace(',', '')) : 0;
     
-    let currentPot = 0;
-    if (actionArr.length > 0) {
-        currentPot = actionArr[actionArr.length - 1].potSizeAfter || 0;
-    }
-
-    let addedAmount = 0;
-
-    if (["POST_SB", "POST_BB", "BET", "CALL"].includes(newAction.actionType)) {
-        addedAmount = extractedAmount;
-    } 
-    else if (newAction.actionType === "RAISE") {
-        
-        let playerStreetCommitment = 0;
-        for (const action of actionArr) {
-            if (action.player === newAction.player && action.street === street) {
-                if (action.actionType === "RAISE") {
-                    // "Raises TO X" resets their commitment to X
-                    playerStreetCommitment = action.amount;
-                } else if (["BET", "CALL", "POST_SB", "POST_BB"].includes(action.actionType)) {
-                    // "Bets X" adds X to their commitment
-                    playerStreetCommitment += action.amount;
-                }
-            }
-        }
-        addedAmount = extractedAmount - playerStreetCommitment;
-        if (addedAmount < 0) addedAmount = 0;
-    }
-    newAction.potSizeAfter = currentPot + addedAmount;
-
-    actionArr.push(newAction);
-}
-
-/**
- * Extracts board cards from a log line into a clean array.
- * Handles formats: "Flop: [Ah, Ks, 2d]" and "River: Ah, Ks, 2d, 9c [Th]"
- * STRICT NO REGEX.
- * * @param {string} entry - The log line containing card data.
- * @returns {string[]} An array of card strings (e.g., ["Ah", "Ks", "2d"]).
- */
-export function extractBoardCards(entry) {
-    // 1. Remove the "Street:" prefix (Flop:, Turn:, River:)
-    // We look for the colon and take everything after it.
-    let cardPart = entry;
-    const colonIndex = entry.indexOf(':');
-    
-    if (colonIndex !== -1) {
-        cardPart = entry.substring(colonIndex + 1);
-    }
-
-    cardPart = cardPart.split('[').join(',');
-
-    // 3. Remove the closing bracket ']' completely.
-    cardPart = cardPart.split(']').join('');
-
-    // 4. Split by comma to get individual items
-    const rawCards = cardPart.split(',');
-
-    // 5. Clean up the array
-    const cleanCards = [];
-    
-    for (let i = 0; i < rawCards.length; i++) {
-        const card = rawCards[i].trim(); // Remove spaces around " Qs "
-        
-        // Only add if it's not an empty string (which happens if line started with [)
-        if (card.length > 0) {
-            cleanCards.push(card);
-        }
-    }
-
-    return cleanCards;
+    const prevPot = actionArr.length > 0 ? actionArr[actionArr.length - 1].potSizeAfter : 0;
+    action.potSizeAfter = prevPot + action.amount;
+    actionArr.push(action);
 }

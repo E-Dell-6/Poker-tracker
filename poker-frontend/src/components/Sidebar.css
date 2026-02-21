@@ -1,48 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
+
+/* ── SIDEBAR ────────────────────────────────────────────── */
 .sidebar {
+  position: relative;
   width: 220px;
-  background: #1e1e1e;
-  color: white;
   height: 100vh;
-  padding: 20px 10px;
-  transition: width 0.25s ease;
+  background: #0d0f12;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  position: relative;
+  flex-shrink: 0;
+  transition: width 0.3s ease;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .sidebar.collapsed {
-  width: 70px;
+  width: 64px;
 }
 
-.sidebar-item a {
-  color: white;
-  text-decoration: none;
-  font-size: 18px;
+/* ── BRAND ──────────────────────────────────────────────── */
+.sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
   white-space: nowrap;
 }
 
-/* Hide text smoothing */
-.sidebar.collapsed .sidebar-item a {
+.sidebar-brand-icon {
+  font-size: 22px;
+  color: #d4af37;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.sidebar-brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.2px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 24px 0 20px;
+}
+
+.sidebar.collapsed .sidebar-brand-name {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+/* ── NAV ────────────────────────────────────────────────── */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 10px;
+  flex: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  color: #6b7280;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: rgba(212, 175, 55, 0.12);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.sidebar-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  line-height: 1;
+}
+
+.sidebar-label {
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+/* ── COLLAPSED NAV ──────────────────────────────────────── */
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 11px;
+}
+
+.sidebar.collapsed .sidebar-label {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+/* ── COLLAPSE BUTTON ────────────────────────────────────── */
+.collapse-btn {
+  width: 100%;
+  padding: 14px;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #6b7280;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-/*** Toggle button ***/
-.collapse-btn {
-  position: absolute;
-  top: 10px;
-  right: -15px;
-  background: #333;
-  border: none;
-  color: white;
-  padding: 10px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
 .collapse-btn:hover {
-  background: #444;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
 }

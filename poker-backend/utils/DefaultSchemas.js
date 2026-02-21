@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
+
 export function createEmptyHand (){
     return {
+        _id: new mongoose.Types.ObjectId(),
         handIndex: -1,
         gameType: null, 
         datePlayed: null,
@@ -9,10 +12,7 @@ export function createEmptyHand (){
         board: { flop: [], turn: [], river: []},
 
         winners: [],
-
-        buttonSeat: -1,
-        heroSeat: -1,
-        finalPotSize: -1
+        finalPotSize: 0
      }
 }
 
@@ -22,6 +22,7 @@ export function createEmptyPlayer(){
         name: null,
         stack: -1,
         isDealer: false,
+        winnings: 0,
     }
 }
 

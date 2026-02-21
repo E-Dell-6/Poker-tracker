@@ -1,34 +1,52 @@
 import "./Sidebar.css";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 
 const menuItems = [
-  { icon: "🏠", label: "Dashboard", to: "/dashboard"},
-  { icon: "📖", label: "Ledger", to: "/ledger" },
-  { icon: "⏱️", label: "History", to: "/history" },
-  { icon: "🃏", label: "Hands", to: "/hands" },
+  { icon: "⊞", label: "Dashboard", to: "/" },
+  { icon: "≡", label: "History", to: "/history" },
+  { icon: "◷", label: "Clock In", to: "/clock" },
+  { icon: "◈", label: "Players", to: "/players" },
+  { icon: "◎", label: "Study", to: "/study" },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-
-  const toggleCollapse = () => setCollapsed(!collapsed);
-  const sidebarClass = `sidebar ${collapsed ? 'collapsed' : ''}`;
+  const location = useLocation();
 
   return (
-    <div className={sidebarClass}>
-      <button className="collapse-btn" onClick={toggleCollapse}>
-        {collapsed ? "➡️" : "⬅️"}
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+
+      {/* Brand */}
+      <div className="sidebar-brand">
+        <span className="sidebar-brand-icon">♠</span>
+        {!collapsed && <span className="sidebar-brand-name">PokerPulse</span>}
+      </div>
+
+      {/* Nav */}
+      <nav className="sidebar-nav">
+        {menuItems.map((item) => (
+          <Link
+            key={item.label}
+            to={item.to}
+            className={`sidebar-link ${location.pathname === item.to ? 'active' : ''}`}
+            title={collapsed ? item.label : ''}
+          >
+            <span className="sidebar-icon">{item.icon}</span>
+            {!collapsed && <span className="sidebar-label">{item.label}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Collapse toggle at bottom */}
+      <button
+        className="collapse-btn"
+        onClick={() => setCollapsed(!collapsed)}
+        aria-label="Toggle sidebar"
+      >
+        {collapsed ? '›' : '‹'}
       </button>
 
-      {menuItems.map((item) => (
-        <div key={item.label} className="sidebar-item">
-          <Link to={item.to} className="sidebar-link">
-            <div className="sidebar-icon">{item.icon}</div>
-            {!collapsed && <div className="sidebar-label">{item.label}</div>}
-          </Link>
-        </div>
-      ))}
-    </div>
+    </aside>
   );
 }

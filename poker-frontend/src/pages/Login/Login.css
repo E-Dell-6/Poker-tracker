@@ -1,0 +1,308 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+}
+
+/* ── Page wrapper ── */
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #c8b4e8 0%, #b4c8f0 100%);
+  font-family: 'Nunito', sans-serif;
+}
+
+/* ── Card ── */
+.card {
+  position: relative;
+  background: #13132b;
+  border-radius: 20px;
+  padding: 40px 36px 36px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.glow-top {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 120px;
+  background: radial-gradient(ellipse, rgba(100, 80, 220, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Typography ── */
+.title {
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.subtitle {
+  color: rgba(160, 160, 210, 0.7);
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 28px;
+  font-weight: 600;
+}
+
+/* ── Server error banner ── */
+.server-error {
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  color: #ff8f8f;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ── Fields ── */
+.field-group {
+  margin-bottom: 14px;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #1e1e3a;
+  border-radius: 12px;
+  padding: 0 14px;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.input-wrapper.error-border {
+  border-color: #ff6b6b;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #e0e0f5;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  padding: 14px 0;
+}
+
+.input::placeholder {
+  color: rgba(160, 160, 210, 0.5);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin-left: 8px;
+}
+
+.eye-btn:hover {
+  opacity: 0.7;
+}
+
+.error-msg {
+  color: #ff6b6b;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 5px;
+  display: block;
+  padding-left: 4px;
+}
+
+/* ── Forgot row ── */
+.forgot-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 22px;
+  margin-top: 4px;
+}
+
+.forgot-btn {
+  background: none;
+  border: none;
+  color: #7b6ef6;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  padding: 0;
+  text-decoration: none;
+}
+
+.forgot-btn:hover {
+  opacity: 0.8;
+}
+
+/* ── Primary button ── */
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(90deg, #5b4de8 0%, #7b6ef6 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  margin-bottom: 16px;
+  transition: opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Ghost/back button ── */
+.ghost-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid rgba(123, 110, 246, 0.4);
+  border-radius: 12px;
+  color: rgba(160, 160, 210, 0.8);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  margin-bottom: 4px;
+}
+
+.ghost-btn:hover {
+  border-color: #7b6ef6;
+  color: #e0e0f5;
+}
+
+/* ── Loading spinner ── */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer ── */
+.footer-text {
+  color: rgba(160, 160, 210, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #7b6ef6;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  opacity: 0.8;
+}
+
+/* ── Success state ── */
+.success-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0 10px;
+  gap: 12px;
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5b4de8, #7b6ef6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.success-text {
+  color: #e0e0f5;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* ── View transition animations ── */
+.card-content {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-in {
+  opacity: 1;
+  transform: translateY(0px);
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}

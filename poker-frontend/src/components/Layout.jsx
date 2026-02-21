@@ -1,12 +1,13 @@
-import { Sidebar } from './Sidebar';
+import { Header } from './Header';
+import "./Layout.css";
 
 export function Layout({ children }) {
   return (
     <div className="app-layout">
-      <Sidebar />
-      <div className="main-content">
+      <Header />
+      <main className="main-content">
         {children}
-      </div>
+      </main>
     </div>
   );
 }

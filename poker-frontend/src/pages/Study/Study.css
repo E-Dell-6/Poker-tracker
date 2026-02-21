@@ -1,0 +1,143 @@
+/* SessionSelector.css */
+
+.session-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.session-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.session-panel-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.session-panel-count {
+  color: #888;
+  font-weight: 400;
+}
+
+.session-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.session-panel-actions button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #b0b0b0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-panel-actions button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.session-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.session-list::-webkit-scrollbar {
+  width: 6px;
+}
+.session-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.session-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.session-row:last-child {
+  border-bottom: none;
+}
+
+.session-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.session-row.disabled {
+  opacity: 0.4;
+}
+
+.session-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.session-checkbox.checked {
+  background: linear-gradient(145deg, #d4af37, #f4c430);
+  border-color: #d4af37;
+}
+
+.session-row-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-row-date {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.session-row-type {
+  color: #888;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.session-row-hands {
+  color: #666;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.session-empty {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  padding: 30px;
+  margin: 0;
+}

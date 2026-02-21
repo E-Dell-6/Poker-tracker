@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
+  --green: #22c55e; --red: #ef4444;
+  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
+  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
+}
+
+.player-info {
+  font-family: 'DM Sans', sans-serif;
+  width: 100%;
+  height: 100%;
+  background: var(--bg3);
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow-y: auto;
+  box-sizing: border-box;
+  gap: 0;
+}
+
+.player-info::-webkit-scrollbar { width: 6px; }
+.player-info::-webkit-scrollbar-track { background: transparent; }
+.player-info::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.25); border-radius: 3px; }
+
+/* ── AVATAR ─────────────────────────────────────────────── */
+.avatar-upload-wrapper {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.avatar-upload-wrapper.uploading { cursor: wait; opacity: 0.7; }
+
+.player-avatar-large {
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--gold-border);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: block;
+}
+
+.avatar-placeholder {
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  border: 3px solid var(--gold-border);
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--gold);
+  box-sizing: border-box;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.avatar-upload-wrapper:hover .avatar-upload-overlay,
+.avatar-upload-wrapper.uploading .avatar-upload-overlay { opacity: 1; }
+
+/* ── NAME ───────────────────────────────────────────────── */
+.player-info .name {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 20px;
+}
+
+/* ── TAGS ───────────────────────────────────────────────── */
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.tag {
+  padding: 6px 14px;
+  border-radius: 100px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  border: none;
+  cursor: default;
+  transition: transform 0.2s;
+}
+
+.tag:hover { transform: translateY(-2px); }
+
+.create-tag-btn {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px dashed var(--gold-border) !important;
+  color: var(--gold) !important;
+  font-size: 12px !important;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s !important;
+}
+
+.create-tag-btn:hover {
+  background: var(--gold-dim) !important;
+  border-color: var(--gold) !important;
+  transform: translateY(-2px);
+}
+
+/* ── NOTES ──────────────────────────────────────────────── */
+.notes-section {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.notes-header h3 {
+  font-family: 'Playfair Display', serif;
+  color: #fff;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.edit-notes-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.edit-notes-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+.notes-display p {
+  color: var(--text);
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.notes-empty { color: var(--muted) !important; font-style: italic; }
+
+.notes-editor { display: flex; flex-direction: column; gap: 12px; }
+
+.notes-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.notes-textarea:focus {
+  border-color: var(--gold-border);
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+}
+
+.notes-textarea::placeholder { color: var(--muted); }
+
+.notes-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.notes-actions button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cancel-notes-btn {
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+}
+
+.cancel-notes-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+.cancel-notes-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.save-notes-btn {
+  background: linear-gradient(135deg, #d4af37, #f4c430);
+  color: #0d0f12;
+  box-shadow: 0 3px 12px rgba(212,175,55,0.25);
+}
+
+.save-notes-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px rgba(212,175,55,0.4);
+}
+
+.save-notes-btn:disabled { opacity: 0.5; cursor: not-allowed; }

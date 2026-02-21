@@ -1,0 +1,109 @@
+.player-seat {
+  position: absolute;
+  min-width: 120px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 3px solid #0f3460;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.player-seat.active-turn {
+  animation: activePulse 1.5s ease-in-out infinite;
+  border-color: #e94560;
+}
+
+@keyframes activePulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(233, 69, 96, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(233, 69, 96, 0.8);
+  }
+}
+
+.player-seat.folded {
+  opacity: 0.3;
+}
+
+.player-info {
+  color: #fff;
+  text-align: center;
+}
+
+.player-name {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #e94560;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.player-name:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.name-input {
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+  border: 2px solid #e94560;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  width: 100px;
+  text-align: center;
+}
+
+.player-stack {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.player-bet {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.dealer-button {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffffff, #e0e0e0);
+  border: 3px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+  color: #333;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.hero-cards {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.card-image {
+  transition: all 0.2s ease;
+}
+
+.card-image:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}

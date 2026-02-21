@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
+  --green: #22c55e; --red: #ef4444;
+  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
+  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
+}
+
+.player-stats-section {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 32px;
+}
+
+/* ── HEADER ROW ─────────────────────────────────────────── */
+.stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.player-stats-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.player-stats-section h3.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 4px 0 0;
+}
+
+.sessions-toggle-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.sessions-toggle-btn:hover,
+.sessions-toggle-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+/* ── FILTERS ────────────────────────────────────────────── */
+.stats-filters {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filter-group { display: flex; flex-direction: column; gap: 8px; }
+
+.filter-group label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--muted);
+}
+
+.filter-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.filter-btn {
+  padding: 5px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.filter-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+
+.filter-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+/* ── STATS ──────────────────────────────────────────────── */
+.stats-container { display: flex; flex-direction: column; gap: 16px; }
+
+.stats-placeholder {
+  text-align: center;
+  color: var(--muted);
+  padding: 48px 20px;
+  font-size: 14px;
+  font-style: italic;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.stat-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.stat-box:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold-border);
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.stat-sample {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.position-stats {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.position-stats h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin: 0 0 12px;
+}
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-filters { padding: 14px 16px; }
+}

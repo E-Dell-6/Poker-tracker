@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
+  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
+  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
+}
+
+.players-container {
+  display: flex;
+  gap: 24px;
+  height: 100%;
+  padding: 32px 40px;
+  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 240px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.player-list::-webkit-scrollbar { width: 5px; }
+.player-list::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 3px; }
+
+.player-info-container {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── EMPTY STATE ────────────────────────────────────────── */
+.no-info {
+  width: 100%;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 80px;
+  font-size: 15px;
+  font-style: italic;
+}
+
+/* ── PLAYER CARD (list item) ────────────────────────────── */
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.player-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--gold-border);
+  transform: translateX(3px);
+}
+
+.player-card.active {
+  background: var(--gold-dim);
+  border-color: var(--gold-border);
+}
+
+.player-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-card.active h3 { color: var(--gold); }
+
+/* ── AVATAR ─────────────────────────────────────────────── */
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid var(--gold-border);
+}
+
+@media (max-width: 768px) {
+  .players-container { flex-direction: column; padding: 20px 16px; }
+  .player-list { width: 100%; flex-direction: row; flex-wrap: wrap; overflow-y: unset; }
+  .player-card { width: calc(50% - 4px); }
+}

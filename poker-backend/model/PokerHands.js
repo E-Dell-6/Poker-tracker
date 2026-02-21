@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const ActionSchema = new mongoose.Schema({
   street: { 
     type: String, 
-    enum: ['PREFLOP', 'FLOP', 'TURN', 'RIVER',], 
+    enum: ['PREFLOP', 'FLOP', 'TURN', 'RIVER'], 
   },
   actionType: { 
     type: String, 
@@ -37,39 +37,39 @@ const PlayerSetupSchema = new mongoose.Schema({
     validate: [cardLimit, '{PATH} must be 0 (hidden), 2 (NLH), or 4 (PLO) cards']
   },
   showedHand: { 
-    type: Boolean, 
-    default: false 
-  }
+    type: [String], 
+    default: []
+  },
+  winnings: { type: Number, default: 0 }
 });
 
-const HandSchema = new mongoose.Schema({
-  sessionId: { type: String, required: true, index: true },
+// 3. HAND SCHEMA - MUST BE EXPORTED
+export const HandSchema = new mongoose.Schema({
+  sessionId: { type: String, index: true },
   handIndex: { type: Number, required: true },
 
   gameType: { type: String, enum: ['NLH', 'PLO']},
   stakes: { type: String },
   datePlayed: { type: Date, default: Date.now },
-  
-  // Reference the Schema variable defined above
+
   players: [PlayerSetupSchema], 
   
-  buttonSeat: { type: Number, required: true },
-  heroSeat: { type: Number, required: true},
-
   actions: [ActionSchema],
-
+  isRunTwice: { type: Boolean, default: false },
   board: {
     flop: [{ type: String }],
     turn: [{ type: String }],
     river: [{ type: String }]
   },
 
-  winners: [{ name: String, amount: Number }], 
-  finalPotSize: { type: Number }
-});
+  winners: { type: [String], default: [], required: true}, 
+  finalPotSize: { type: Number },
+  isStarred: { type: Boolean, default: false },
+}, { _id: true });
 
 function cardLimit(val) {
   return val.length === 0 || val.length === 2 || val.length === 4;
 }
 
-export default mongoose.model('Hand', HandSchema);
+const Hand = mongoose.models.hand || mongoose.model('Hand', HandSchema);
+export default Hand;

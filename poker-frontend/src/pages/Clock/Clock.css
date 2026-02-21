@@ -1,0 +1,516 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --gold: #d4af37;
+  --gold-dim: rgba(212, 175, 55, 0.15);
+  --gold-border: rgba(212, 175, 55, 0.3);
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.12);
+  --bg: #0d0f12;
+  --bg2: #13161b;
+  --bg3: #1a1f28;
+  --border: rgba(255, 255, 255, 0.07);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+}
+
+/* ── PAGE ───────────────────────────────────────────────── */
+.clock-page {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  padding: 48px 40px;
+  box-sizing: border-box;
+}
+
+.clock-container {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.clock-header {
+  text-align: center;
+  animation: fadeUp 0.6s ease both;
+}
+
+.clock-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.clock-subtitle {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* ── MAIN CLOCK CARD ────────────────────────────────────── */
+.clock-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  animation: fadeUp 0.6s 0.1s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle gold radial glow behind active card */
+.clock-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 200px;
+  background: radial-gradient(ellipse, rgba(212,175,55,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── STATUS INDICATOR ───────────────────────────────────── */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); }
+  50%       { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.08); }
+}
+
+.status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ── TIME DISPLAY ───────────────────────────────────────── */
+.time-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 32px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 28px;
+}
+
+.time-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  align-self: end;
+}
+
+.time-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold);
+  align-self: start;
+}
+
+.time-label.current,
+.time-value.current {
+  color: var(--text);
+}
+
+/* ── CLOCK ACTION BUTTONS ───────────────────────────────── */
+.clock-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #d4af37, #f4c430);
+  color: #0d0f12;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(212, 175, 55, 0.45);
+}
+
+.btn-secondary {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(212, 175, 55, 0.22);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ── MODAL ──────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  animation: scaleIn 0.25s ease;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 0;
+}
+
+.modal-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-info {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.modal-info strong {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 0 28px 24px;
+  justify-content: flex-end;
+}
+
+/* ── FORM GROUP ─────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: var(--gold-border);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+}
+
+.form-group input::placeholder {
+  color: rgba(107, 114, 128, 0.6);
+}
+
+/* hide number input spinners */
+.form-group input[type=number]::-webkit-inner-spin-button,
+.form-group input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.form-group input[type=number] { -moz-appearance: textfield; }
+
+/* ── PROFIT PREVIEW ─────────────────────────────────────── */
+.profit-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.profit-positive {
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.profit-negative {
+  color: var(--red);
+  background: var(--red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ── SESSION HISTORY ────────────────────────────────────── */
+.history-section {
+  animation: fadeUp 0.5s ease both;
+}
+
+.history-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 16px;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.session-item:hover {
+  border-color: var(--gold-border);
+  transform: translateY(-2px);
+}
+
+/* ── SESSION TIME ───────────────────────────────────────── */
+.session-time {
+  flex-shrink: 0;
+  min-width: 140px;
+}
+
+.session-time > div:first-child {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.session-duration {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── SESSION DETAILS ────────────────────────────────────── */
+.session-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  flex: 1;
+}
+
+.session-blinds,
+.session-buyin,
+.session-profit {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 80px;
+}
+
+.blinds-label,
+.buyin-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.blinds-value,
+.buyin-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.profit-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.profit-value.profit-positive { color: var(--green); }
+.profit-value.profit-negative { color: var(--red); }
+
+/* ── ANIMATIONS ─────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .clock-page { padding: 28px 16px; }
+  .clock-card { padding: 24px 20px; }
+  .clock-title { font-size: 1.8rem; }
+  .time-display { grid-template-columns: 1fr; gap: 4px; padding: 16px; }
+  .modal-header { padding: 20px 20px 0; }
+  .modal-body { padding: 16px 20px; }
+  .modal-footer { padding: 0 20px 20px; }
+  .session-item { flex-direction: column; gap: 14px; }
+}
