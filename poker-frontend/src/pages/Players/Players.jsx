@@ -1,6 +1,6 @@
 import { Layout } from "../../components/Layout"
 import { useEffect, useState } from "react";
-import './players.css';
+import './Players.css';
 import { PlayerInfo } from "./PlayerInfo";
 
 export function Players() {

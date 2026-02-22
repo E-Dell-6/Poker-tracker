@@ -23,9 +23,12 @@ import liveSessionRouter from '../routes/liveSessionRoute.js';
 const app = express();
 const PORT = process.env.PORT || 1111;
 
-app.use(express.json());
-app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
+app.use(cors({ 
+  credentials: true, 
+  origin: 'http://localhost'
+}));
+app.use(express.json());
 
 app.use('/api/', sessionRouter);
 app.use('/uploads', express.static('uploads'));

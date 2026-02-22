@@ -104,7 +104,7 @@ export function Login() {
         credentials: "include", body: JSON.stringify(loginForm),
       });
       const data = await res.json();
-      if (data.success) window.location.href = "/dashboard";
+      if (data.success) window.location.href = "/";
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }
     finally { setLoading(false); }
@@ -125,7 +125,7 @@ export function Login() {
         credentials: "include", body: JSON.stringify(registerForm),
       });
       const data = await res.json();
-      if (data.success) window.location.href = "/dashboard";
+      if (data.success) window.location.href = "/";
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }
     finally { setLoading(false); }

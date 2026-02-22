@@ -18,7 +18,7 @@ export function HomePage() {
   const [pulse, setPulse] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:1111/api/user/data', { credentials: 'include' })
+    fetch('/api/user/data', { credentials: 'include' })
       .then(r => r.json())
       .then(data => setIsLoggedIn(data.success === true))
       .catch(() => setIsLoggedIn(false));
@@ -26,7 +26,7 @@ export function HomePage() {
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    fetch('http://localhost:1111/api/sessions', { credentials: 'include' })
+    fetch('/api/sessions', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         if (!Array.isArray(data)) return;
