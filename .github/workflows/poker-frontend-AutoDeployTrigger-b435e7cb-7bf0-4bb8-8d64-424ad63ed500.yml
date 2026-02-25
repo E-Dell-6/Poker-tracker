@@ -1,8 +1,6 @@
 name: Trigger auto deployment for poker-frontend
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
     branches: 
       [ main ]
@@ -10,15 +8,14 @@ on:
     - '**'
     - '.github/workflows/poker-frontend-AutoDeployTrigger-b435e7cb-7bf0-4bb8-8d64-424ad63ed500.yml'
 
-  # Allow manual trigger 
   workflow_dispatch:      
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: 
-      id-token: write #This is required for requesting the OIDC JWT Token
-      contents: read #Required when GH token is used to authenticate with private repo
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout to the branch
@@ -34,16 +31,11 @@ jobs:
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
         with:
-          appSourcePath: ${{ github.workspace }}/poker-frontend/dockerfile
-          _dockerfilePathKey_: _dockerfilePath_
-          _targetLabelKey_: _targetLabel_
+          appSourcePath: ${{ github.workspace }}/poker-frontend
+          dockerfilePath: Dockerfile
           registryUrl: pokertracker.azurecr.io
           registryUsername: ${{ secrets.POKERFRONTEND_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.POKERFRONTEND_REGISTRY_PASSWORD }}
           containerAppName: poker-frontend
           resourceGroup: myResourceGroup
           imageToBuild: pokertracker.azurecr.io/poker-frontend:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
-
-
