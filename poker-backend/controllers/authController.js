@@ -8,22 +8,22 @@ export const register = async (req, res) => {
     if (!name || !email || !password) {
         return res.json({ success: false, message: 'Missing Details' });
     }
-
     try {
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return res.json({ success: false, message: "User already Exists" });
         }
-
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new userModel({ name, email, password: hashedPassword });
         await user.save();
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        // --- UPDATED COOKIE SETTINGS ---
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            secure: true,
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         return res.json({ success: true });
@@ -38,34 +38,24 @@ export const login = async (req, res) => {
     if (!email || !password) {
         return res.json({ success: false, message: 'Email and password are required' });
     }
-
     try {
         const user = await userModel.findOne({ email });
         if (!user) {
             return res.json({ success: false, message: 'Invalid email' });
         }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.json({ success: false, message: 'Invalid password' });
         }
-
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        // --- UPDATED COOKIE SETTINGS ---
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            secure: true,
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
-
-        const mailOptions = {
-            from: process.env.SENDER_EMAIL,
-            to: email,
-            subject: 'Welcome to TESTESES',
-            text: `Welcome to my website. Your account has been created with email: ${email}`
-        };
-        await getTransporter().sendMail(mailOptions);
-
         return res.json({ success: true });
 
     } catch (error) {

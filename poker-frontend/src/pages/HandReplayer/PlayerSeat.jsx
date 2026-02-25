@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./PlayerSeat.css";
+import { API_URL } from "../../config";
 
 export default function PlayerSeat({ player, style, betAmount, isFolded, winners, isChecked, shownPlayerHand }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -12,22 +13,12 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   const [isUploading, setIsUploading] = useState(false);
   const [playerImage, setPlayerImage] = useState(null);
 
-  if (!player) return null;
-  
-  let isWinner = false;
-  let isArray = shownPlayerHand === null;
-  
-  if (winners) {
-    winners.forEach((winner) => {
-      if (player.name === winner) isWinner = true;
-    });
-  }
 
   // Fetch people list when modal opens
   useEffect(() => {
     const fetchPeople = async () => {
       try {
-        const response = await fetch('http://localhost:1111/api/people');
+        const response = await fetch(`${API_URL}/api/people`);
         if (response.ok) {
           const data = await response.json();
           setPeople(data);
@@ -46,7 +37,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   useEffect(() => {
     const fetchPlayerImage = async () => {
       try {
-        const response = await fetch('http://localhost:1111/api/people');
+        const response = await fetch(`${API_URL}/api/people`);
         if (response.ok) {
           const allPeople = await response.json();
           const matchedPerson = allPeople.find(p => p.name === player.name);
@@ -63,6 +54,17 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
       fetchPlayerImage();
     }
   }, [player.name, player.isHero]);
+
+    if (!player) return null;
+  
+  let isWinner = false;
+  let isArray = shownPlayerHand === null;
+  
+  if (winners) {
+    winners.forEach((winner) => {
+      if (player.name === winner) isWinner = true;
+    });
+  }
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -91,7 +93,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
     formData.append('image', file);
 
     try {
-      const response = await fetch('http://localhost:1111/api/upload-image', {
+      const response = await fetch(`${API_URL}/api/upload-image`, {
         method: 'POST',
         body: formData
       });
@@ -123,7 +125,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
         imageUrl = await uploadImageToServer(selectedFile);
       }
 
-      const response = await fetch('http://localhost:1111/api/people', {
+      const response = await fetch(`${API_URL}/api/people`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,7 +172,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
     alert(`Assigned ${selectedPerson?.name || 'person'} to ${player.name}`);
     
     // TODO: Add API call to save the mapping
-    // await fetch(`http://localhost:1111/api/players/${player.name}/assign-person`, {
+    // await fetch(`${API_URL}/api/players/${player.name}/assign-person`, {
     //   method: 'POST',
     //   body: JSON.stringify({ personId: selectedPersonId })
     // });
@@ -208,7 +210,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
         >
           {playerImage ? (
             <img 
-              src={`http://localhost:1111${playerImage}`} 
+              src={`${API_URL}${playerImage}`} 
               alt={player.name}
               className="profile-image"
               style={{

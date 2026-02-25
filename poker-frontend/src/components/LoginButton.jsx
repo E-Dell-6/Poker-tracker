@@ -1,6 +1,7 @@
 import { Link} from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import "./LoginButton.css";
+import { API_URL } from "../config";
 
 export function LoginButton() {
   const [userData, setUserData] = useState(null);
@@ -13,7 +14,7 @@ export function LoginButton() {
   const otpRefs = useRef([]);
 
   useEffect(() => {
-    fetch("/api/user/data", { credentials: "include" })
+    fetch(`${API_URL}/api/user/data`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => { if (d.success) setUserData(d.userData); })
       .catch(() => {});
@@ -41,7 +42,7 @@ export function LoginButton() {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
     setUserData(null);
     closeDropdown();
     window.location.href = "/";
@@ -51,7 +52,7 @@ export function LoginButton() {
     setVerifyState("sending");
     setOtpError("");
     try {
-      const res = await fetch("/api/auth/send-verify-otp", {
+      const res = await fetch(`${API_URL}/api/auth/send-verify-otp`, {
         method: "POST", credentials: "include",
       });
       const data = await res.json();
@@ -98,7 +99,7 @@ export function LoginButton() {
     setVerifyState("verifying");
     setOtpError("");
     try {
-      const res = await fetch("/api/auth/verify-account", {
+      const res = await fetch(`${API_URL}/api/auth/verify-account`, {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp: code }),

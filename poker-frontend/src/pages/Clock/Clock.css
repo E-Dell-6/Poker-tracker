@@ -245,7 +245,7 @@
   animation: fadeIn 0.2s ease;
 }
 
-.modal-content {
+.clock-modal-content {
   background: var(--bg3);
   border: 1px solid var(--border);
   border-radius: 20px;

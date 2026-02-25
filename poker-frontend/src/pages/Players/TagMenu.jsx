@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './TagMenu.css';
+import { API_URL } from '../../config';
 
 const PRESET_COLORS = [
   '#ef4444', // red
@@ -32,7 +33,7 @@ export function TagMenu({ player, onClose, onTagCreated }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`http://localhost:1111/api/people/${player._id}/tags`, {
+      const response = await fetch(`${API_URL}/api/people/${player._id}/tags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,6 @@
+import { API_URL } from "../config";
 import React, { useState, useEffect } from "react";
+import './EditSessionLog.css';
 
 export function EditSessionLog({ 
   isOpen, 
@@ -29,7 +31,7 @@ export function EditSessionLog({
 
   useEffect(() => {
     if (!isOpen) return;
-    fetch('http://localhost:1111/api/people', { credentials: 'include' })
+    fetch(`${API_URL}/api/people`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => setPeople(Array.isArray(data) ? data : []))
       .catch(err => console.error("Failed to fetch people:", err));
@@ -82,7 +84,7 @@ export function EditSessionLog({
   const uploadImageToServer = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
-    const response = await fetch('http://localhost:1111/api/upload-image', {
+    const response = await fetch(`${API_URL}/api/upload-image`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -99,7 +101,7 @@ export function EditSessionLog({
       let imageUrl = "";
       if (selectedFile) imageUrl = await uploadImageToServer(selectedFile);
 
-      const response = await fetch('http://localhost:1111/api/people', {
+      const response = await fetch(`${API_URL}/api/people`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -139,7 +141,7 @@ export function EditSessionLog({
       });
 
       const response = await fetch(
-        `http://localhost:1111/api/sessions/${editFormData.id}`,
+        `${API_URL}/api/sessions/${editFormData.id}`,
         {
           method: "PUT",
           credentials: "include",

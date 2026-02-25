@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
+import { API_URL } from "../config";
+import "./SessionLog.css";
 
 export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
@@ -12,7 +14,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
   useEffect(() => {
     const fetchFavourites = async () => {
       try {
-        const response = await fetch('http://localhost:1111/api/favourites', {
+        const response = await fetch(`${API_URL}/api/favourites`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -77,7 +79,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
     if (!confirmed) { setContextMenu(null); return; }
     try {
       const response = await fetch(
-        `http://localhost:1111/api/sessions/${sessionToDelete._id}`,
+        `${API_URL}/api/sessions/${sessionToDelete._id}`,
         { method: "DELETE", credentials: "include" }
       );
       if (!response.ok) throw new Error("Failed to delete session");
@@ -170,7 +172,21 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                       >
                         <div className="hand-info">
                           <span className="hand-index">#{hand.handIndex || i + 1}</span>
-                          <span className="hand-cards">{hero ? hero.holeCards.join(" ") : "No Cards"}</span>
+                          <div className="hand-cards">
+                            {hero && hero.holeCards.length > 0 ? (
+                              hero.holeCards.map((card, ci) => (
+                                <div key={ci} className="card-wrapper">
+                                  <img
+                                    src={`/images/cards/${card}.png`}
+                                    alt={card}
+                                    className="card-img"
+                                  />
+                                </div>
+                              ))
+                            ) : (
+                              <span className="no-cards">No Cards</span>
+                            )}
+                          </div>
                           <span className="hand-winner">Winner: {hand.winners.join(", ")}</span>
                         </div>
                         <div className="hand-right">

@@ -166,10 +166,9 @@ ul.hands-list > li.hand-item:hover {
 }
 
 .hand-cards {
-  color: var(--text);
-  font-weight: 600;
-  font-family: monospace;
-  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .hand-winner {

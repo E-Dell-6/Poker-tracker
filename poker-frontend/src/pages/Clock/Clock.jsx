@@ -185,7 +185,7 @@ export function Clock() {
           {/* Session Form Modal (clock-in) */}
           {showSessionForm && (
             <div className="modal-overlay" onClick={() => setShowSessionForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>New Session</h2>
                   <button className="modal-close" onClick={() => setShowSessionForm(false)}>×</button>
@@ -230,7 +230,7 @@ export function Clock() {
           {/* Buy-In Form Modal */}
           {showBuyInForm && (
             <div className="modal-overlay" onClick={() => setShowBuyInForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>Add Buy-In</h2>
                   <button className="modal-close" onClick={() => setShowBuyInForm(false)}>×</button>
@@ -260,7 +260,7 @@ export function Clock() {
           {/* Clock Out / Cash-Out Modal */}
           {showClockOutForm && (
             <div className="modal-overlay" onClick={() => setShowClockOutForm(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>End Session</h2>
                   <button className="modal-close" onClick={() => setShowClockOutForm(false)}>×</button>

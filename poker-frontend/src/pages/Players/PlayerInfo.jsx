@@ -2,9 +2,9 @@ import './PlayerInfo.css';
 import { TagMenu } from './TagMenu';
 import { PlayerStats } from './PlayerStats';
 import { useState, useRef } from 'react';
+import { API_URL } from '../../config';
 
 export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
-    if (!player) return null;
 
     const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
     const [currentPlayer, setCurrentPlayer] = useState(player);
@@ -13,6 +13,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const fileInputRef = useRef(null);
+    if (!player) return null;
 
     const handleTagCreated = (updatedPlayer) => {
         setCurrentPlayer(updatedPlayer);
@@ -29,7 +30,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
             const formData = new FormData();
             formData.append('image', file);
 
-            const uploadResponse = await fetch('http://localhost:1111/api/upload-image', {
+            const uploadResponse = await fetch(`${API_URL}/api/upload-image`, {
                 method: 'POST',
                 credentials: 'include',
                 body: formData,
@@ -38,7 +39,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
             if (!uploadResponse.ok) throw new Error('Failed to upload image');
             const { imageUrl } = await uploadResponse.json();
 
-            const updateResponse = await fetch(`http://localhost:1111/api/people/${currentPlayer._id}`, {
+            const updateResponse = await fetch(`${API_URL}/api/people/${currentPlayer._id}`, {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -62,7 +63,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
     const handleSaveNotes = async () => {
         setIsSavingNotes(true);
         try {
-            const response = await fetch(`http://localhost:1111/api/people/${currentPlayer._id}/notes`, {
+            const response = await fetch(`${API_URL}/api/people/${currentPlayer._id}/notes`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
@@ -105,7 +106,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
             >
                 {currentPlayer.image ? (
                     <img
-                        src={`http://localhost:1111${currentPlayer.image}`}
+                        src={`${API_URL}${currentPlayer.image}`}
                         alt={currentPlayer.name}
                         className="player-avatar-large"
                     />

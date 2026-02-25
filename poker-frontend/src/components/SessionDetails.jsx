@@ -1,3 +1,4 @@
+import API_URL from "../config";
 /*/import React, { useState, useEffect } from "react";
 
 export function EditSessionLog({ 
@@ -25,7 +26,7 @@ export function EditSessionLog({
   useEffect(() => {
     const fetchPeople = async () => {
       try {
-        const response = await fetch('http://localhost:1111/api/people');
+        const response = await fetch('${API_URL}/api/people');
         if (response.ok) {
           const data = await response.json();
           setPeople(data);
@@ -107,7 +108,7 @@ export function EditSessionLog({
     formData.append('image', file);
 
     try {
-      const response = await fetch('http://localhost:1111/api/upload-image', {
+      const response = await fetch('${API_URL}/api/upload-image', {
         method: 'POST',
         body: formData
       });
@@ -141,7 +142,7 @@ export function EditSessionLog({
       }
 
       // Create the person with the image URL
-      const response = await fetch('http://localhost:1111/api/people', {
+      const response = await fetch('${API_URL}/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -203,7 +204,7 @@ export function EditSessionLog({
       };
 
       const response = await fetch(
-        `http://localhost:1111/api/sessions/${editFormData.id}`,
+        `${API_URL}/api/sessions/${editFormData.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

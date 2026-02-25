@@ -2,6 +2,7 @@ import { Layout } from "../../components/Layout"
 import { useEffect, useState } from "react";
 import './Players.css';
 import { PlayerInfo } from "./PlayerInfo";
+import { API_URL } from "../../config";
 
 export function Players() {
   const [players, setPlayers] = useState([]);
@@ -12,8 +13,8 @@ export function Players() {
     const fetchData = async () => {
       try {
         const [peopleRes, sessionsRes] = await Promise.all([
-          fetch("http://localhost:1111/api/people", { credentials: "include" }),
-          fetch("http://localhost:1111/api/sessions", { credentials: "include" }),
+          fetch(`${API_URL}/api/people`, { credentials: "include" }),
+          fetch(`${API_URL}/api/sessions`, { credentials: "include" }),
         ]);
 
         const peopleData = await peopleRes.json();
@@ -60,7 +61,7 @@ export function Players() {
                 >
                   {player.image && (
                     <img
-                      src={`http://localhost:1111${player.image}`}
+                      src={`${API_URL}${player.image}`}
                       alt={player.name}
                       className="player-avatar"
                     />

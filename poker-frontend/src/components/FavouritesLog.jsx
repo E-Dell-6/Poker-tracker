@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import './FavouritesLog.css';
+import { API_URL } from "../config";
 
 export function FavouritesLog({ hands: initialHands, onHandClick }) {
   const [hands, setHands] = useState([]);
@@ -23,7 +24,7 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
       setTimeout(async () => {
         if (!newStatus) {
           try {
-            await fetch(`http://localhost:1111/api/favourites/${handId}`, {
+            await fetch(`${API_URL}/api/favourites/${handId}`, {
               method: "DELETE"
             });
             console.log(`Deleted hand ${handId} from backend`);

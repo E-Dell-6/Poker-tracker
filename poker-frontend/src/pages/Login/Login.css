@@ -203,6 +203,10 @@ body {
   cursor: not-allowed;
 }
 
+.submit-btn--register {
+  margin-top: 8px;
+}
+
 /* ── Ghost/back button ── */
 .ghost-btn {
   width: 100%;

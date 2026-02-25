@@ -3,5 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY . .
-EXPOSE 5000
+# Change this to 80 to match the standard Azure port
+EXPOSE 80
 CMD ["node", "src/server.js"]

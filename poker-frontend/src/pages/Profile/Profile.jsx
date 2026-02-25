@@ -1,8 +1,7 @@
 import { Layout } from "../../components/Layout";
 import { useState, useEffect, useMemo } from "react";
 import "./Profile.css";
-
-const BASE = "http://localhost:1111";
+import { API_URL } from "../../config";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -46,6 +45,7 @@ function fmtDate(d) {
 
 /* ─── pure-SVG line/area chart ──────────────────────────── */
 function ProfitChart({ data }) {
+const [hover, setHover] = useState(null);
   const W = 900, H = 260, PL = 56, PR = 16, PT = 16, PB = 32;
   const cW = W - PL - PR;
   const cH = H - PT - PB;
@@ -88,9 +88,6 @@ function ProfitChart({ data }) {
   const xTicks = data
     .map((d, i) => ({ i, label: d.label }))
     .filter((_, i) => i === 0 || i === data.length - 1 || i % step === 0);
-
-  // Hover state
-  const [hover, setHover] = useState(null);
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -208,9 +205,9 @@ export function Profile() {
     (async () => {
       try {
         const [uRes, oRes, lRes] = await Promise.all([
-          fetch(`${BASE}/api/user/data`,      { credentials: "include" }),
-          fetch(`${BASE}/api/sessions`,       { credentials: "include" }),
-          fetch(`${BASE}/api/live-sessions`,  { credentials: "include" }),
+          fetch(`${API_URL}/api/user/data`,      { credentials: "include" }),
+          fetch(`${API_URL}/api/sessions`,       { credentials: "include" }),
+          fetch(`${API_URL}/api/live-sessions`,  { credentials: "include" }),
         ]);
         const [uData, oData, lData] = await Promise.all([
           uRes.json(), oRes.json(), lRes.json(),
@@ -297,7 +294,7 @@ export function Profile() {
         <div className="profile-hero">
           <div className="profile-avatar">
             {user?.image
-              ? <img src={`${BASE}${user.image}`} alt={user.name} />
+              ? <img src={`${API_URL}${user.image}`} alt={user.name} />
               : <span>{user?.name?.charAt(0).toUpperCase() ?? "?"}</span>
             }
           </div>

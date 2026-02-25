@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
+import { API_URL } from "../../config";
 import "./History.css";
 
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
@@ -18,7 +19,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:1111/api/people", { credentials: "include" })
+    fetch(`${API_URL}/api/people`, { credentials: "include" })
       .then((r) => r.json())
       .then((data) => setPeople(Array.isArray(data) ? data : []))
       .catch(() => {});
@@ -49,7 +50,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
       if (selectedFile) {
         const formData = new FormData();
         formData.append("image", selectedFile);
-        const imgRes = await fetch("http://localhost:1111/api/upload-image", {
+        const imgRes = await fetch(`${API_URL}/api/upload-image`, {
           method: "POST",
           credentials: "include",
           body: formData,
@@ -59,7 +60,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
         imageUrl = imgData.imageUrl;
       }
 
-      const res = await fetch("http://localhost:1111/api/people", {
+      const res = await fetch(`${API_URL}/api/people`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -189,7 +190,7 @@ export function History() {
   const [favourites, setFavourites] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:1111/api/sessions", { credentials: "include" })
+    fetch(`${API_URL}/api/sessions`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => setSessions(Array.isArray(data) ? data : []))
       .catch(() => setError("Server connection failed."));
@@ -197,7 +198,7 @@ export function History() {
 
   useEffect(() => {
     if (isFavouritesShowing !== "⭐") return;
-    fetch("http://localhost:1111/api/favourites", { credentials: "include" })
+    fetch(`${API_URL}/api/favourites`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => setFavourites(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Failed to load favourites", err));
@@ -215,7 +216,7 @@ export function History() {
     const formData = new FormData();
     formData.append("csvFile", file);
     try {
-      const response = await fetch("http://localhost:1111/api/upload", {
+      const response = await fetch(`${API_URL}/api/upload`, {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -234,7 +235,7 @@ export function History() {
     const { sessionId, originalName } = renamingState;
     try {
       const response = await fetch(
-        `http://localhost:1111/api/sessions/${sessionId}/map-player`,
+        `${API_URL}/api/sessions/${sessionId}/map-player`,
         {
           method: "POST",
           credentials: "include",

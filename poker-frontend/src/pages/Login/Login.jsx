@@ -1,36 +1,37 @@
 import { useState } from "react";
 import "./Login.css";
+import { API_URL } from "../../config";
 
 // ── Icons (defined outside to prevent remounting) ──
 const UserIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
   </svg>
 );
 const EmailIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
   </svg>
 );
 const LockIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 );
 const ShieldIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
 const EyeOffIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
     <line x1="1" y1="1" x2="23" y2="23"/>
   </svg>
 );
 const EyeIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(160,160,210,0.7)" strokeWidth="2">
+  <svg className="login-icon-svg" viewBox="0 0 24 24">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
     <circle cx="12" cy="12" r="3"/>
   </svg>
@@ -99,7 +100,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify(loginForm),
       });
@@ -120,7 +121,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify(registerForm),
       });
@@ -136,7 +137,7 @@ export function Login() {
       return setErrors({ forgotEmail: "Please enter a valid email" });
     setLoading(true); setServerError("");
     try {
-      const res = await fetch("/api/auth/send-reset-otp", {
+      const res = await fetch(`${API_URL}/api/auth/send-reset-otp`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include", body: JSON.stringify({ email: forgotEmail }),
       });
@@ -155,7 +156,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email: forgotEmail, otp: resetForm.otp, newPassword: resetForm.newPassword }),
@@ -223,7 +224,7 @@ export function Login() {
                   <Field icon={<LockIcon />} type={showPassword ? "text" : "password"} placeholder="Password"
                     value={registerForm.password} onChange={(v) => handleChange(setRegisterForm, "password", v)}
                     error={errors.password} toggle={() => setShowPassword(s => !s)} showToggle={showPassword} />
-                  <button className="submit-btn" style={{ marginTop: "8px" }} onClick={handleRegister} disabled={loading}>
+                  <button className="submit-btn submit-btn--register" onClick={handleRegister} disabled={loading}>
                     {loading ? <span className="spinner" /> : "Sign Up"}
                   </button>
                   <p className="footer-text">Already have an account?{" "}

@@ -157,11 +157,34 @@
 }
 
 .hand-cards {
-  color: var(--text);
-  font-weight: 600;
-  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-  letter-spacing: 1px;
+.card-wrapper {
+  width: 40px;
+  height: 56px;
+  background: #CCCCCC;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.no-cards {
+  color: var(--muted);
+  font-size: 0.85em;
 }
 
 .hand-winner {

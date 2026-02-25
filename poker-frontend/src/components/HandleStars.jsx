@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { API_URL } from "../config";
 
 export function HandleStars({ hand, isStarred: initialIsStarred, onToggle }) {
   const [isStarred, setIsStarred] = useState(initialIsStarred);
@@ -14,7 +15,7 @@ export function HandleStars({ hand, isStarred: initialIsStarred, onToggle }) {
     setIsStarred(newStatus);
 
     try {
-      const response = await fetch(`http://localhost:1111/api/favourites/${hand._id}`, {
+      const response = await fetch(`${API_URL}/api/favourites/${hand._id}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

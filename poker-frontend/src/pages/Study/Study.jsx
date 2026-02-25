@@ -2,6 +2,7 @@ import { Layout } from '../../components/Layout';
 import { useState, useEffect, useMemo } from 'react';
 import { calculateHeadsUpStats } from '../../utils/HeadsUpStats';
 import { SessionSelector } from '../../components/SessionSelector';
+import { API_URL } from '../../config';
 import './Study.css';
 
 const TIME_FILTERS = [
@@ -64,7 +65,7 @@ export function Study() {
         try {
             setLoading(true);
             setError(null);
-            const res = await fetch('http://localhost:1111/api/sessions', {
+            const res = await fetch(`${API_URL}/api/sessions`, {
                 credentials: 'include',
             });
             if (!res.ok) throw new Error('Failed to fetch sessions');
