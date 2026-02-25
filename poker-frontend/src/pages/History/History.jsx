@@ -302,6 +302,16 @@ export function History() {
               accept=".csv"
               style={{ display: "none" }}
             />
+            <div className="upload-info-wrap">
+              <button className="upload-info-btn" aria-label="Upload requirements">i</button>
+              <div className="upload-info-tooltip">
+                <div>Supported Logs:</div>
+                <ul>
+                  <li>PokerNow.com</li>
+                  <li>No-Limit Hold'em (NLH)</li>
+                </ul>
+              </div>
+            </div>
             <button
               className="upload-button"
               onClick={() => fileInputRef.current.click()}
