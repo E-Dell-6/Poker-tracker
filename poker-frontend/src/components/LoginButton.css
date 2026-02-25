@@ -2,12 +2,12 @@
 
 /* ── Nav wrapper ── */
 .lb-nav {
-  position: fixed;
-  top: 16px;
-  right: 16px;
+  position: relative;
   display: inline-flex;
+  align-items: center;
   font-family: 'Nunito', sans-serif;
   z-index: 999;
+  justify-self: end;
 }
 
 /* ── Base button ── */

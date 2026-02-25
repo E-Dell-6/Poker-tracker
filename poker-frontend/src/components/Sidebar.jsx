@@ -20,7 +20,7 @@ export function Sidebar() {
       {/* Brand */}
       <div className="sidebar-brand">
         <span className="sidebar-brand-icon">♠</span>
-        {!collapsed && <span className="sidebar-brand-name">PokerPulse</span>}
+        {!collapsed && <span className="sidebar-brand-name">PokerFlow</span>}
       </div>
 
       {/* Nav */}

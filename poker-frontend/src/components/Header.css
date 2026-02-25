@@ -80,6 +80,14 @@
   line-height: 1;
 }
 
+/* Actions (right column) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
 /* Responsive: hide labels on small screens */
 @media (max-width: 640px) {
   .header {

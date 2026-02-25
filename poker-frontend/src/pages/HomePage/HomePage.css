@@ -203,6 +203,73 @@
   transform: translateY(-2px);
 }
 
+/* ── GUEST BUTTON ───────────────────────────────────────── */
+.hp-btn-guest {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+  margin-bottom: 28px;
+  letter-spacing: 0.2px;
+}
+
+.hp-btn-guest:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.hp-btn-guest-icon {
+  font-size: 15px;
+}
+
+/* ── GUEST BANNER ───────────────────────────────────────── */
+.hp-guest-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(212, 175, 55, 0.08);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: rgba(212, 175, 55, 0.85);
+  flex-wrap: wrap;
+}
+
+.hp-guest-banner-icon {
+  font-size: 15px;
+}
+
+.hp-guest-banner-cta {
+  background: none;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #d4af37;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  margin-left: 4px;
+}
+
+.hp-guest-banner-cta:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.7);
+}
+
 .hp-hero-pills {
   display: flex;
   gap: 24px;

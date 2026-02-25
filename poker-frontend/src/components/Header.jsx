@@ -17,7 +17,7 @@ export function Header() {
       {/* Brand */}
       <Link to="/" className="header-brand">
         <span className="header-brand-icon">♠</span>
-        <span className="header-brand-name">PokerPulse</span>
+        <span className="header-brand-name">PokerFlow</span>
       </Link>
 
       {/* Nav */}
@@ -32,8 +32,12 @@ export function Header() {
             <span className="header-label">{item.label}</span>
           </Link>
         ))}
-        <LoginButton />
       </nav>
+
+      {/* Right slot */}
+      <div className="header-actions">
+        <LoginButton />
+      </div>
     </header>
   );
 }

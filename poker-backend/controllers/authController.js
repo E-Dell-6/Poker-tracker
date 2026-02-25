@@ -97,7 +97,7 @@ export const sendVerifyOtp = async (req, res) => {
             from: process.env.SENDER_EMAIL,
             to: user.email,
             subject: 'Account Verification',
-            text: `Your OTP is ${otp}. Verify your account using this OTP`
+            text: `Your One Time Password is ${otp}. Verify your account using this OTP`
         };
         await getTransporter().sendMail(mailOptions);
         res.json({ success: true, message: 'Verification OTP Sent on Email' });

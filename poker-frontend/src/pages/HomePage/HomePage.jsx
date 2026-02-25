@@ -11,9 +11,22 @@ const STAT_CARDS = [
   { label: 'PFR', key: 'pfr', icon: '↑', suffix: '%' },
 ];
 
+// Demo data shown to guests
+const GUEST_SESSIONS = [
+  { _id: 'g1', gameType: 'NL Hold\'em', date: '2024-11-10', hands: Array(87), totalProfit: 142 },
+  { _id: 'g2', gameType: 'NL Hold\'em', date: '2024-11-08', hands: Array(63), totalProfit: -55 },
+  { _id: 'g3', gameType: 'PLO', date: '2024-11-05', hands: Array(44), totalProfit: 310 },
+  { _id: 'g4', gameType: 'NL Hold\'em', date: '2024-11-01', hands: Array(101), totalProfit: -88 },
+  { _id: 'g5', gameType: 'PLO', date: '2024-10-28', hands: Array(72), totalProfit: 220 },
+];
+
+const GUEST_STATS = { totalHands: 367, sessions: 5, vpip: '28', pfr: '19' };
+const GUEST_PULSE = [-55, 142, 310, -88, 220];
+
 export function HomePage() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [stats, setStats] = useState(null);
   const [pulse, setPulse] = useState([]);
@@ -55,6 +68,13 @@ export function HomePage() {
       })
       .catch(() => {});
   }, [isLoggedIn]);
+
+  const handleGuestMode = () => {
+    setIsGuest(true);
+    setSessions(GUEST_SESSIONS);
+    setStats(GUEST_STATS);
+    setPulse(GUEST_PULSE);
+  };
 
   const recentSessions = [...sessions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -99,7 +119,7 @@ export function HomePage() {
   };
 
   // ── LOGGED OUT ──
-  if (isLoggedIn === false) {
+  if (isLoggedIn === false && !isGuest) {
     return (
       <div className="hp-root">
         <section className="hp-hero">
@@ -138,6 +158,10 @@ export function HomePage() {
               </button>
             </div>
 
+            <button className="hp-btn-guest" onClick={handleGuestMode}>
+              Continue as Guest
+            </button>
+
             <div className="hp-hero-pills">
               <span>Hand-by-hand replay</span>
               <span>VPIP · PFR · 3-Bet %</span>
@@ -149,7 +173,7 @@ export function HomePage() {
         <footer className="hp-footer">
           <div className="hp-footer-brand">
             <span className="hp-logo">♠</span>
-            <span className="hp-brand-name">PokerPulse</span>
+            <span className="hp-brand-name">PokerFlow</span>
           </div>
 
           <div className="hp-footer-links">
@@ -160,7 +184,7 @@ export function HomePage() {
           </div>
 
           <p className="hp-footer-copy">
-            © {new Date().getFullYear()} PokerPulse. All rights reserved.
+            © {new Date().getFullYear()} Poker. All rights reserved.
           </p>
         </footer>
       </div>
@@ -178,10 +202,23 @@ export function HomePage() {
     );
   }
 
-  // ── LOGGED IN ──
+  // ── LOGGED IN or GUEST ──
   return (
     <Layout>
       <div className="hp-dashboard">
+        {isGuest && (
+          <div className="hp-guest-banner">
+            <span className="hp-guest-banner-icon">👁</span>
+            <span>You're browsing as a guest with sample data.</span>
+            <button
+              className="hp-guest-banner-cta"
+              onClick={() => navigate('/login')}
+            >
+              Sign up free →
+            </button>
+          </div>
+        )}
+
         <section className="hp-section">
           <h2 className="hp-section-title">Performance Snapshot</h2>
 
@@ -219,7 +256,8 @@ export function HomePage() {
                 <div
                   key={s._id}
                   className="hp-feed-item"
-                  onClick={() => navigate('/history')}
+                  onClick={() => !isGuest && navigate('/history')}
+                  style={isGuest ? { cursor: 'default' } : {}}
                 >
                   <div className="hp-feed-left">
                     <span className="hp-feed-type">
@@ -250,12 +288,23 @@ export function HomePage() {
                 </div>
               ))}
 
-              <button
-                className="hp-btn-ghost hp-view-all"
-                onClick={() => navigate('/history')}
-              >
-                View All Sessions →
-              </button>
+              {!isGuest && (
+                <button
+                  className="hp-btn-ghost hp-view-all"
+                  onClick={() => navigate('/history')}
+                >
+                  View All Sessions →
+                </button>
+              )}
+
+              {isGuest && (
+                <button
+                  className="hp-btn-primary hp-view-all"
+                  onClick={() => navigate('/login')}
+                >
+                  Sign up to track your own sessions →
+                </button>
+              )}
             </div>
           </section>
         )}
