@@ -15,6 +15,70 @@
   --muted: #6b7280;
 }
 
+/* ── HAND FILTER BAR (inside session) ───────────────────── */
+.hand-filter-bar {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+}
+
+.hand-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.hand-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.hand-filter-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+.hand-filter-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 100px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.hand-filter-btn.active .hand-filter-count {
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--gold);
+}
+
+/* ── EMPTY FILTER STATE ─────────────────────────────────── */
+.hands-empty-filter {
+  padding: 24px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  font-style: italic;
+  list-style: none;
+}
+
 /* ── SESSIONS LIST ──────────────────────────────────────── */
 .sessions-list {
   list-style: none;
