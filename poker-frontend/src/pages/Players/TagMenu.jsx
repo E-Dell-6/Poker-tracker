@@ -3,19 +3,19 @@ import './TagMenu.css';
 import { API_URL } from '../../config';
 
 const PRESET_COLORS = [
-  '#ef4444', // red
-  '#f59e0b', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#06b6d4', // cyan
-  '#3b82f6', // blue
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#64748b', // gray
-  '#dc2626', // dark red
-  '#16a34a', // dark green
-  '#2563eb', // dark blue
-];
+  '#ef4444', 
+  '#f59e0b', 
+  '#eab308', 
+  '#22c55e', 
+  '#06b6d4', 
+  '#3b82f6', 
+  '#8b5cf6', 
+  '#ec4899', 
+  '#64748b', 
+  '#dc2626', 
+  '#16a34a', 
+  '#2563eb', 
+]
 
 export function TagMenu({ player, onClose, onTagCreated }) {
   const [tagLabel, setTagLabel] = useState('');
@@ -35,6 +35,7 @@ export function TagMenu({ player, onClose, onTagCreated }) {
     try {
       const response = await fetch(`${API_URL}/api/people/${player._id}/tags`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           label: tagLabel.trim(),
@@ -48,17 +49,9 @@ export function TagMenu({ player, onClose, onTagCreated }) {
 
       const updatedPlayer = await response.json();
       
-      // Notify parent component of the update
       if (onTagCreated) {
         onTagCreated(updatedPlayer);
       }
-
-      // Close the menu
-      if (onClose) {
-        onClose();
-      }
-
-      alert('Tag created successfully!');
     } catch (error) {
       console.error('Error creating tag:', error);
       alert('Failed to create tag');

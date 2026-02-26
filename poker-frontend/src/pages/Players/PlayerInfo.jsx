@@ -1,10 +1,11 @@
 import './PlayerInfo.css';
 import { TagMenu } from './TagMenu';
 import { PlayerStats } from './PlayerStats';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { API_URL } from '../../config';
 
 export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
+    if (!player) return null;
 
     const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
     const [currentPlayer, setCurrentPlayer] = useState(player);
@@ -13,7 +14,13 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
     const [isSavingNotes, setIsSavingNotes] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const fileInputRef = useRef(null);
-    if (!player) return null;
+
+    // Sync internal state when the selected player changes
+    useEffect(() => {
+        setCurrentPlayer(player);
+        setNotes(player.notes || '');
+        setIsEditingNotes(false);
+    }, [player._id]);
 
     const handleTagCreated = (updatedPlayer) => {
         setCurrentPlayer(updatedPlayer);
@@ -191,7 +198,6 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
                 )}
             </div>
 
-            {/* sessions prop passed straight through — no extra fetch */}
             <PlayerStats player={currentPlayer} sessions={sessions} />
 
             {isTagMenuOpen && (
