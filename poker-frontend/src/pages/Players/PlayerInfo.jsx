@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { API_URL } from '../../config';
 
 export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
-    if (!player) return null;
 
     const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
     const [currentPlayer, setCurrentPlayer] = useState(player);
@@ -21,7 +20,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
         setNotes(player.notes || '');
         setIsEditingNotes(false);
     }, [player._id]);
-
+     if (!player) return null;
     const handleTagCreated = (updatedPlayer) => {
         setCurrentPlayer(updatedPlayer);
         setIsTagMenuOpen(false);
