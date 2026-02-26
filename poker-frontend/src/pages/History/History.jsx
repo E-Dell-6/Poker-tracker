@@ -212,22 +212,37 @@ export function History() {
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    setError(null);
     setUploadStatus("uploading");
+
     const formData = new FormData();
     formData.append("csvFile", file);
+
     try {
       const response = await fetch(`${API_URL}/api/upload`, {
         method: "POST",
         credentials: "include",
         body: formData,
       });
+
       const result = await response.json();
+
+      if (response.status === 409 || result.duplicate) {
+        setUploadStatus(null);
+        setError("This log file has already been uploaded.");
+        event.target.value = null;
+        return;
+      }
+
       if (!response.ok) throw new Error(result.error || "Upload failed");
+
       setUploadStatus("success-" + Date.now());
     } catch (err) {
       setUploadStatus("error");
       setError(err.message);
     }
+
     event.target.value = null;
   };
 

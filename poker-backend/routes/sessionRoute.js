@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import crypto from 'crypto';
 import { parsePokerNowLog } from '../utils/pokerNowParser.js';
 import Session from '../model/Session.js';
 import LiveSession from '../model/LiveSession.js';
@@ -57,12 +58,21 @@ router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+        // --- Duplicate detection ---
+        const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
+        const existing = await Session.findOne({ userId, fileHash });
+        if (existing) {
+            return res.status(409).json({ duplicate: true, error: "This log file has already been uploaded." });
+        }
+
         const csvContent = req.file.buffer.toString('utf8');
         const parsedHands = parsePokerNowLog(csvContent);
         if (parsedHands.length === 0) return res.status(400).json({ error: "No hands found in the uploaded file" });
         parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
         const session = new Session({
             userId,
+            fileHash,
             sessionType: 'upload',
             date: parsedHands[0].datePlayed,
             gameType: parsedHands[0].gameType,

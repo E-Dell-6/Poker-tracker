@@ -13,8 +13,6 @@ export function HandReplayer() {
   const navigate = useNavigate();
   const hand = state?.hand;
   const session = state?.session;
-  console.log(hand);
-  console.log(hand.secondBoard);
   const [actionIndex, setActionIndex] = useState(0);
   let [historyCollapse, setHistoryCollapse] = useState(true);
   const toggleCollapse = () => {
@@ -25,8 +23,6 @@ export function HandReplayer() {
     setActionIndex(0);
   }, [hand?._id]);
 
-  console.log("session :");
-  console.log(session);
 
   const actions = hand?.actions || [];
 
@@ -58,9 +54,6 @@ export function HandReplayer() {
   }, [actionsWithReveals]);
 
   const derivedState = useMemo(() => {
-    console.log("=== DERIVED STATE RECALCULATING ===");
-    console.log("actionIndex:", actionIndex);
-    console.log("hand:", hand);
 
     const players = JSON.parse(JSON.stringify(hand.players));
     let currentBoard = [];
@@ -78,20 +71,12 @@ export function HandReplayer() {
     let pot = 0; // Track total pot
     let currentStreetBets = 0; // Track bets on current street
 
-    console.log(
-      "Total actions to process:",
-      actionsWithReveals.slice(0, actionIndex).length
-    );
-    console.log("Actions:", actionsWithReveals.slice(0, actionIndex));
-    console.log("hand.board:", hand.board);
-    console.log("hand.secondBoard:", hand.secondBoard);
+
 
     actionsWithReveals.slice(0, actionIndex).forEach((action, idx) => {
-      console.log(`Action ${idx}:`, action);
       // --- STREET CHANGE ---
       if (action.street && action.street !== currentStreet) {
         currentStreet = action.street;
-        console.log("Street changed to:", currentStreet);
 
         // reset
         pot += currentStreetBets;
@@ -110,7 +95,6 @@ export function HandReplayer() {
         if (currentStreet === "RIVER") {
           currentBoard = [...hand.board.river]; // Show flop + turn + river
           firstRunoutComplete = true;
-          console.log("First runout complete!");
         }
       }
 
@@ -197,39 +181,26 @@ export function HandReplayer() {
       firstRunoutComplete = true;
     }
 
-    console.log("After loop - currentBoard:", currentBoard);
-    console.log("After loop - currentBoard length:", currentBoard.length);
-    console.log("After loop - firstRunoutComplete:", firstRunoutComplete);
-    console.log("After loop - hand.isRunTwice:", hand.isRunTwice);
-    console.log("After loop - hand.secondBoard:", hand.secondBoard);
+
 
     if (firstRunoutComplete && hand.isRunTwice && hand.secondBoard) {
       showSecondBoard = true;
-      console.log("Setting showSecondBoard to true");
 
       // Build the full second board by combining flop, turn, and river
       const secondFlop = hand.secondBoard.flop || [];
       const secondTurn = hand.secondBoard.turn || [];
       const secondRiver = hand.secondBoard.river || [];
 
-      console.log("secondFlop:", secondFlop);
-      console.log("secondTurn:", secondTurn);
-      console.log("secondRiver:", secondRiver);
 
       // Combine all cards based on what's available
       if (secondRiver.length > 0) {
         currentSecondBoard = [...secondRiver]; // River includes flop + turn already
-        console.log("Using river cards:", currentSecondBoard);
       } else if (secondTurn.length > 0) {
         currentSecondBoard = [...secondTurn]; // Turn includes flop already
-        console.log("Using turn cards:", currentSecondBoard);
       } else if (secondFlop.length > 0) {
         currentSecondBoard = [...secondFlop];
-        console.log("Using flop cards:", currentSecondBoard);
       }
     }
-    console.log("Final showSecondBoard:", showSecondBoard);
-    console.log("Final currentSecondBoard:", currentSecondBoard);
 
     return {
       players,

@@ -8,7 +8,6 @@ function formatDate(dateStr) {
 export function SessionSelector({ sessions, disabledSessions, onToggle, onToggleAll }) {
     const activeCount = sessions.filter(s => !disabledSessions.has(s._id)).length;
 
-    console.log('[SessionSelector] sessions:', sessions.length, sessions[0]);
 
     return (
         <div className="session-panel">

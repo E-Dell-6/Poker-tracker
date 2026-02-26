@@ -9,7 +9,9 @@ const SessionSchema = new mongoose.Schema({
     totalHands: Number,
     totalProfit: Number,
     hands: [HandSchema], // ← Use HandSchema instead of plain Array
-    uploadDate: { type: Date, default: Date.now }
+    uploadDate: { type: Date, default: Date.now },
+    
+    fileHash: { type: String, index: true },
 });
 
 const Session = mongoose.models.session || mongoose.model('Session', SessionSchema);

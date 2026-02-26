@@ -3,7 +3,6 @@ import "./PokerTable.css";
 export default function PokerTable({ board, secondBoard, pot, bigBlind, winners }) {
   const isWinner = (winners === null);
   const doesPotExist = (pot > 0);
-  console.log(board);
   
   // Process first board
   let allCards = [];

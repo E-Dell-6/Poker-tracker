@@ -27,8 +27,6 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
             await fetch(`${API_URL}/api/favourites/${handId}`, {
               method: "DELETE"
             });
-            console.log(`Deleted hand ${handId} from backend`);
-
             // Remove the hand from local state so UI updates
             setHands(prevHands => prevHands.filter(h => h._id !== handId));
           } catch (err) {

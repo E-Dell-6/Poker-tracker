@@ -1,5 +1,5 @@
 import { Layout } from '../../components/Layout';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { calculateHeadsUpStats } from '../../utils/HeadsUpStats';
 import { SessionSelector } from '../../components/SessionSelector';
 import { API_URL } from '../../config';
@@ -23,7 +23,6 @@ const HERO_SENTINEL = '__hero__';
 
 function calculateHeadsUpStatsForHero(heroHands) {
     if (heroHands.length === 0) return null;
-
     const normalizedHands = heroHands.map(hand => ({
         ...hand,
         players: hand.players.map(p =>
@@ -33,14 +32,152 @@ function calculateHeadsUpStatsForHero(heroHands) {
             a.player === hand._heroName ? { ...a, player: HERO_SENTINEL } : a
         )
     }));
-
     return calculateHeadsUpStats(normalizedHands, HERO_SENTINEL);
 }
 
-function StatBox({ label, value, opportunities }) {
+// ── Hand filtering per stat type ─────────────────────────
+// Uses the actual schema: actionType (RAISE/CALL/BET/FOLD/CHECK), street (PREFLOP/FLOP/TURN/RIVER)
+
+function getPreflopRaiseCount(hand) {
+    return (hand.actions ?? []).filter(
+        a => a.street === 'PREFLOP' && a.actionType === 'RAISE'
+    ).length;
+}
+
+function heroAction(hand, street, types) {
+    return (hand.actions ?? []).some(
+        a => a.player === HERO_SENTINEL && a.street === street && types.includes(a.actionType)
+    );
+}
+
+function heroFaced(hand, street, raiseNum) {
+    // Hero faced an nth raise on street = opponent raised raiseNum times before hero acted
+    const pfActions = (hand.actions ?? []).filter(a => a.street === street);
+    let raisesSeen = 0;
+    for (const a of pfActions) {
+        if (a.actionType === 'RAISE') raisesSeen++;
+        if (a.player === HERO_SENTINEL && raisesSeen >= raiseNum) return true;
+    }
+    return false;
+}
+
+function getHandsForStat(statKey, heroHands) {
+    // heroHands are already normalized with HERO_SENTINEL
+    switch (statKey) {
+        case 'vpip':
+            return heroHands.filter(h =>
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE', 'BET'])
+            );
+        case 'pfr':
+            return heroHands.filter(h =>
+                heroAction(h, 'PREFLOP', ['RAISE'])
+            );
+        case 'totalHands':
+            return heroHands;
+
+        // SB open
+        case 'open':
+            return heroHands.filter(h => getPreflopRaiseCount(h) === 0 &&
+                heroAction(h, 'PREFLOP', ['RAISE', 'BET'])
+            );
+
+        // BB 3-bet (faced open, hero raises)
+        case '3bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 1 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 1)
+            );
+
+        // SB 4-bet (faced 3-bet, hero raises again)
+        case '4bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 2 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 2)
+            );
+
+        // BB 5-bet
+        case '5bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 3 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 3)
+            );
+
+        // SB 6-bet
+        case '6bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 4 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 4)
+            );
+
+        case '7bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 5 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 5)
+            );
+
+        case '8bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 6 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 6)
+            );
+
+        case '9bet':
+            return heroHands.filter(h => getPreflopRaiseCount(h) >= 7 &&
+                heroAction(h, 'PREFLOP', ['RAISE']) &&
+                heroFaced(h, 'PREFLOP', 7)
+            );
+
+        // Defends = called/raised facing a raise
+        case 'defend1bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 1) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend3bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 2) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend4bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 3) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend5bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 4) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend6bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 5) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend7bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 6) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+        case 'defend8bet':
+            return heroHands.filter(h =>
+                heroFaced(h, 'PREFLOP', 7) &&
+                heroAction(h, 'PREFLOP', ['CALL', 'RAISE'])
+            );
+
+        default:
+            return [];
+    }
+}
+
+// ── StatBox ───────────────────────────────────────────────
+function StatBox({ label, value, opportunities, statKey, onSelect, isActive }) {
     if (!opportunities) return null;
     return (
-        <div className="stat-box">
+        <div
+            className={`stat-box ${isActive ? 'stat-box--active' : ''}`}
+            onClick={() => onSelect?.(statKey, label)}
+            title="Click to see hands"
+        >
             <div className="stat-label">{label}</div>
             <div className="stat-value">{value}%</div>
             <div className="stat-sample">{opportunities} hands</div>
@@ -48,6 +185,68 @@ function StatBox({ label, value, opportunities }) {
     );
 }
 
+// ── Hand Drawer ───────────────────────────────────────────
+function HandDrawer({ label, hands, onClose, drawerRef }) {
+    if (!hands) return null;
+    return (
+        <div className="hand-drawer" ref={drawerRef}>
+            <div className="hand-drawer-header">
+                <div className="hand-drawer-title">
+                    <span className="hand-drawer-label">{label}</span>
+                    <span className="hand-drawer-count">{hands.length} hands</span>
+                </div>
+                <button className="hand-drawer-close" onClick={onClose}>✕</button>
+            </div>
+            <div className="hand-drawer-list">
+                {hands.length === 0 && (
+                    <div className="hand-drawer-empty">No matching hands found.</div>
+                )}
+                {hands.map((hand, i) => {
+                    const hero = hand.players?.find(p => p.isHero || p.name === HERO_SENTINEL);
+                    const profit = typeof hero?.profitLoss === 'number'
+                        ? hero.profitLoss
+                        : (hand.winners?.includes(hero?.name) ? hand.finalPotSize : null);
+                    const date = hand.sessionDate
+                        ? new Date(hand.sessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : '';
+
+                    return (
+                        <div key={hand._id ?? i} className="hand-drawer-item">
+                            <span className="hdi-index">#{hand.handIndex ?? i + 1}</span>
+
+                            <div className="hdi-cards">
+                                {hero?.holeCards?.length > 0
+                                    ? hero.holeCards.map((card, ci) => (
+                                        <div key={ci} className="hdi-card-wrap">
+                                            <img src={`/images/cards/${card}.png`} alt={card} className="hdi-card-img" />
+                                        </div>
+                                    ))
+                                    : <span className="hdi-no-cards">—</span>
+                                }
+                            </div>
+
+                            <span className="hdi-winner">
+                                {hand.winners?.join(', ') || '—'}
+                            </span>
+
+                            <span className="hdi-pot">Pot: {hand.finalPotSize ?? '—'}</span>
+
+                            {profit !== null && (
+                                <span className={`hdi-profit ${profit >= 0 ? 'win' : 'loss'}`}>
+                                    {profit >= 0 ? '+' : ''}{profit}
+                                </span>
+                            )}
+
+                            {date && <span className="hdi-date">{date}</span>}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// ── Main component ─────────────────────────────────────────
 export function Study() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -56,18 +255,16 @@ export function Study() {
     const [timeFilter, setTimeFilter] = useState(null);
     const [gameTypeFilter, setGameTypeFilter] = useState('all');
     const [showSessionPanel, setShowSessionPanel] = useState(false);
+    const [selectedStat, setSelectedStat] = useState(null); // { key, label, hands[] }
+    const drawerRef = useRef(null);
 
-    useEffect(() => {
-        fetchSessions();
-    }, []);
+    useEffect(() => { fetchSessions(); }, []);
 
     const fetchSessions = async () => {
         try {
             setLoading(true);
             setError(null);
-            const res = await fetch(`${API_URL}/api/sessions`, {
-                credentials: 'include',
-            });
+            const res = await fetch(`${API_URL}/api/sessions`, { credentials: 'include' });
             if (!res.ok) throw new Error('Failed to fetch sessions');
             const data = await res.json();
             setSessions(Array.isArray(data) ? data : []);
@@ -79,7 +276,6 @@ export function Study() {
         }
     };
 
-    // Sessions shown in the panel — respect time/type filters but not manual deselection
     const panelSessions = useMemo(() => {
         let filtered = [...sessions];
         if (timeFilter !== null) {
@@ -93,32 +289,55 @@ export function Study() {
         return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
     }, [sessions, timeFilter, gameTypeFilter]);
 
-    // Sessions that actually feed into the stats
     const activeSessions = useMemo(() => {
         return panelSessions.filter(s => !disabledSessions.has(s._id ?? s.id));
     }, [panelSessions, disabledSessions]);
 
-    const heroStats = useMemo(() => {
-        if (gameTypeFilter === 'NLH') return { message: 'NLH stats coming soon...' };
-        if (gameTypeFilter === 'PLO') return { message: 'PLO stats coming soon...' };
-
-        const heroHands = [];
+    // Build normalized heroHands for both stats and drawer filtering
+    const heroHands = useMemo(() => {
+        const hands = [];
         activeSessions.forEach(session => {
             (session.hands ?? []).forEach(hand => {
                 const heroPlayer = hand.players?.find(p => p.isHero);
                 if (heroPlayer) {
-                    heroHands.push({
+                    const normalized = {
                         ...hand,
                         _heroName: heroPlayer.name,
                         gameType: session.gameType,
-                        sessionDate: session.date
-                    });
+                        sessionDate: session.date,
+                        players: hand.players.map(p =>
+                            p.isHero ? { ...p, name: HERO_SENTINEL } : p
+                        ),
+                        actions: (hand.actions ?? []).map(a =>
+                            a.player === heroPlayer.name ? { ...a, player: HERO_SENTINEL } : a
+                        ),
+                    };
+                    hands.push(normalized);
                 }
             });
         });
+        return hands;
+    }, [activeSessions]);
 
-        return calculateHeadsUpStatsForHero(heroHands);
-    }, [activeSessions, gameTypeFilter]);
+    const heroStats = useMemo(() => {
+        if (gameTypeFilter === 'NLH') return { message: 'NLH stats coming soon...' };
+        if (gameTypeFilter === 'PLO') return { message: 'PLO stats coming soon...' };
+        if (heroHands.length === 0) return null;
+        return calculateHeadsUpStats(heroHands, HERO_SENTINEL);
+    }, [heroHands, gameTypeFilter]);
+
+    const handleStatClick = (statKey, label) => {
+        if (selectedStat?.key === statKey) {
+            setSelectedStat(null);
+            return;
+        }
+        const hands = getHandsForStat(statKey, heroHands);
+        setSelectedStat({ key: statKey, label, hands });
+        // Scroll drawer into view after render
+        setTimeout(() => {
+            drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+    };
 
     const toggleSession = (id) => {
         setDisabledSessions(prev => {
@@ -167,6 +386,13 @@ export function Study() {
     }
 
     const activeCount = panelSessions.filter(s => !disabledSessions.has(s._id ?? s.id)).length;
+
+    // Helper to build StatBox props including statKey and handler
+    const mkStat = (label, value, opportunities, statKey) => ({
+        label, value, opportunities, statKey,
+        onSelect: handleStatClick,
+        isActive: selectedStat?.key === statKey,
+    });
 
     return (
         <Layout>
@@ -233,15 +459,17 @@ export function Study() {
                 ) : (
                     <div className="stats-container">
                         <div className="stats-grid">
-                            <div className="stat-box">
+                            <div className="stat-box" onClick={() => handleStatClick('totalHands', 'All Hands')}>
                                 <div className="stat-label">Total Hands</div>
                                 <div className="stat-value">{heroStats.totalHands}</div>
                             </div>
-                            <div className="stat-box">
+                            <div className={`stat-box ${selectedStat?.key === 'vpip' ? 'stat-box--active' : ''}`}
+                                onClick={() => handleStatClick('vpip', 'VPIP Hands')}>
                                 <div className="stat-label">VPIP</div>
                                 <div className="stat-value">{heroStats.vpip}%</div>
                             </div>
-                            <div className="stat-box">
+                            <div className={`stat-box ${selectedStat?.key === 'pfr' ? 'stat-box--active' : ''}`}
+                                onClick={() => handleStatClick('pfr', 'PFR Hands')}>
                                 <div className="stat-label">PFR</div>
                                 <div className="stat-value">{heroStats.pfr}%</div>
                             </div>
@@ -257,24 +485,24 @@ export function Study() {
                                             <h4>{position}</h4>
                                             {position === 'Small Blind' ? (
                                                 <div className="stats-grid">
-                                                    <StatBox label="Open %" value={posStats.openPct} opportunities={r.opportunities1Bet} />
-                                                    <StatBox label="4-Bet %" value={posStats.fourBetPct} opportunities={r.opportunities4Bet} />
-                                                    <StatBox label="Defend vs 3-Bet %" value={posStats.defend3BetPct} opportunities={r.opportunities4Bet} />
-                                                    <StatBox label="6-Bet %" value={posStats.sixBetPct} opportunities={r.opportunities6Bet} />
-                                                    <StatBox label="Defend vs 5-Bet %" value={posStats.defend5BetPct} opportunities={r.opportunities6Bet} />
-                                                    <StatBox label="8-Bet %" value={posStats.eightBetPct} opportunities={r.opportunities8Bet} />
-                                                    <StatBox label="Defend vs 7-Bet %" value={posStats.defend7BetPct} opportunities={r.opportunities8Bet} />
+                                                    <StatBox {...mkStat('Open %', posStats.openPct, r.opportunities1Bet, 'open')} />
+                                                    <StatBox {...mkStat('4-Bet %', posStats.fourBetPct, r.opportunities4Bet, '4bet')} />
+                                                    <StatBox {...mkStat('Defend vs 3-Bet %', posStats.defend3BetPct, r.opportunities4Bet, 'defend3bet')} />
+                                                    <StatBox {...mkStat('6-Bet %', posStats.sixBetPct, r.opportunities6Bet, '6bet')} />
+                                                    <StatBox {...mkStat('Defend vs 5-Bet %', posStats.defend5BetPct, r.opportunities6Bet, 'defend5bet')} />
+                                                    <StatBox {...mkStat('8-Bet %', posStats.eightBetPct, r.opportunities8Bet, '8bet')} />
+                                                    <StatBox {...mkStat('Defend vs 7-Bet %', posStats.defend7BetPct, r.opportunities8Bet, 'defend7bet')} />
                                                 </div>
                                             ) : (
                                                 <div className="stats-grid">
-                                                    <StatBox label="3-Bet %" value={posStats.threeBetPct} opportunities={r.facedOpen} />
-                                                    <StatBox label="Defend vs Open %" value={posStats.defend1BetPct} opportunities={r.facedOpen} />
-                                                    <StatBox label="5-Bet %" value={posStats.fiveBetPct} opportunities={r.opportunities5Bet} />
-                                                    <StatBox label="Defend vs 4-Bet %" value={posStats.defend4BetPct} opportunities={r.opportunities5Bet} />
-                                                    <StatBox label="7-Bet %" value={posStats.sevenBetPct} opportunities={r.opportunities7Bet} />
-                                                    <StatBox label="Defend vs 6-Bet %" value={posStats.defend6BetPct} opportunities={r.opportunities7Bet} />
-                                                    <StatBox label="9-Bet %" value={posStats.nineBetPct} opportunities={r.opportunities9Bet} />
-                                                    <StatBox label="Defend vs 8-Bet %" value={posStats.defend8BetPct} opportunities={r.opportunities9Bet} />
+                                                    <StatBox {...mkStat('3-Bet %', posStats.threeBetPct, r.facedOpen, '3bet')} />
+                                                    <StatBox {...mkStat('Defend vs Open %', posStats.defend1BetPct, r.facedOpen, 'defend1bet')} />
+                                                    <StatBox {...mkStat('5-Bet %', posStats.fiveBetPct, r.opportunities5Bet, '5bet')} />
+                                                    <StatBox {...mkStat('Defend vs 4-Bet %', posStats.defend4BetPct, r.opportunities5Bet, 'defend4bet')} />
+                                                    <StatBox {...mkStat('7-Bet %', posStats.sevenBetPct, r.opportunities7Bet, '7bet')} />
+                                                    <StatBox {...mkStat('Defend vs 6-Bet %', posStats.defend6BetPct, r.opportunities7Bet, 'defend6bet')} />
+                                                    <StatBox {...mkStat('9-Bet %', posStats.nineBetPct, r.opportunities9Bet, '9bet')} />
+                                                    <StatBox {...mkStat('Defend vs 8-Bet %', posStats.defend8BetPct, r.opportunities9Bet, 'defend8bet')} />
                                                 </div>
                                             )}
                                         </div>
@@ -286,6 +514,16 @@ export function Study() {
                         <div className="refresh-row">
                             <button className="refresh-btn" onClick={fetchSessions}>↺ Refresh Stats</button>
                         </div>
+
+                        {/* Hand Drawer */}
+                        {selectedStat && (
+                            <HandDrawer
+                                label={selectedStat.label}
+                                hands={selectedStat.hands}
+                                onClose={() => setSelectedStat(null)}
+                                drawerRef={drawerRef}
+                            />
+                        )}
                     </div>
                 )}
             </div>

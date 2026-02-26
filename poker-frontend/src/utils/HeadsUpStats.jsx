@@ -138,9 +138,7 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
   
   // Track if SB had opportunity to open
   let sbHadOpenOpportunity = false;
-  
-  console.log(`\n=== NEW HAND (${position}) ===`);
-  console.log(`Actions: ${realActions.map(a => `${a.player}:${a.actionType}`).join(' → ')}`);
+
   
   for (let i = 0; i < realActions.length; i++) {
     const action = realActions[i];
@@ -150,7 +148,6 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
       currentBetLevel++;
       lastAggressorBetLevel = currentBetLevel;
       
-      console.log(`Bet #${currentBetLevel} by ${action.player} (isPlayer: ${isPlayer}, position: ${position})`);
       
       if (isPlayer) {
         // Player made this bet/raise
@@ -162,12 +159,10 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
     } 
     else if (action.actionType === 'CALL' && isPlayer) {
       // Player called - this is a defense against the last bet level
-      console.log(`${playerName} calls bet #${lastAggressorBetLevel}`);
       recordDefense(position, lastAggressorBetLevel, stats);
     }
     else if (action.actionType === 'FOLD') {
       if (isPlayer) {
-        console.log(`${playerName} folded to bet #${lastAggressorBetLevel}`);
       }
       // Fold ends the action, but we've already counted the opportunity
       break;
@@ -177,7 +172,6 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
         // SB checked (limped) - they had opportunity to open but didn't
         sbHadOpenOpportunity = true;
         stats.opportunities1Bet++;
-        console.log('SB limped (checked) - had open opportunity but declined');
       }
     }
   }
@@ -193,9 +187,7 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
       stats.opportunities1Bet++;
     }
   }
-  
-  console.log('=== END HAND ===\n');
-}
+  }
 
 /**
  * Record when player makes a bet/raise
@@ -208,19 +200,15 @@ function recordPlayerAggression(position, betLevel, stats) {
       case 1:
         stats.made1Bet++;
         stats.opportunities1Bet++; // Counted when they actually open
-        console.log('  → SB opened (made 1-bet)');
         break;
       case 3:
         stats.made4Bet++;
-        console.log('  → SB made 4-bet');
         break;
       case 5:
         stats.made6Bet++;
-        console.log('  → SB made 6-bet');
         break;
       case 7:
         stats.made8Bet++;
-        console.log('  → SB made 8-bet');
         break;
     }
   } else {
@@ -228,19 +216,15 @@ function recordPlayerAggression(position, betLevel, stats) {
     switch(betLevel) {
       case 2:
         stats.made3Bet++;
-        console.log('  → BB made 3-bet');
         break;
       case 4:
         stats.made5Bet++;
-        console.log('  → BB made 5-bet');
         break;
       case 6:
         stats.made7Bet++;
-        console.log('  → BB made 7-bet');
         break;
       case 8:
         stats.made9Bet++;
-        console.log('  → BB made 9-bet');
         break;
     }
   }
@@ -255,15 +239,12 @@ function recordOpportunity(position, betLevel, stats) {
     switch(betLevel) {
       case 2:
         stats.opportunities4Bet++;
-        console.log('  → SB faces 3-bet (opportunity to 4-bet or defend)');
         break;
       case 4:
         stats.opportunities6Bet++;
-        console.log('  → SB faces 5-bet (opportunity to 6-bet or defend)');
         break;
       case 6:
         stats.opportunities8Bet++;
-        console.log('  → SB faces 7-bet (opportunity to 8-bet or defend)');
         break;
     }
   } else {
@@ -271,19 +252,15 @@ function recordOpportunity(position, betLevel, stats) {
     switch(betLevel) {
       case 1:
         stats.facedOpen++;
-        console.log('  → BB faces open (opportunity to 3-bet or defend)');
         break;
       case 3:
         stats.opportunities5Bet++;
-        console.log('  → BB faces 4-bet (opportunity to 5-bet or defend)');
         break;
       case 5:
         stats.opportunities7Bet++;
-        console.log('  → BB faces 6-bet (opportunity to 7-bet or defend)');
         break;
       case 7:
         stats.opportunities9Bet++;
-        console.log('  → BB faces 8-bet (opportunity to 9-bet or defend)');
         break;
     }
   }
@@ -298,15 +275,12 @@ function recordDefense(position, betLevel, stats) {
     switch(betLevel) {
       case 2:
         stats.defended3Bet++;
-        console.log('  → SB defended vs 3-bet');
         break;
       case 4:
         stats.defended5Bet++;
-        console.log('  → SB defended vs 5-bet');
         break;
       case 6:
         stats.defended7Bet++;
-        console.log('  → SB defended vs 7-bet');
         break;
     }
   } else {
@@ -314,19 +288,15 @@ function recordDefense(position, betLevel, stats) {
     switch(betLevel) {
       case 1:
         stats.defended1Bet++;
-        console.log('  → BB defended vs open');
         break;
       case 3:
         stats.defended4Bet++;
-        console.log('  → BB defended vs 4-bet');
         break;
       case 5:
         stats.defended6Bet++;
-        console.log('  → BB defended vs 6-bet');
         break;
       case 7:
         stats.defended8Bet++;
-        console.log('  → BB defended vs 8-bet');
         break;
     }
   }

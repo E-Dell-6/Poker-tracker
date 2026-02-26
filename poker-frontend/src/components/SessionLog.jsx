@@ -141,7 +141,6 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
       if (!res.ok) throw new Error("Failed to delete session");
       onSessionsChange?.(prev => prev.filter(x => x._id !== s._id));
       setContextMenu(null);
-      alert("Session deleted successfully");
     } catch (err) {
       alert("Failed to delete session");
     }
