@@ -41,3 +41,19 @@ jobs:
           imageToBuild: pokertracker.azurecr.io/poker-frontend:${{ github.sha }}
           buildArguments: |
             VITE_API_URL=https://api.pokerflow.live
+
+      - name: Delete old images from ACR
+        run: |
+          OLD_TAGS=$(az acr repository show-tags \
+            --name pokertracker \
+            --repository poker-frontend \
+            --orderby time_desc \
+            --output tsv | tail -n +4)
+
+          for TAG in $OLD_TAGS; do
+            echo "Deleting poker-frontend:$TAG"
+            az acr repository delete \
+              --name pokertracker \
+              --image poker-frontend:$TAG \
+              --yes
+          done
