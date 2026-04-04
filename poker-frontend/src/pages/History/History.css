@@ -186,7 +186,7 @@
   color: var(--muted);
 }
 
-/* ── UPLOAD INFO BUTTON ─────────────────────────────────── */
+/* ── GAME FILTER ────────────────────────────────────────── */
 .game-filter {
   display: flex;
   gap: 8px;

@@ -13,7 +13,6 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   const [isUploading, setIsUploading] = useState(false);
   const [playerImage, setPlayerImage] = useState(null);
 
-
   // Fetch people list when modal opens
   useEffect(() => {
     const fetchPeople = async () => {
@@ -55,11 +54,12 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
     }
   }, [player.name, player.isHero]);
 
-    if (!player) return null;
-  
+  if (!player) return null;
+
+  const handIsOver = Boolean(winners);
   let isWinner = false;
   let isArray = shownPlayerHand === null;
-  
+
   if (winners) {
     winners.forEach((winner) => {
       if (player.name === winner) isWinner = true;
@@ -161,8 +161,6 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
       return;
     }
 
-    // Here you would typically update the player-person mapping in your backend
-    // For now, we'll just update the local state
     const selectedPerson = people.find(p => p._id === selectedPersonId);
     if (selectedPerson && selectedPerson.image) {
       setPlayerImage(selectedPerson.image);
@@ -170,12 +168,6 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
 
     setIsEditModalOpen(false);
     alert(`Assigned ${selectedPerson?.name || 'person'} to ${player.name}`);
-    
-    // TODO: Add API call to save the mapping
-    // await fetch(`${API_URL}/api/players/${player.name}/assign-person`, {
-    //   method: 'POST',
-    //   body: JSON.stringify({ personId: selectedPersonId })
-    // });
   };
 
   const handleProfilePictureClick = (e) => {
@@ -194,12 +186,20 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
         style={style}
       >
         <div className={player.isDealer ? "Dealer" : "nothing"}>Dealer</div>
-        <div className={betAmount > 0 ? "bet" : "nothing"}>{betAmount}</div>
+
+        {/* Hide bet chip once hand is over */}
+        <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{betAmount}</div>
+
         <div className={isChecked ? "check" : "nothing"}>Check</div>
         <div className={player.stack === 0 && !isFolded ? "all-in" : "nothing"}>All-In</div>
-        <div className={isWinner ? "winner" : ""}>
-          {isWinner ? player.winnings || 0 : null}
-        </div>
+
+        {/* Only mount winner badge when there actually is a winner — 
+            prevents an empty div sitting in the flex column during the hand */}
+        {isWinner && (
+          <div className="winner">
+            {player.winnings || 0}
+          </div>
+        )}
 
         <div className="player-name">{player.name}</div>
         

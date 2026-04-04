@@ -1,53 +1,56 @@
 /* PlayerSeat.css - Premium Casino Player UI */
 
+/* ── BASE SEAT ───────────────────────────────────────────── */
 .player-seat {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 20px;
-  
-  /* Glassmorphism with depth */
+  gap: 5px;
+  padding: 10px 14px;
+
+  /* Glassmorphism */
   background: linear-gradient(
     145deg,
-    rgba(30, 35, 45, 0.9) 0%,
-    rgba(20, 25, 35, 0.95) 100%
+    rgba(30, 35, 45, 0.92) 0%,
+    rgba(20, 25, 35, 0.96) 100%
   );
   backdrop-filter: blur(12px);
-  border-radius: 16px;
-  
-  /* Subtle border glow */
+  border-radius: 14px;
+
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(0, 0, 0, 0.2),
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  
-  min-width: 130px;
+
+  /* Fixed size so seats don't shift layout */
+  width: 110px;
+  box-sizing: border-box;
+
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   isolation: auto;
 }
 
 .player-seat:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.5),
-    0 4px 12px rgba(0, 0, 0, 0.3),
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.5),
+    0 3px 10px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Hero player - golden accent */
+/* ── HERO ── */
 .player-seat.hero {
   border: 2px solid rgba(212, 175, 55, 0.6);
-  box-shadow: 
-    0 0 25px rgba(212, 175, 55, 0.25),
-    0 8px 32px rgba(0, 0, 0, 0.4),
+  box-shadow:
+    0 0 20px rgba(212, 175, 55, 0.2),
+    0 6px 24px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   background: linear-gradient(
     145deg,
-    rgba(45, 40, 30, 0.9) 0%,
-    rgba(25, 22, 18, 0.95) 100%
+    rgba(45, 40, 30, 0.92) 0%,
+    rgba(25, 22, 18, 0.96) 100%
   );
 }
 
@@ -62,54 +65,58 @@
   border-radius: 2px;
 }
 
+/* ── PLAYER INFO ─────────────────────────────────────────── */
 .player-name {
   font-weight: 700;
   color: #fff;
-  font-size: 15px;
+  font-size: 13px;
   text-align: center;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.3px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
 
 .player-stack {
   color: #ffd700;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
   background: rgba(0, 0, 0, 0.3);
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 20px;
   border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
+
+/* ── PROFILE PICTURE ─────────────────────────────────────── */
 .profile-picture {
   position: absolute;
-  top: -55px;
+  top: -44px;                /* Lifted above the card */
   left: 50%;
   transform: translateX(-50%);
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(
-    145deg,
-    #2a3040 0%,
-    #1a1f2a 100%
-  );
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(145deg, #2a3040 0%, #1a1f2a 100%);
   border-radius: 50%;
-  z-index: -1;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.5),
-    inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.5),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .profile-picture:hover {
-  transform: translateX(-50%) scale(1.05);
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(212, 175, 55, 0.3),
-    inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%) scale(1.07);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(212, 175, 55, 0.25),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.3);
 }
 
 .profile-picture::after {
@@ -118,7 +125,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 40px;
+  font-size: 24px;
   opacity: 0.4;
   pointer-events: none;
 }
@@ -128,23 +135,26 @@
   z-index: 1;
 }
 
+/* ── HOLE CARDS ──────────────────────────────────────────── */
 .hole-cards {
   display: flex;
-  gap: 6px;
-  margin-top: 10px;
-  perspective: 500px;
+  gap: 4px;
+  margin-top: 6px;
+  perspective: 400px;
 }
 
+/* Opponent cards */
 .card-image {
-  width: 52px;
-  height: 73px;
-  border-radius: 6px;
+  width: 38px;
+  height: 54px;
+  border-radius: 5px;
   background-color: #fff;
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.4),
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.4),
     0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
+  display: block;
 }
 
 .card-image:first-child {
@@ -156,41 +166,35 @@
 }
 
 .card-image:hover {
-  transform: translateY(-8px) rotate(0deg) scale(1.1) !important;
-  box-shadow: 
-    0 12px 24px rgba(0, 0, 0, 0.5),
-    0 0 15px rgba(212, 175, 55, 0.2);
+  transform: translateY(-6px) rotate(0deg) scale(1.08) !important;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(212, 175, 55, 0.2);
 }
 
-/* Bet indicator - vibrant red chip style */
+
+/* ── BET CHIP ────────────────────────────────────────────── */
 .bet {
   position: absolute;
-  top: -30px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  
-  background: linear-gradient(
-    180deg,
-    #ff4757 0%,
-    #c0392b 50%,
-    #a02020 100%
-  );
+
+  background: linear-gradient(180deg, #ff4757 0%, #c0392b 50%, #a02020 100%);
   color: white;
   font-weight: 700;
-  font-size: 14px;
-  padding: 10px 18px;
-  border-radius: 25px;
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 20px;
   white-space: nowrap;
-  
-  /* Chip-like border */
-  border: 3px solid #fff;
-  box-shadow: 
-    0 6px 20px rgba(192, 57, 43, 0.5),
+
+  border: 2px solid #fff;
+  box-shadow:
+    0 4px 14px rgba(192, 57, 43, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.3),
-    inset 0 2px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.2);
-  
-  min-width: 45px;
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+  min-width: 40px;
   text-align: center;
   z-index: 10;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -201,112 +205,96 @@
   display: none;
 }
 
-/* Check indicator - cool blue style */
+/* ── CHECK CHIP ──────────────────────────────────────────── */
 .check {
   position: absolute;
-  top: -25px;
+  top: -24px;
   left: 50%;
   transform: translateX(-50%);
-  
-  background: linear-gradient(
-    180deg,
-    #5dade2 0%,
-    #3498db 50%,
-    #2980b9 100%
-  );
+
+  background: linear-gradient(180deg, #5dade2 0%, #3498db 50%, #2980b9 100%);
   color: white;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  
-  padding: 10px 16px;
-  border-radius: 25px;
-  border: 3px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 
-    0 6px 20px rgba(52, 152, 219, 0.4),
-    inset 0 2px 0 rgba(255, 255, 255, 0.3);
-  
-  min-width: 45px;
+
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 4px 14px rgba(52, 152, 219, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+  min-width: 40px;
   text-align: center;
   z-index: 10;
   animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* All-in indicator - dramatic purple */
+/* ── ALL-IN CHIP ─────────────────────────────────────────── */
 .all-in {
   position: absolute;
-  top: -65px;
+  top: -52px;
   left: 50%;
   transform: translateX(-50%);
-  
-  background: linear-gradient(
-    180deg,
-    #9b59b6 0%,
-    #8e44ad 50%,
-    #6c3483 100%
-  );
+
+  background: linear-gradient(180deg, #9b59b6 0%, #8e44ad 50%, #6c3483 100%);
   color: white;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
   white-space: nowrap;
-  
-  padding: 10px 16px;
-  border-radius: 25px;
-  border: 3px solid #fff;
-  box-shadow: 
-    0 0 25px rgba(155, 89, 182, 0.6),
-    0 6px 20px rgba(0, 0, 0, 0.4),
-    inset 0 2px 0 rgba(255, 255, 255, 0.3);
-  
+
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  box-shadow:
+    0 0 20px rgba(155, 89, 182, 0.6),
+    0 4px 14px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
   text-align: center;
   z-index: 11;
   animation: allInPulse 1.5s ease-in-out infinite, popIn 0.3s ease;
 }
 
 @keyframes allInPulse {
-  0%, 100% { 
-    box-shadow: 
-      0 0 25px rgba(155, 89, 182, 0.6),
-      0 6px 20px rgba(0, 0, 0, 0.4);
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(155, 89, 182, 0.6),
+      0 4px 14px rgba(0, 0, 0, 0.4);
   }
-  50% { 
-    box-shadow: 
-      0 0 40px rgba(155, 89, 182, 0.8),
-      0 6px 20px rgba(0, 0, 0, 0.4);
+  50% {
+    box-shadow:
+      0 0 35px rgba(155, 89, 182, 0.85),
+      0 4px 14px rgba(0, 0, 0, 0.4);
   }
 }
 
-/* Winner celebration */
+/* ── WINNER BADGE ────────────────────────────────────────── */
 .winner {
   position: absolute;
-  top: -120px;
+  top: -38px;
   left: 50%;
   transform: translateX(-50%);
   display: inline-block;
-  
+
   color: #1a1a1a;
   font-weight: 800;
-  font-size: 16px;
+  font-size: 14px;
   white-space: nowrap;
-  
-  background: linear-gradient(
-    180deg,
-    #ffd700 0%,
-    #ffb347 50%,
-    #f4a012 100%
-  );
-  
-  padding: 10px 20px;
-  border-radius: 25px;
-  border: 3px solid #fff;
-  box-shadow: 
-    0 0 30px rgba(255, 215, 0, 0.7),
-    0 0 60px rgba(255, 179, 71, 0.4),
-    0 8px 20px rgba(0, 0, 0, 0.3);
-  
+
+  background: linear-gradient(180deg, #ffd700 0%, #ffb347 50%, #f4a012 100%);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  box-shadow:
+    0 0 24px rgba(255, 215, 0, 0.7),
+    0 0 48px rgba(255, 179, 71, 0.4),
+    0 6px 16px rgba(0, 0, 0, 0.3);
+
   animation: winnerGlow 1.5s ease-in-out infinite, popUp 0.6s ease-out forwards;
   opacity: 0;
   pointer-events: none;
@@ -316,65 +304,45 @@
 
 @keyframes winnerGlow {
   0%, 100% {
-    box-shadow: 
-      0 0 30px rgba(255, 215, 0, 0.7),
-      0 0 60px rgba(255, 179, 71, 0.4),
-      0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 0 24px rgba(255, 215, 0, 0.7),
+      0 0 48px rgba(255, 179, 71, 0.4),
+      0 6px 16px rgba(0, 0, 0, 0.3);
   }
   50% {
-    box-shadow: 
-      0 0 50px rgba(255, 215, 0, 0.9),
-      0 0 100px rgba(255, 179, 71, 0.6),
-      0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 0 40px rgba(255, 215, 0, 0.9),
+      0 0 80px rgba(255, 179, 71, 0.6),
+      0 6px 16px rgba(0, 0, 0, 0.3);
   }
 }
 
-/* Folded state - dramatic fade */
+/* ── FOLDED STATE ────────────────────────────────────────── */
 .player-seat.folded {
   opacity: 0.35;
   filter: grayscale(100%) brightness(0.7);
   pointer-events: none;
   transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
-  transform: scale(0.95);
+  transform: translateY(0) scale(0.95);
 }
 
-/* Animations */
+/* ── ANIMATIONS ──────────────────────────────────────────── */
 @keyframes popIn {
-  0% {
-    transform: translateX(-50%) scale(0);
-    opacity: 0;
-  }
-  60% {
-    transform: translateX(-50%) scale(1.15);
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
+  0%   { transform: translateX(-50%) scale(0); opacity: 0; }
+  60%  { transform: translateX(-50%) scale(1.12); }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
 }
 
 @keyframes popUp {
-  0% {
-    transform: translateX(-50%) scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: translateX(-50%) scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 1;
-  }
+  0%   { transform: translateX(-50%) scale(0); opacity: 0; }
+  50%  { transform: translateX(-50%) scale(1.15); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
 }
 
-/* Modal Styles */
+/* ── MODAL ───────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
+  inset: 0 !important;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
@@ -399,21 +367,10 @@
   pointer-events: auto !important;
 }
 
-.modal-content * {
-  pointer-events: auto !important;
-}
+.modal-content * { pointer-events: auto !important; }
 
-.modal-content h3 {
-  color: #fff;
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.modal-content h4 {
-  color: #fff;
-  margin-bottom: 15px;
-  font-size: 18px;
-}
+.modal-content h3 { color: #fff; margin-bottom: 20px; font-size: 22px; }
+.modal-content h4 { color: #fff; margin-bottom: 15px; font-size: 17px; }
 
 .modal-label {
   display: block;
@@ -475,10 +432,7 @@
   transform: translateY(-2px);
 }
 
-.save-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .create-person-btn {
   width: 100%;
@@ -513,10 +467,8 @@
   border-color: rgba(155, 89, 182, 0.6);
 }
 
-.upload-image-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.upload-image-btn:disabled,
+.remove-image-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .remove-image-btn {
   padding: 8px 12px;
@@ -541,9 +493,7 @@
   margin-top: 10px;
 }
 
-.new-person-form {
-  margin-top: 20px;
-}
+.new-person-form { margin-top: 20px; }
 
 .new-person-actions {
   display: flex;
@@ -570,58 +520,21 @@
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Responsive adjustments */
+/* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  .card-image {
-    width: 45px;
-    height: 63px;
-  }
-  
-  .player-seat {
-    min-width: 115px;
-    padding: 12px 16px;
-  }
-  
-  .profile-picture {
-    width: 85px;
-    height: 85px;
-    top: -45px;
-  }
+  .player-seat       { width: 96px;  padding: 8px 12px; }
+  .card-image        { width: 34px; height: 48px; }
+  .profile-picture   { width: 48px; height: 48px; top: -38px; }
+  .profile-picture::after { font-size: 20px; }
 }
 
 @media (max-width: 768px) {
-  .card-image {
-    width: 40px;
-    height: 56px;
-  }
-  
-  .player-seat {
-    min-width: 100px;
-    padding: 10px 12px;
-    border-radius: 12px;
-  }
-  
-  .player-name {
-    font-size: 13px;
-  }
-  
-  .player-stack {
-    font-size: 12px;
-  }
-  
-  .bet, .check, .all-in, .winner {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-  
-  .profile-picture {
-    width: 70px;
-    height: 70px;
-    top: -35px;
-  }
-  
-  .modal-content {
-    width: 95%;
-    padding: 20px;
-  }
+  .player-seat       { width: 82px;  padding: 6px 10px; border-radius: 10px; }
+  .card-image        { width: 28px; height: 40px; border-radius: 4px; }
+  .player-name       { font-size: 11px; }
+  .player-stack      { font-size: 10px; padding: 2px 8px; }
+  .profile-picture   { width: 38px; height: 38px; top: -30px; border-width: 1px; }
+  .profile-picture::after { font-size: 16px; }
+  .bet, .check, .all-in, .winner { font-size: 10px; padding: 5px 10px; }
+  .modal-content     { width: 95%; padding: 18px; }
 }

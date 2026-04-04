@@ -15,24 +15,17 @@ const HAND_FILTERS = [
 ];
 
 function sawFlop(hand) {
-  // board.flop is an array of card strings
   return hand.board?.flop?.length > 0;
 }
 
 function hadAllIn(hand) {
-  // A player is all-in when they raise/call/bet and their remaining stack is 0
-  // We detect this by checking if any player's winnings indicate they put in their whole stack,
-  // or if a RAISE/CALL/BET action amount equals the player's starting stack
   if (hand.hasAllIn || hand.allIn) return true;
 
-  // Check if any player put in exactly their full stack (winnings covers full stack or stack = 0 after action)
   const players = hand.players ?? [];
   for (const p of players) {
-    // If a player won more than their stack, they were all-in
     if (p.winnings > 0 && p.winnings > p.stack) return true;
   }
 
-  // Check actions: if a RAISE or CALL amount equals a player's stack, it's all-in
   const actions = hand.actions ?? [];
   for (const a of actions) {
     if (a.actionType === "RAISE" || a.actionType === "CALL" || a.actionType === "BET") {
@@ -45,9 +38,6 @@ function hadAllIn(hand) {
 }
 
 function countPreflopRaises(hand) {
-  // actionType is uppercase: 'RAISE'. Street is uppercase: 'PREFLOP'
-  // First action (open raise) counts as raise 1 (the open).
-  // 3-bet = 2 raises preflop, 4-bet = 3, etc.
   return (hand.actions ?? []).filter(
     a => a.street === "PREFLOP" && a.actionType === "RAISE"
   ).length;
@@ -203,7 +193,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
               onContextMenu={(e) => handleContextMenu(e, session)}
             >
               <div className="session-header">
-                <div className="session-info">
+                <div className="session-left">
                   <span className="session-date">{new Date(session.date).toLocaleDateString()}</span>
                   <span className="session-game-type">{session.gameType}</span>
                   <span className="session-players">{hands.length} hands</span>

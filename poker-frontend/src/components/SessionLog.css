@@ -15,12 +15,12 @@
   --muted: #6b7280;
 }
 
-/* ── HAND FILTER BAR (inside session) ───────────────────── */
+/* ── HAND FILTER BAR ────────────────────────────────────── */
 .hand-filter-bar {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: var(--bg2);
   border-top: 1px solid var(--border);
 }
@@ -86,7 +86,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 /* ── SESSION CARD ───────────────────────────────────────── */
@@ -96,71 +96,69 @@
   flex-direction: column;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 10px;
   cursor: pointer;
   overflow: hidden;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .session-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: var(--gold-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* ── SESSION HEADER ─────────────────────────────────────── */
 .session-header {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.session-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-grow: 1;
-  flex-wrap: wrap;
-}
-
-.session-info span {
-  display: inline-block;
-  white-space: nowrap;
+  padding: 10px 16px;
   font-family: 'DM Sans', sans-serif;
+}
+
+/* ── LEFT GROUP ─────────────────────────────────────────── */
+.session-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .session-date {
   color: var(--text);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 .session-game-type {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: var(--gold-dim);
-  color: var(--gold);
-  padding: 4px 10px;
-  border-radius: 6px;
+  letter-spacing: 0.4px;
+  background: #3a3000;
+  color: #fde68a;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid rgba(253, 230, 138, 0.25);
 }
 
 .session-players {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 /* ── SESSION PROFIT ─────────────────────────────────────── */
 .session-profit {
   font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
-  text-align: right;
-
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -274,7 +272,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-
   justify-content: flex-end;
 }
 
@@ -366,17 +363,9 @@
   font-family: 'DM Sans', sans-serif;
 }
 
-.modal-content::-webkit-scrollbar {
-  width: 6px;
-}
-.modal-content::-webkit-scrollbar-track {
-  background: var(--bg2);
-  border-radius: 3px;
-}
-.modal-content::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.3);
-  border-radius: 3px;
-}
+.modal-content::-webkit-scrollbar { width: 6px; }
+.modal-content::-webkit-scrollbar-track { background: var(--bg2); border-radius: 3px; }
+.modal-content::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
 
 .modal-content h3 {
   font-family: 'Playfair Display', serif;
@@ -424,18 +413,11 @@
   cursor: pointer;
 }
 
-select.modal-input {
-  cursor: pointer;
-}
-
-select.modal-input option {
-  background: var(--bg3);
-}
+select.modal-input { cursor: pointer; }
+select.modal-input option { background: var(--bg3); }
 
 /* ── OPPONENTS ──────────────────────────────────────────── */
-.opponents-section {
-  margin-top: 8px;
-}
+.opponents-section { margin-top: 8px; }
 
 .opponents-scroll-container {
   max-height: 200px;
@@ -451,15 +433,8 @@ select.modal-input option {
 .opponents-scroll-container::-webkit-scrollbar-track { background: var(--bg); border-radius: 3px; }
 .opponents-scroll-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.25); border-radius: 3px; }
 
-.opponent-row {
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-}
-
-.opponent-row:last-child {
-  margin-bottom: 0;
-}
+.opponent-row { margin-bottom: 12px; display: flex; flex-direction: column; }
+.opponent-row:last-child { margin-bottom: 0; }
 
 .opponent-original-name {
   font-size: 0.78em;
@@ -482,15 +457,10 @@ select.modal-input option {
   cursor: pointer;
 }
 
-.opponent-name-input:focus {
-  border-color: var(--gold-border);
-  outline: none;
-}
+.opponent-name-input:focus { border-color: var(--gold-border); outline: none; }
 
 /* ── CREATE PERSON SECTION ──────────────────────────────── */
-.create-person-section {
-  margin-top: 8px;
-}
+.create-person-section { margin-top: 8px; }
 
 .create-person-btn {
   width: 100%;
@@ -506,10 +476,7 @@ select.modal-input option {
   transition: background 0.2s, border-color 0.2s;
 }
 
-.create-person-btn:hover {
-  background: rgba(212, 175, 55, 0.2);
-  border-color: var(--gold);
-}
+.create-person-btn:hover { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); }
 
 .new-person-form {
   background: var(--bg2);
@@ -518,18 +485,9 @@ select.modal-input option {
   padding: 16px;
 }
 
-.new-person-form h4 {
-  font-family: 'Playfair Display', serif;
-  color: #fff;
-  margin: 0 0 16px;
-  font-size: 1rem;
-}
+.new-person-form h4 { font-family: 'Playfair Display', serif; color: #fff; margin: 0 0 16px; font-size: 1rem; }
 
-.new-person-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
+.new-person-actions { display: flex; gap: 8px; margin-top: 12px; }
 
 .new-person-actions button {
   flex: 1;
@@ -545,9 +503,7 @@ select.modal-input option {
   color: var(--text);
 }
 
-.new-person-actions button:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
+.new-person-actions button:hover { background: rgba(255, 255, 255, 0.12); }
 
 .upload-image-btn {
   padding: 8px 14px;
@@ -562,9 +518,7 @@ select.modal-input option {
   transition: background 0.2s;
 }
 
-.upload-image-btn:hover {
-  background: rgba(212, 175, 55, 0.2);
-}
+.upload-image-btn:hover { background: rgba(212, 175, 55, 0.2); }
 
 .remove-image-btn {
   padding: 6px 10px;
@@ -578,9 +532,7 @@ select.modal-input option {
   transition: background 0.2s;
 }
 
-.remove-image-btn:hover {
-  background: rgba(239, 68, 68, 0.25);
-}
+.remove-image-btn:hover { background: rgba(239, 68, 68, 0.25); }
 
 /* ── MODAL ACTIONS ──────────────────────────────────────── */
 .modal-actions {
@@ -603,14 +555,8 @@ select.modal-input option {
   transition: background 0.2s, transform 0.15s;
 }
 
-.modal-actions button:first-child {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text);
-}
-
-.modal-actions button:first-child:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
+.modal-actions button:first-child { background: rgba(255, 255, 255, 0.07); color: var(--text); }
+.modal-actions button:first-child:hover { background: rgba(255, 255, 255, 0.12); }
 
 .save-btn {
   background: linear-gradient(135deg, #d4af37, #f4c430) !important;
@@ -624,14 +570,7 @@ select.modal-input option {
 }
 
 /* ── OTP / SPINNER ──────────────────────────────────────── */
-.lb-otp-sending {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  padding: 8px 0;
-}
+.lb-otp-sending { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; padding: 8px 0; }
 
 .lb-spinner {
   width: 14px;
@@ -643,9 +582,7 @@ select.modal-input option {
   display: inline-block;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes slideDown {
@@ -655,9 +592,9 @@ select.modal-input option {
 
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .session-header { padding: 16px 18px; gap: 12px; }
-  .session-info { gap: 12px; font-size: 0.88rem; }
-  .session-profit { font-size: 1.1em; }
+  .session-header { padding: 8px 12px; }
+  .session-left { gap: 6px; }
+  .session-profit { font-size: 0.95rem; }
   .hand-info { gap: 10px; }
   .modal-content { padding: 24px 20px; }
 }

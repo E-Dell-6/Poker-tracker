@@ -1,6 +1,6 @@
 import "./PokerTable.css";
 
-export default function PokerTable({ board, secondBoard, pot, bigBlind, winners }) {
+export default function PokerTable({ board, secondBoard, pot, bigBlind, winners, seats }) {
   const isWinner = (winners === null);
   const doesPotExist = (pot > 0);
   
@@ -27,43 +27,24 @@ export default function PokerTable({ board, secondBoard, pot, bigBlind, winners 
   }
 
   let potImage = "small-stack";
-  if (pot >= bigBlind * 12) {
-    potImage = "medium-stack";
-  }
-  if (pot >= bigBlind * 50) {
-    potImage = "large-stack";
-  }
+  if (pot >= bigBlind * 12) potImage = "medium-stack";
+  if (pot >= bigBlind * 50) potImage = "large-stack";
+
+  const hasBoard = allCards.length > 0;
+  const hasSecondBoard = secondAllCards.length > 0;
 
   return (
     <div className="pokertable">
 
-      <div className="full-board" style={{ bottom: secondAllCards.length > 0 ? '350px' : '300px' }}>
-        {secondAllCards.length > 0 && <div className="board-label">Run 1</div>}
-        {allCards.map((card, i) => (
-          <img
-            key={i}
-            src={`/images/cards/${card}.png`}
-            alt={card}
-            className="board-card"
-          />
-        ))}
-      </div>
-
-      {secondAllCards.length > 0 && (
-        <div className="full-board" style={{ bottom: '240px' }}>
-          <div className="board-label">Run 2</div>
-          {secondAllCards.map((card, i) => (
-            <img
-              key={i}
-              src={`/images/cards/${card}.png`}
-              alt={card}
-              className="board-card"
-            />
-          ))}
+      {/* ── Seats layer ── */}
+      {seats && (
+        <div className="table-seats">
+          {seats}
         </div>
       )}
-      
-      <div className="pot">
+
+      {/* ── Pot: own anchor, always above center, never overlaps board ── */}
+      <div className={`pot ${hasBoard || winners !== undefined ? "pot--above-board" : "pot--preflop"}`}>
         {potImage && isWinner && doesPotExist && (
           <img
             src={`/images/chips/${potImage}.png`}
@@ -73,6 +54,48 @@ export default function PokerTable({ board, secondBoard, pot, bigBlind, winners 
         )}
         <span className="pot-text">Pot: {pot || 0}</span>
       </div>
+
+      {/* ── Board: own anchor, centered ── */}
+      {hasBoard && (
+        <div className="boards-center">
+          <div
+            className="full-board"
+            style={{
+              transform: hasSecondBoard
+                ? "translate(-50%, calc(-100% - 10px))"
+                : "translate(-50%, -50%)"
+            }}
+          >
+            {hasSecondBoard && <div className="board-label">Run 1</div>}
+            {allCards.map((card, i) => (
+              <img
+                key={i}
+                src={`/images/cards/${card}.png`}
+                alt={card}
+                className="board-card"
+              />
+            ))}
+          </div>
+
+          {hasSecondBoard && (
+            <div
+              className="full-board"
+              style={{ transform: "translate(-50%, 10px)" }}
+            >
+              <div className="board-label">Run 2</div>
+              {secondAllCards.map((card, i) => (
+                <img
+                  key={i}
+                  src={`/images/cards/${card}.png`}
+                  alt={card}
+                  className="board-card"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

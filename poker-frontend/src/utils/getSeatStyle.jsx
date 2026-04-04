@@ -1,6 +1,6 @@
 export function getSeatStyle (index, totalPlayers){
     const xRadius = 50; // Maximum spread
-    const yRadius = 45; // Maximum spread
+    const yRadius = 36; // Reduced from 45 — pulls seats closer in so hero clears the viewport bottom
 
     let angle;
     
