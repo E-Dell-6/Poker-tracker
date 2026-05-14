@@ -22,11 +22,11 @@ export function parsePokerNowLog(csvContent) {
         if (line.startsWith("Your hand is ")) {
             tempHeroCards = getHoleCards(line).sort().join(',');
         }
-        if (line.includes(" shows ") && tempHeroCards) {
+        if (line.includes(" shows a ") && tempHeroCards) {
             const shownCards = extractShownCards(line).sort().join(',');
             if (shownCards === tempHeroCards) {
                 globalHeroName = getPlayerName(line);
-                break; 
+                break;
             }
         }
         if (line.toLowerCase().startsWith("-- ending hand")) tempHeroCards = null;
@@ -47,15 +47,14 @@ export function parsePokerNowLog(csvContent) {
             currentHand = createEmptyHand();
             currentHand.handIndex = handNumber++;
             currentHand.datePlayed = record.at;
-            
+
             const gameTypeStr = getGameType(line);
             currentHand.gameType = gameTypeStr === "No Limit Texas Hold'em" ? 'NLH' : 'PLO';
             currentStreet = 'PREFLOP';
-            
-            // Extract and store dealer name
+
             const dealerName = getDealerName(line);
             if (dealerName) currentHand.dealerName = dealerName;
-            
+
             if (globalHeroName) currentHand.heroName = globalHeroName;
             continue;
         }
@@ -64,14 +63,12 @@ export function parsePokerNowLog(csvContent) {
 
         if (line.startsWith("Player stacks:")) {
             currentHand.players = parsePlayerStacks(line.substring(15));
-            
-            // Apply Global Hero flag
+
             if (globalHeroName) {
                 const hp = currentHand.players.find(p => p.name === globalHeroName);
                 if (hp) hp.isHero = true;
             }
-            
-            // Set isDealer flag based on dealer name
+
             if (currentHand.dealerName) {
                 const dp = currentHand.players.find(p => p.name === currentHand.dealerName);
                 if (dp) dp.isDealer = true;
@@ -91,7 +88,7 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
-        // --- BOARD CARDS (REVERTED TO CUMULATIVE) ---
+        // --- BOARD CARDS ---
         if (line.startsWith("Flop:")) {
             currentHand.board.flop = extractBoardCards(line);
             currentStreet = "FLOP";
@@ -108,6 +105,48 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
+        // --- SHOW HAND ---
+        // PokerNow lines: `"Player @ ID" shows a Ah, Kd.`
+        if (line.includes(" shows a ")) {
+            const playerName = getPlayerName(line);
+            const cards = extractShownCards(line);
+            if (playerName && currentHand.players) {
+                const player = currentHand.players.find(p => p.name === playerName);
+                if (player) {
+                    player.showedHand = cards;
+                }
+            }
+            // Emit a SHOW_HAND action so the replayer steps through it
+            const action = createEmptyAction();
+            action.street = currentStreet;
+            action.actionType = "SHOW_HAND";
+            action.player = playerName;
+            action.amount = 0;
+            const prevPot = currentHand.actions.length > 0
+                ? currentHand.actions[currentHand.actions.length - 1].potSizeAfter
+                : 0;
+            action.potSizeAfter = prevPot;
+            currentHand.actions.push(action);
+            continue;
+        }
+
+        // --- MUCK HAND ---
+        // PokerNow lines: `"Player @ ID" mucks a hand`
+        if (line.includes(" mucks a hand")) {
+            const playerName = getPlayerName(line);
+            const action = createEmptyAction();
+            action.street = currentStreet;
+            action.actionType = "MUCK";
+            action.player = playerName;
+            action.amount = 0;
+            const prevPot = currentHand.actions.length > 0
+                ? currentHand.actions[currentHand.actions.length - 1].potSizeAfter
+                : 0;
+            action.potSizeAfter = prevPot;
+            currentHand.actions.push(action);
+            continue;
+        }
+
         // --- ACTIONS ---
         if (/calls|raises|posts|bets|checks|folds/.test(line)) {
             getAction(line, currentHand.actions, currentStreet);
@@ -117,8 +156,8 @@ export function parsePokerNowLog(csvContent) {
         // --- WINNERS ---
         if (line.includes(" collected ") || line.startsWith("Uncalled bet of")) {
             let winnerName = getPlayerName(line);
-            let amountStr = line.includes("collected") 
-                ? line.split(" collected ")[1].split(" ")[0] 
+            let amountStr = line.includes("collected")
+                ? line.split(" collected ")[1].split(" ")[0]
                 : line.split("Uncalled bet of ")[1].split(" returned")[0];
             let winAmount = parseInt(amountStr.replace(/,/g, ''), 10);
 
@@ -145,7 +184,6 @@ export function parsePokerNowLog(csvContent) {
 // --- HELPERS ---
 
 function getDealerName(entry) {
-    // Extract dealer from: "-- starting hand #186 (id: xxx) No Limit Texas Hold'em (dealer: "Name @ ID") --"
     const dealerMatch = entry.match(/\(dealer:\s*"([^"]+)"\)/);
     if (!dealerMatch) return null;
     return dealerMatch[1].split(' @ ')[0].trim();
@@ -212,7 +250,7 @@ function getAction(entry, actionArr, street) {
     const action = createEmptyAction();
     action.street = street;
     action.player = getPlayerName(entry);
-    
+
     if (entry.includes("small blind")) action.actionType = "POST_SB";
     else if (entry.includes("big blind")) action.actionType = "POST_BB";
     else if (entry.includes("calls")) action.actionType = "CALL";
@@ -221,9 +259,23 @@ function getAction(entry, actionArr, street) {
     else if (entry.includes("folds")) action.actionType = "FOLD";
     else action.actionType = "CHECK";
 
-    const amtMatch = entry.match(/\d+,?\d*/g);
-    action.amount = amtMatch ? parseInt(amtMatch[amtMatch.length - 1].replace(',', '')) : 0;
-    
+    // Extract the action amount cleanly.
+    // PokerNow formats: `calls 500`, `bets 1000`, `raises to 2000`, `posts small blind of 25`
+    // We grab the first number after the action keyword to avoid grabbing pot sizes
+    // that sometimes appear later in the line (e.g. "... and the pot is 3000").
+    let amount = 0;
+    const callMatch   = entry.match(/calls (\d[\d,]*)/);
+    const raiseMatch  = entry.match(/raises to (\d[\d,]*)/);
+    const betMatch    = entry.match(/bets (\d[\d,]*)/);
+    const blindMatch  = entry.match(/blind of (\d[\d,]*)/);
+
+    if (action.actionType === "CALL" && callMatch)              amount = parseInt(callMatch[1].replace(/,/g, ''), 10);
+    else if (action.actionType === "RAISE" && raiseMatch)       amount = parseInt(raiseMatch[1].replace(/,/g, ''), 10);
+    else if (action.actionType === "BET" && betMatch)           amount = parseInt(betMatch[1].replace(/,/g, ''), 10);
+    else if ((action.actionType === "POST_SB" || action.actionType === "POST_BB") && blindMatch)
+                                                                amount = parseInt(blindMatch[1].replace(/,/g, ''), 10);
+
+    action.amount = amount;
     const prevPot = actionArr.length > 0 ? actionArr[actionArr.length - 1].potSizeAfter : 0;
     action.potSizeAfter = prevPot + action.amount;
     actionArr.push(action);
