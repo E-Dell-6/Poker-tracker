@@ -12,6 +12,7 @@ import imageUploadRouter from '../routes/imageUploadRoute.js';
 import authRouter from '../routes/authRoutes.js';
 import userRouter from '../routes/userRoutes.js';
 import liveSessionRouter from '../routes/liveSessionRoute.js';
+import shareRouter from '../routes/shareRoute.js';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/people', peopleRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/live-sessions', liveSessionRouter);
+app.use('/api/share', shareRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server started on port: ${PORT}`);

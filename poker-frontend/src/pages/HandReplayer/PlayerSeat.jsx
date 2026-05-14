@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import "./PlayerSeat.css";
 import { API_URL } from "../../config";
 
-export default function PlayerSeat({ player, style, betAmount, isFolded, winners, isChecked, shownPlayerHand }) {
+export default function PlayerSeat({
+  player, style, betAmount, isFolded, winners,
+  isChecked, shownPlayerHand,
+  isPublic = false,  // <-- new: disables the edit modal for public viewers
+}) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [people, setPeople] = useState([]);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
@@ -13,7 +17,6 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   const [isUploading, setIsUploading] = useState(false);
   const [playerImage, setPlayerImage] = useState(null);
 
-  // Fetch people list when modal opens
   useEffect(() => {
     const fetchPeople = async () => {
       try {
@@ -26,33 +29,25 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
         console.error("Failed to fetch people:", error);
       }
     };
-    
-    if (isEditModalOpen) {
-      fetchPeople();
-    }
+    if (isEditModalOpen) fetchPeople();
   }, [isEditModalOpen]);
 
-  // Fetch player's image on mount and when player changes
   useEffect(() => {
+    if (player.isHero || isPublic) return;
     const fetchPlayerImage = async () => {
       try {
         const response = await fetch(`${API_URL}/api/people`);
         if (response.ok) {
           const allPeople = await response.json();
           const matchedPerson = allPeople.find(p => p.name === player.name);
-          if (matchedPerson && matchedPerson.image) {
-            setPlayerImage(matchedPerson.image);
-          }
+          if (matchedPerson?.image) setPlayerImage(matchedPerson.image);
         }
       } catch (error) {
         console.error("Failed to fetch player image:", error);
       }
     };
-
-    if (!player.isHero) {
-      fetchPlayerImage();
-    }
-  }, [player.name, player.isHero]);
+    fetchPlayerImage();
+  }, [player.name, player.isHero, isPublic]);
 
   if (!player) return null;
 
@@ -69,21 +64,10 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size should be less than 5MB");
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      alert("Please select an image file");
-      return;
-    }
-
+    if (file.size > 5 * 1024 * 1024) { alert("Image size should be less than 5MB"); return; }
+    if (!file.type.startsWith('image/')) { alert("Please select an image file"); return; }
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
     setSelectedFile(file);
   };
@@ -91,134 +75,75 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
   const uploadImageToServer = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
-
-    try {
-      const response = await fetch(`${API_URL}/api/upload-image`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const result = await response.json();
-      return result.imageUrl;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
+    const response = await fetch(`${API_URL}/api/upload-image`, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error('Failed to upload image');
+    const result = await response.json();
+    return result.imageUrl;
   };
 
   const handleCreateNewPerson = async () => {
-    if (!newPersonName.trim()) {
-      alert("Please enter a name");
-      return;
-    }
-
+    if (!newPersonName.trim()) { alert("Please enter a name"); return; }
     setIsUploading(true);
-
     try {
       let imageUrl = "";
-
-      if (selectedFile) {
-        imageUrl = await uploadImageToServer(selectedFile);
-      }
-
+      if (selectedFile) imageUrl = await uploadImageToServer(selectedFile);
       const response = await fetch(`${API_URL}/api/people`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newPersonName,
-          image: imageUrl
-        })
+        body: JSON.stringify({ name: newPersonName, image: imageUrl })
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to create person");
-      }
-
+      if (!response.ok) throw new Error("Failed to create person");
       const newPerson = await response.json();
       setPeople(prev => [...prev, newPerson]);
-      
-      setNewPersonName("");
-      setImagePreview(null);
-      setSelectedFile(null);
+      setNewPersonName(""); setImagePreview(null); setSelectedFile(null);
       setIsCreatingNewPerson(false);
-      setIsUploading(false);
-      
       alert("Person created successfully!");
     } catch (error) {
       console.error("Error creating person:", error);
-      setIsUploading(false);
       alert("Failed to create person. Name might already exist or image upload failed.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleAssignPerson = async () => {
-    if (!selectedPersonId) {
-      alert("Please select a person");
-      return;
-    }
-
+    if (!selectedPersonId) { alert("Please select a person"); return; }
     const selectedPerson = people.find(p => p._id === selectedPersonId);
-    if (selectedPerson && selectedPerson.image) {
-      setPlayerImage(selectedPerson.image);
-    }
-
+    if (selectedPerson?.image) setPlayerImage(selectedPerson.image);
     setIsEditModalOpen(false);
     alert(`Assigned ${selectedPerson?.name || 'person'} to ${player.name}`);
   };
 
   const handleProfilePictureClick = (e) => {
     e.stopPropagation();
-    if (!player.isHero) {
-      setIsEditModalOpen(true);
-    }
+    if (!player.isHero && !isPublic) setIsEditModalOpen(true);
   };
 
   return (
     <>
       <div
-        className={`player-seat ${player.isHero ? "hero" : ""} ${
-          isFolded ? "folded" : ""
-        }`}
+        className={`player-seat ${player.isHero ? "hero" : ""} ${isFolded ? "folded" : ""}`}
         style={style}
       >
         <div className={player.isDealer ? "Dealer" : "nothing"}>Dealer</div>
-
-        {/* Hide bet chip once hand is over */}
         <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{betAmount}</div>
-
         <div className={isChecked ? "check" : "nothing"}>Check</div>
         <div className={player.stack === 0 && !isFolded ? "all-in" : "nothing"}>All-In</div>
-
-        {/* Only mount winner badge when there actually is a winner — 
-            prevents an empty div sitting in the flex column during the hand */}
-        {isWinner && (
-          <div className="winner">
-            {player.winnings || 0}
-          </div>
-        )}
+        {isWinner && <div className="winner">{player.winnings || 0}</div>}
 
         <div className="player-name">{player.name}</div>
-        
-        <div 
+
+        <div
           className={!player.isHero ? "profile-picture" : "nothing"}
           onClick={handleProfilePictureClick}
-          style={{ cursor: !player.isHero ? 'pointer' : 'default' }}
+          style={{ cursor: !player.isHero && !isPublic ? 'pointer' : 'default' }}
         >
           {playerImage ? (
-            <img 
-              src={`${API_URL}${playerImage}`} 
+            <img
+              src={`${API_URL}${playerImage}`}
               alt={player.name}
               className="profile-image"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: '50%'
-              }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
             />
           ) : null}
         </div>
@@ -228,48 +153,25 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
         <div className="hole-cards">
           {player.isHero && player.holeCards?.length > 0 ? (
             player.holeCards.map((card, index) => (
-              <img
-                key={index}
-                src={`/images/cards/${card}.png`}
-                alt={card}
-                className="card-image"
-              />
+              <img key={index} src={`/images/cards/${card}.png`} alt={card} className="card-image" />
             ))
           ) : shownPlayerHand && shownPlayerHand.length > 0 ? (
             shownPlayerHand.map((card, index) => (
-              <img
-                key={index}
-                src={`/images/cards/${card}.png`}
-                alt={card}
-                className="card-image"
-              />
+              <img key={index} src={`/images/cards/${card}.png`} alt={card} className="card-image" />
             ))
           ) : !player.isHero && isArray ? (
             <>
-              <img
-                src="/images/cardbacks/fire_cardback.png"
-                alt="Hidden card"
-                className="card-image"
-              />
-              <img
-                src="/images/cardbacks/fire_cardback.png"
-                alt="Hidden card"
-                className="card-image"
-              />
+              <img src="/images/cardbacks/fire_cardback.png" alt="Hidden card" className="card-image" />
+              <img src="/images/cardbacks/fire_cardback.png" alt="Hidden card" className="card-image" />
             </>
           ) : null}
         </div>
       </div>
 
-      {isEditModalOpen && (
-        <div 
-          className="modal-overlay" 
-          onClick={() => setIsEditModalOpen(false)}
-        >
-          <div 
-            className="modal-content" 
-            onClick={(e) => e.stopPropagation()}
-          >
+      {/* Edit modal — never shown in public mode */}
+      {isEditModalOpen && !isPublic && (
+        <div className="modal-overlay" onClick={() => setIsEditModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>Assign Person to {player.name}</h3>
 
             {!isCreatingNewPerson ? (
@@ -282,14 +184,12 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                 >
                   <option value="">-- Select a person --</option>
                   {people.map((person) => (
-                    <option key={person._id} value={person._id}>
-                      {person.name}
-                    </option>
+                    <option key={person._id} value={person._id}>{person.name}</option>
                   ))}
                 </select>
 
                 <div style={{ marginTop: '20px' }}>
-                  <button 
+                  <button
                     className="create-person-btn"
                     onClick={() => setIsCreatingNewPerson(true)}
                     style={{ marginBottom: '10px', width: '100%' }}
@@ -299,14 +199,8 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                 </div>
 
                 <div className="modal-actions">
-                  <button onClick={() => setIsEditModalOpen(false)}>
-                    Cancel
-                  </button>
-                  <button 
-                    className="save-btn" 
-                    onClick={handleAssignPerson}
-                    disabled={!selectedPersonId}
-                  >
+                  <button onClick={() => setIsEditModalOpen(false)}>Cancel</button>
+                  <button className="save-btn" onClick={handleAssignPerson} disabled={!selectedPersonId}>
                     Assign
                   </button>
                 </div>
@@ -322,7 +216,6 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                   onChange={(e) => setNewPersonName(e.target.value)}
                   placeholder="Enter person's name"
                 />
-                
                 <label className="modal-label">Profile Image:</label>
                 <div className="image-upload-section">
                   <input
@@ -332,7 +225,7 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                     onChange={handleImageUpload}
                     style={{ display: 'none' }}
                   />
-                  <button 
+                  <button
                     type="button"
                     className="upload-image-btn"
                     onClick={() => document.getElementById('player-image-upload').click()}
@@ -342,24 +235,15 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                   </button>
                   {imagePreview && (
                     <div className="image-preview">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        style={{ 
-                          maxWidth: '100px', 
-                          maxHeight: '100px', 
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          marginTop: '10px'
-                        }} 
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }}
                       />
-                      <button 
+                      <button
                         type="button"
                         className="remove-image-btn"
-                        onClick={() => {
-                          setImagePreview(null);
-                          setSelectedFile(null);
-                        }}
+                        onClick={() => { setImagePreview(null); setSelectedFile(null); }}
                         style={{ marginLeft: '10px' }}
                         disabled={isUploading}
                       >
@@ -368,24 +252,14 @@ export default function PlayerSeat({ player, style, betAmount, isFolded, winners
                     </div>
                   )}
                 </div>
-                
                 <div className="new-person-actions" style={{ marginTop: '20px' }}>
-                  <button 
-                    onClick={() => {
-                      setIsCreatingNewPerson(false);
-                      setNewPersonName("");
-                      setImagePreview(null);
-                      setSelectedFile(null);
-                    }}
+                  <button
+                    onClick={() => { setIsCreatingNewPerson(false); setNewPersonName(""); setImagePreview(null); setSelectedFile(null); }}
                     disabled={isUploading}
                   >
                     Back
                   </button>
-                  <button 
-                    className="save-btn" 
-                    onClick={handleCreateNewPerson}
-                    disabled={isUploading}
-                  >
+                  <button className="save-btn" onClick={handleCreateNewPerson} disabled={isUploading}>
                     {isUploading ? "Uploading..." : "Create"}
                   </button>
                 </div>

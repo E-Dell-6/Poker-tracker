@@ -1,13 +1,18 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useSearchParams } from 'react-router-dom';
 import { HomePage } from './pages/HomePage/HomePage';
 import { History } from './pages/History/History';
 import './App.css'
-import { HandReplayer } from './pages/HandReplayer/HandReplayer';
+import { HandReplayer, PublicHandViewer } from './pages/HandReplayer/HandReplayer';
 import { Clock } from './pages/Clock/Clock';
 import { Players } from './pages/Players/Players';
 import { Study } from './pages/Study/Study';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
+
+function HandReplayRoute() {
+  const [searchParams] = useSearchParams();
+  return searchParams.get('hand') ? <PublicHandViewer /> : <HandReplayer />;
+}
 
 function App() {
   return (
@@ -16,7 +21,7 @@ function App() {
       <Route path="/dashboard" element={<HomePage />} />
       <Route path="/history" element={<History />}/> 
       <Route path="/clock" element={<Clock />}/>
-      <Route path="hand-replay" element={<HandReplayer />}/>
+      <Route path="hand-replay" element={<HandReplayRoute />}/>
       <Route path="/players" element={<Players />} />
       <Route path="/study" element={<Study />} />
       <Route path="/profile" element={<Profile />} />
