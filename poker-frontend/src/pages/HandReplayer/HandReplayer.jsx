@@ -9,6 +9,58 @@ import Controller from "../../components/controller";
 import { API_URL } from "../../config";
 import { getSeatStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 
+// ── Hand filter helpers (shared with SessionLog) ──────────
+const HAND_FILTERS = [
+  { key: "flop",  label: "Saw Flop" },
+  { key: "allin", label: "All-In"   },
+  { key: "3bet",  label: "3-Bet"    },
+  { key: "4bet",  label: "4-Bet"    },
+  { key: "5bet",  label: "5-Bet"    },
+  { key: "6bet",  label: "6-Bet"    },
+];
+
+function sawFlop(hand) {
+  return hand.board?.flop?.length > 0;
+}
+
+function hadAllIn(hand) {
+  if (hand.hasAllIn || hand.allIn) return true;
+  const players = hand.players ?? [];
+  for (const p of players) {
+    if (p.winnings > 0 && p.winnings > p.stack) return true;
+  }
+  const actions = hand.actions ?? [];
+  for (const a of actions) {
+    if (a.actionType === "RAISE" || a.actionType === "CALL" || a.actionType === "BET") {
+      const player = players.find(p => p.name === a.player);
+      if (player && a.amount >= player.stack) return true;
+    }
+  }
+  return false;
+}
+
+function countPreflopRaises(hand) {
+  return (hand.actions ?? []).filter(
+    a => a.street === "PREFLOP" && a.actionType === "RAISE"
+  ).length;
+}
+
+function handMatchesFilter(hand, filter) {
+  switch (filter) {
+    case "flop":  return sawFlop(hand);
+    case "allin": return hadAllIn(hand);
+    case "3bet":  return countPreflopRaises(hand) >= 2;
+    case "4bet":  return countPreflopRaises(hand) >= 3;
+    case "5bet":  return countPreflopRaises(hand) >= 4;
+    case "6bet":  return countPreflopRaises(hand) >= 5;
+    default:      return true;
+  }
+}
+
+function getAvailableFilters(hands) {
+  return HAND_FILTERS.filter(f => hands.some(h => handMatchesFilter(h, f.key)));
+}
+
 // ── Public viewer ─────────────────────────────────────────
 export function PublicHandViewer() {
   const [hand, setHand] = useState(null);
@@ -207,6 +259,17 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
   const [actionIndex, setActionIndex] = useState(0);
   const [historyCollapse, setHistoryCollapse] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState(null);
+
+  const allHands = session?.hands ?? [];
+  const visibleHands = activeFilter
+    ? allHands.filter(h => handMatchesFilter(h, activeFilter))
+    : allHands;
+  const currentVisibleIdx = visibleHands.findIndex(h => h._id === hand?._id);
+  const prevVisibleHand = currentVisibleIdx > 0 ? visibleHands[currentVisibleIdx - 1] : null;
+  const nextVisibleHand = currentVisibleIdx !== -1 && currentVisibleIdx < visibleHands.length - 1
+    ? visibleHands[currentVisibleIdx + 1]
+    : null;
 
   // Track whether this specific hand is shared (for button label)
   // Re-read from localStorage whenever hand changes
@@ -339,6 +402,30 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
         />
       </div>
 
+      {!isPublic && (prevVisibleHand || nextVisibleHand) && (
+        <div className="hand-nav-btns">
+          <button
+            className="hand-nav-btn"
+            disabled={!prevVisibleHand}
+            onClick={() => navigate('/hand-replay', { state: { hand: prevVisibleHand, session } })}
+          >
+            ← Prev Hand
+          </button>
+          {activeFilter && (
+            <span className="hand-nav-filter-label">
+              {HAND_FILTERS.find(f => f.key === activeFilter)?.label} ({currentVisibleIdx + 1}/{visibleHands.length})
+            </span>
+          )}
+          <button
+            className="hand-nav-btn"
+            disabled={!nextVisibleHand}
+            onClick={() => navigate('/hand-replay', { state: { hand: nextVisibleHand, session } })}
+          >
+            Next Hand →
+          </button>
+        </div>
+      )}
+
       {/* Share button — private mode only */}
       {!isPublic && (
         <button
@@ -377,49 +464,78 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
 
       {!isPublic && (
         <div className={!historyCollapse ? "history" : "nothing"}>
-          {session?.hands ? (
-            <ul className="hands-list">
-              {session.hands.map((h, i) => {
-                const hero = h.players.find((p) => p.isHero);
-                const isActive = h._id === hand?._id;
-                return (
-                  <li
-                    key={i}
-                    className={`hand-item ${isActive ? "active-hand" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/hand-replay', { state: { hand: h, session } });
-                    }}
-                  >
-                    <div className="hand-item-left">
-                      <span className="hand-round-number">#{h.handIndex || i + 1}</span>
-                      <div className="menu-hole-cards">
-                        {hero && hero.holeCards?.length > 0 ? (
-                          hero.holeCards.map((card, ci) => (
-                            <div key={ci} className="menu-card-wrapper">
-                              <img src={`/images/cards/${card}.png`} alt={card} className="menu-card-img" />
-                            </div>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: 10, color: 'var(--muted)' }}>—</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="hand-item-right">
-                      <div className="hand-item-winner">
-                        <span className="winner-label">Winner</span>
-                        <span className="winner-name">{h.winners?.join(", ") || "—"}</span>
-                      </div>
-                      <div className="hand-item-pot">
-                        <span className="pot-label">Pot</span>
-                        <span className="pot-value">{h.finalPotSize}</span>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
+          {session?.hands ? (() => {
+            const availableFilters = getAvailableFilters(allHands);
+
+            return (
+              <>
+                {availableFilters.length > 0 && (
+                  <div className="hand-filter-bar">
+                    {availableFilters.map(f => (
+                      <button
+                        key={f.key}
+                        className={`hand-filter-btn ${activeFilter === f.key ? "active" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveFilter(prev => prev === f.key ? null : f.key);
+                        }}
+                      >
+                        {f.label}
+                        <span className="hand-filter-count">
+                          {allHands.filter(h => handMatchesFilter(h, f.key)).length}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <ul className="hands-list">
+                  {visibleHands.length === 0 && (
+                    <li className="hands-empty-filter">No hands match this filter.</li>
+                  )}
+                  {visibleHands.map((h, i) => {
+                    const hero = h.players.find((p) => p.isHero);
+                    const isActive = h._id === hand?._id;
+                    return (
+                      <li
+                        key={i}
+                        className={`hand-item ${isActive ? "active-hand" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate('/hand-replay', { state: { hand: h, session } });
+                        }}
+                      >
+                        <div className="hand-item-left">
+                          <span className="hand-round-number">#{h.handIndex || i + 1}</span>
+                          <div className="menu-hole-cards">
+                            {hero && hero.holeCards?.length > 0 ? (
+                              hero.holeCards.map((card, ci) => (
+                                <div key={ci} className="menu-card-wrapper">
+                                  <img src={`/images/cards/${card}.png`} alt={card} className="menu-card-img" />
+                                </div>
+                              ))
+                            ) : (
+                              <span style={{ fontSize: 10, color: 'var(--muted)' }}>—</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="hand-item-right">
+                          <div className="hand-item-winner">
+                            <span className="winner-label">Winner</span>
+                            <span className="winner-name">{h.winners?.join(", ") || "—"}</span>
+                          </div>
+                          <div className="hand-item-pot">
+                            <span className="pot-label">Pot</span>
+                            <span className="pot-value">{h.finalPotSize}</span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            );
+          })() : (
             <p style={{ color: 'var(--muted)', padding: '20px', fontSize: 13 }}>No session data available</p>
           )}
         </div>
