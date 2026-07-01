@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'; // <-- Changed from require
+import mongoose from 'mongoose'; 
 
 const connectDB = async () => {
     try {

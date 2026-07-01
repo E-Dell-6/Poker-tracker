@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { HandSchema } from './PokerHands.js'; // Import the HandSchema
+import { HandSchema } from './PokerHands.js'; 
 
 const SessionSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true, index: true },
@@ -8,7 +8,7 @@ const SessionSchema = new mongoose.Schema({
     gameType: String,
     totalHands: Number,
     totalProfit: Number,
-    hands: [HandSchema], // ← Use HandSchema instead of plain Array
+    hands: [HandSchema], 
     uploadDate: { type: Date, default: Date.now },
     
     fileHash: { type: String, index: true },

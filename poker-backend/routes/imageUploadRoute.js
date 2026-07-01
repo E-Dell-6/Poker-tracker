@@ -74,7 +74,7 @@ const upload = multer({
   }
 });
 
-// POST /api/upload-image
+
 router.post('/', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
@@ -129,7 +129,6 @@ router.post('/', upload.single('image'), (req, res) => {
   }
 });
 
-// DELETE /api/upload-image/:filename
 router.delete('/:filename', (req, res) => {
   try {
     const filename = req.params.filename;

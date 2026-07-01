@@ -1,7 +1,5 @@
 # PokerFlow
 
-**Live Project:** [pokerflow.live](https://pokerflow.live)
-
 PokerFlow is a full stack web application that allows players to track live poker sessions in real time. Users can clock in, record buy-ins, and manage session data through a structured interface backed by a cloud-hosted API.
 
 

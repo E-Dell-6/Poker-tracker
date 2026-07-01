@@ -5,10 +5,10 @@ const PersonSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        unique: false // Names only need to be unique per user, enforced at query level
+        unique: false 
     },
     image: {
-        type: String, // URL or local path string
+        type: String, 
         default: ""
     },
     tags: [

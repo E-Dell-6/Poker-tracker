@@ -5,7 +5,7 @@ import { API_URL } from "../../config";
 export default function PlayerSeat({
   player, style, betAmount, isFolded, winners,
   isChecked, shownPlayerHand,
-  isPublic = false,  // <-- new: disables the edit modal for public viewers
+  isPublic = false,  
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [people, setPeople] = useState([]);

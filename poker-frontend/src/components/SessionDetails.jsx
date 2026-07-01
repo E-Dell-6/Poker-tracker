@@ -22,7 +22,6 @@ export function EditSessionLog({
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Fetch people from backend
   useEffect(() => {
     const fetchPeople = async () => {
       try {
@@ -41,7 +40,6 @@ export function EditSessionLog({
     }
   }, [isOpen]);
 
-  // Save on Enter key (but not when creating a new person, to avoid conflicts)
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
@@ -53,7 +51,6 @@ export function EditSessionLog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, isCreatingNewPerson, isUploading, editFormData]);
 
-  // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen && sessionData) {
       let dateStr = "";
@@ -80,26 +77,22 @@ export function EditSessionLog({
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Image size should be less than 5MB");
       return;
     }
 
-    // Check file type
     if (!file.type.startsWith('image/')) {
       alert("Please select an image file");
       return;
     }
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
 
-    // Store the file for upload when creating person
     setSelectedFile(file);
   };
 
@@ -118,7 +111,7 @@ export function EditSessionLog({
       }
 
       const result = await response.json();
-      return result.imageUrl; // Returns the URL path to the image
+      return result.imageUrl; 
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -136,12 +129,10 @@ export function EditSessionLog({
     try {
       let imageUrl = "";
 
-      // Upload image if one was selected
       if (selectedFile) {
         imageUrl = await uploadImageToServer(selectedFile);
       }
 
-      // Create the person with the image URL
       const response = await fetch('${API_URL}/api/people', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +149,6 @@ export function EditSessionLog({
       const newPerson = await response.json();
       setPeople(prev => [...prev, newPerson]);
       
-      // Reset form
       setNewPersonName("");
       setNewPersonImage("");
       setImagePreview(null);

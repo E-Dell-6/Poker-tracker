@@ -10,12 +10,9 @@ export function Clock() {
   const [completedSessions, setCompletedSessions] = useState([]);
   const [clockInTime, setClockInTime] = useState(null);
 
-  // Blinds are set once at clock-in and shared across all buy-ins
   const [sessionBlinds, setSessionBlinds] = useState({ bigBlind: "", smallBlind: "" });
-  // All buy-ins accumulated during the active session
   const [activeBuyIns, setActiveBuyIns] = useState([]);
 
-  // Form state
   const [formData, setFormData] = useState({
     bigBlind: "",
     smallBlind: "",
@@ -31,12 +28,10 @@ export function Clock() {
     setShowSessionForm(true);
   };
 
-  // Called when the user clicks "Clock Out" — show cash-out prompt
   const handleClockOutClick = () => {
     setShowClockOutForm(true);
   };
 
-  // Called when user confirms cash-out amount
   const handleConfirmClockOut = () => {
     const cashOut = parseFloat(formData.cashOut);
     if (isNaN(cashOut)) return;
@@ -59,7 +54,6 @@ export function Clock() {
 
     setCompletedSessions([newSession, ...completedSessions]);
 
-    // Reset everything
     setIsClocked(false);
     setClockInTime(null);
     setSessionBlinds({ bigBlind: "", smallBlind: "" });

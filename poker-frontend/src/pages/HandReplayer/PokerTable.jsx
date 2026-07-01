@@ -4,7 +4,6 @@ export default function PokerTable({ board, secondBoard, pot, bigBlind, winners,
   const isWinner = (winners === null);
   const doesPotExist = (pot > 0);
   
-  // Process first board
   let allCards = [];
   if (Array.isArray(board)) {
     allCards = board;
@@ -15,7 +14,6 @@ export default function PokerTable({ board, secondBoard, pot, bigBlind, winners,
     allCards = [...flop, ...turn, ...river];
   }
 
-  // Process second board (run it twice)
   let secondAllCards = [];
   if (secondBoard && Array.isArray(secondBoard)) {
     secondAllCards = secondBoard;

@@ -35,8 +35,7 @@ function calculateHeadsUpStatsForHero(heroHands) {
     return calculateHeadsUpStats(normalizedHands, HERO_SENTINEL);
 }
 
-// ── Hand filtering per stat type ─────────────────────────
-// Uses the actual schema: actionType (RAISE/CALL/BET/FOLD/CHECK), street (PREFLOP/FLOP/TURN/RIVER)
+
 
 function getPreflopRaiseCount(hand) {
     return (hand.actions ?? []).filter(
@@ -51,7 +50,6 @@ function heroAction(hand, street, types) {
 }
 
 function heroFaced(hand, street, raiseNum) {
-    // Hero faced an nth raise on street = opponent raised raiseNum times before hero acted
     const pfActions = (hand.actions ?? []).filter(a => a.street === street);
     let raisesSeen = 0;
     for (const a of pfActions) {
@@ -62,7 +60,6 @@ function heroFaced(hand, street, raiseNum) {
 }
 
 function getHandsForStat(statKey, heroHands) {
-    // heroHands are already normalized with HERO_SENTINEL
     switch (statKey) {
         case 'vpip':
             return heroHands.filter(h =>
@@ -75,34 +72,29 @@ function getHandsForStat(statKey, heroHands) {
         case 'totalHands':
             return heroHands;
 
-        // SB open
         case 'open':
             return heroHands.filter(h => getPreflopRaiseCount(h) === 0 &&
                 heroAction(h, 'PREFLOP', ['RAISE', 'BET'])
             );
 
-        // BB 3-bet (faced open, hero raises)
         case '3bet':
             return heroHands.filter(h => getPreflopRaiseCount(h) >= 1 &&
                 heroAction(h, 'PREFLOP', ['RAISE']) &&
                 heroFaced(h, 'PREFLOP', 1)
             );
 
-        // SB 4-bet (faced 3-bet, hero raises again)
         case '4bet':
             return heroHands.filter(h => getPreflopRaiseCount(h) >= 2 &&
                 heroAction(h, 'PREFLOP', ['RAISE']) &&
                 heroFaced(h, 'PREFLOP', 2)
             );
 
-        // BB 5-bet
         case '5bet':
             return heroHands.filter(h => getPreflopRaiseCount(h) >= 3 &&
                 heroAction(h, 'PREFLOP', ['RAISE']) &&
                 heroFaced(h, 'PREFLOP', 3)
             );
 
-        // SB 6-bet
         case '6bet':
             return heroHands.filter(h => getPreflopRaiseCount(h) >= 4 &&
                 heroAction(h, 'PREFLOP', ['RAISE']) &&
@@ -127,7 +119,6 @@ function getHandsForStat(statKey, heroHands) {
                 heroFaced(h, 'PREFLOP', 7)
             );
 
-        // Defends = called/raised facing a raise
         case 'defend1bet':
             return heroHands.filter(h =>
                 heroFaced(h, 'PREFLOP', 1) &&
@@ -169,7 +160,6 @@ function getHandsForStat(statKey, heroHands) {
     }
 }
 
-// ── StatBox ───────────────────────────────────────────────
 function StatBox({ label, value, opportunities, statKey, onSelect, isActive }) {
     if (!opportunities) return null;
     return (
@@ -185,7 +175,6 @@ function StatBox({ label, value, opportunities, statKey, onSelect, isActive }) {
     );
 }
 
-// ── Hand Drawer ───────────────────────────────────────────
 function HandDrawer({ label, hands, onClose, drawerRef }) {
     if (!hands) return null;
     return (
@@ -246,7 +235,6 @@ function HandDrawer({ label, hands, onClose, drawerRef }) {
     );
 }
 
-// ── Main component ─────────────────────────────────────────
 export function Study() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -255,7 +243,7 @@ export function Study() {
     const [timeFilter, setTimeFilter] = useState(null);
     const [gameTypeFilter, setGameTypeFilter] = useState('all');
     const [showSessionPanel, setShowSessionPanel] = useState(false);
-    const [selectedStat, setSelectedStat] = useState(null); // { key, label, hands[] }
+    const [selectedStat, setSelectedStat] = useState(null); 
     const drawerRef = useRef(null);
 
     useEffect(() => { fetchSessions(); }, []);
@@ -293,7 +281,6 @@ export function Study() {
         return panelSessions.filter(s => !disabledSessions.has(s._id ?? s.id));
     }, [panelSessions, disabledSessions]);
 
-    // Build normalized heroHands for both stats and drawer filtering
     const heroHands = useMemo(() => {
         const hands = [];
         activeSessions.forEach(session => {
@@ -333,7 +320,6 @@ export function Study() {
         }
         const hands = getHandsForStat(statKey, heroHands);
         setSelectedStat({ key: statKey, label, hands });
-        // Scroll drawer into view after render
         setTimeout(() => {
             drawerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 50);
@@ -387,7 +373,6 @@ export function Study() {
 
     const activeCount = panelSessions.filter(s => !disabledSessions.has(s._id ?? s.id)).length;
 
-    // Helper to build StatBox props including statKey and handler
     const mkStat = (label, value, opportunities, statKey) => ({
         label, value, opportunities, statKey,
         onSelect: handleStatClick,

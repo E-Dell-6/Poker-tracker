@@ -7,14 +7,13 @@ const router = express.Router();
 
 router.use(userAuth);
 
-// Helper: get or create the user's favorites doc
 const getUserFaves = async (userId) => {
     let faves = await Favorite.findOne({ userId });
     if (!faves) faves = await Favorite.create({ userId, hands: [] });
     return faves;
 };
 
-// GET all favourites
+
 router.get('/', async (req, res) => {
     try {
         const faves = await Favorite.findOne({ userId: req.body.userId });
@@ -24,7 +23,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST toggle favourite
 router.post('/:id', async (req, res) => {
     try {
         const { userId } = req.body;

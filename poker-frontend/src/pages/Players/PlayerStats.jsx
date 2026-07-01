@@ -17,7 +17,6 @@ const GAME_TYPE_FILTERS = [
   { label: 'PLO', value: 'PLO' }
 ];
 
-// Only render a StatBox if there were actual opportunities for it
 function StatBox({ label, value, opportunities }) {
   if (!opportunities) return null;
   return (
@@ -35,12 +34,10 @@ export function PlayerStats({ player, sessions }) {
   const [disabledSessions, setDisabledSessions] = useState(new Set());
   const [showSessionPanel, setShowSessionPanel] = useState(false);
 
-  // Reset disabled sessions when player changes
   useEffect(() => {
     setDisabledSessions(new Set());
   }, [player?._id]);
 
-  // Sessions shown in the panel — respect time/type filters
   const panelSessions = useMemo(() => {
     if (!sessions?.length) return [];
     let filtered = [...sessions];
@@ -52,7 +49,6 @@ export function PlayerStats({ player, sessions }) {
     if (gameTypeFilter !== 'all') {
       filtered = filtered.filter(s => s.gameType === gameTypeFilter);
     }
-    // Only show sessions where this player appears
     filtered = filtered.filter(s =>
       s.hands?.some(h => h.players?.find(p => p.name === player?.name))
     );
@@ -182,7 +178,6 @@ export function PlayerStats({ player, sessions }) {
               <h3 className="section-title">Position Stats</h3>
               {Object.entries(stats.positions).map(([position, posStats]) => {
                 const r = posStats._raw;
-                // Only render position block if there were hands in it
                 const hasData = r && (r.opportunities1Bet > 0 || r.facedOpen > 0);
                 if (!hasData) return null;
                 return (

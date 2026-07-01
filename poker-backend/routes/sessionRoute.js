@@ -53,13 +53,11 @@ router.post('/sessions', userAuth, async (req, res) => {
     }
 });
 
-// multer runs first so req.body is populated before userAuth reads userId
 router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-        // --- Duplicate detection ---
         const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
         const existing = await Session.findOne({ userId, fileHash });
         if (existing) {

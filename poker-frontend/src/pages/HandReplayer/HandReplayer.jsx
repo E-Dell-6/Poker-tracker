@@ -9,7 +9,6 @@ import Controller from "../../components/controller";
 import { API_URL } from "../../config";
 import { getSeatStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 
-// ── Hand filter helpers (shared with SessionLog) ──────────
 const HAND_FILTERS = [
   { key: "flop",  label: "Saw Flop" },
   { key: "allin", label: "All-In"   },
@@ -61,7 +60,6 @@ function getAvailableFilters(hands) {
   return HAND_FILTERS.filter(f => hands.some(h => handMatchesFilter(h, f.key)));
 }
 
-// ── Public viewer ─────────────────────────────────────────
 export function PublicHandViewer() {
   const [hand, setHand] = useState(null);
   const [status, setStatus] = useState("loading");
@@ -106,7 +104,6 @@ export function PublicHandViewer() {
   return <HandReplayerCore hand={hand} session={null} isPublic={true} />;
 }
 
-// ── Private authenticated view ────────────────────────────
 export function HandReplayer() {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -120,7 +117,6 @@ export function HandReplayer() {
   );
 }
 
-// ── Share Modal ───────────────────────────────────────────
 function ShareModal({ hand, session, onClose }) {
   const [shareId, setShareId] = useState(null);
   const [isShared, setIsShared] = useState(false);
@@ -129,7 +125,6 @@ function ShareModal({ hand, session, onClose }) {
   const [revokeLoading, setRevokeLoading] = useState(false);
   const overlayRef = useRef(null);
 
-  // Check localStorage cache on mount
   useEffect(() => {
     if (!hand?._id) return;
     const saved = localStorage.getItem(`share:${hand._id}`);
@@ -254,7 +249,6 @@ function ShareModal({ hand, session, onClose }) {
   );
 }
 
-// ── Shared core ───────────────────────────────────────────
 function HandReplayerCore({ hand, session, isPublic, navigate }) {
   const [actionIndex, setActionIndex] = useState(0);
   const [historyCollapse, setHistoryCollapse] = useState(true);
@@ -271,8 +265,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     ? visibleHands[currentVisibleIdx + 1]
     : null;
 
-  // Track whether this specific hand is shared (for button label)
-  // Re-read from localStorage whenever hand changes
+
   const [isHandShared, setIsHandShared] = useState(false);
   useEffect(() => {
     if (!hand?._id) return;
@@ -437,14 +430,12 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
         </button>
       )}
 
-      {/* Share modal */}
       {showShareModal && !isPublic && (
         <ShareModal
           hand={hand}
           session={session}
           onClose={() => {
             setShowShareModal(false);
-            // Refresh shared state after modal closes in case it changed
             setIsHandShared(Boolean(localStorage.getItem(`share:${hand._id}`)));
           }}
         />

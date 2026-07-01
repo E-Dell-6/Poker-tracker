@@ -3,7 +3,6 @@ import LiveSession from '../model/LiveSession.js';
 
 const router = express.Router();
 
-// GET /api/live-sessions
 router.get('/', async (req, res) => {
     try {
         const userId = req.user?._id ?? req.userId;
@@ -17,7 +16,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST /api/live-sessions  — called by Clock.jsx on clock-out
 router.post('/', async (req, res) => {
     try {
         const userId = req.user?._id ?? req.userId;
@@ -51,7 +49,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// DELETE /api/live-sessions/:id
 router.delete('/:id', async (req, res) => {
     try {
         const userId = req.user?._id ?? req.userId;

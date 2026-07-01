@@ -118,7 +118,6 @@ export function HomePage() {
     );
   };
 
-  // ── LOGGED OUT ──
   if (isLoggedIn === false && !isGuest) {
     return (
       <div className="hp-root">
@@ -191,7 +190,6 @@ export function HomePage() {
     );
   }
 
-  // ── LOADING ──
   if (isLoggedIn === null) {
     return (
       <div className="hp-root">
@@ -202,7 +200,6 @@ export function HomePage() {
     );
   }
 
-  // ── LOGGED IN or GUEST ──
   return (
     <Layout>
       <div className="hp-dashboard">

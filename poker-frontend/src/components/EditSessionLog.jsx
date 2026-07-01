@@ -22,7 +22,7 @@ export function EditSessionLog({
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null); // { type: 'success' | 'error', text: string }
+  const [statusMessage, setStatusMessage] = useState(null); 
 
   const showStatus = (type, text) => {
     setStatusMessage({ type, text });

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// 1. ACTION SCHEMA (Must be defined first)
 const ActionSchema = new mongoose.Schema({
   street: { 
     type: String, 
@@ -17,7 +16,6 @@ const ActionSchema = new mongoose.Schema({
   potSizeAfter: { type: Number } 
 });
 
-// 2. PLAYER SETUP SCHEMA (Must be defined before HandSchema)
 const PlayerSetupSchema = new mongoose.Schema({
   seat: { 
     type: Number, 
@@ -43,7 +41,6 @@ const PlayerSetupSchema = new mongoose.Schema({
   winnings: { type: Number, default: 0 }
 });
 
-// 3. HAND SCHEMA - MUST BE EXPORTED
 export const HandSchema = new mongoose.Schema({
   sessionId: { type: String, index: true },
   handIndex: { type: Number, required: true },

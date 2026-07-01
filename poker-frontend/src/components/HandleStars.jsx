@@ -27,7 +27,7 @@ export function HandleStars({ hand, isStarred: initialIsStarred, onToggle }) {
       if (onToggle) onToggle(hand._id, data.isFavorited);
     } catch (err) {
       console.error("Failed to star", err);
-      setIsStarred(!newStatus); // Revert UI if API fails
+      setIsStarred(!newStatus);  
     }
   };
 

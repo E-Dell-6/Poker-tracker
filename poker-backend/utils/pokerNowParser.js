@@ -13,7 +13,7 @@ export function parsePokerNowLog(csvContent) {
 
     const sortedRecords = records.sort((a, b) => Number(a.order) - Number(b.order));
 
-    // --- STEP 1: IDENTIFY THE GLOBAL HERO (PERSISTENT FIX) ---
+
     let globalHeroName = null;
     let tempHeroCards = null;
 
@@ -32,7 +32,6 @@ export function parsePokerNowLog(csvContent) {
         if (line.toLowerCase().startsWith("-- ending hand")) tempHeroCards = null;
     }
 
-    // --- STEP 2: MAIN PARSING ---
     const hands = [];
     let currentHand = null;
     let handNumber = 1;
@@ -88,7 +87,6 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
-        // --- BOARD CARDS ---
         if (line.startsWith("Flop:")) {
             currentHand.board.flop = extractBoardCards(line);
             currentStreet = "FLOP";
@@ -105,8 +103,7 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
-        // --- SHOW HAND ---
-        // PokerNow lines: `"Player @ ID" shows a Ah, Kd.`
+
         if (line.includes(" shows a ")) {
             const playerName = getPlayerName(line);
             const cards = extractShownCards(line);
@@ -116,7 +113,7 @@ export function parsePokerNowLog(csvContent) {
                     player.showedHand = cards;
                 }
             }
-            // Emit a SHOW_HAND action so the replayer steps through it
+  
             const action = createEmptyAction();
             action.street = currentStreet;
             action.actionType = "SHOW_HAND";
@@ -130,8 +127,7 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
-        // --- MUCK HAND ---
-        // PokerNow lines: `"Player @ ID" mucks a hand`
+     
         if (line.includes(" mucks a hand")) {
             const playerName = getPlayerName(line);
             const action = createEmptyAction();
@@ -147,13 +143,13 @@ export function parsePokerNowLog(csvContent) {
             continue;
         }
 
-        // --- ACTIONS ---
+      
         if (/calls|raises|posts|bets|checks|folds/.test(line)) {
             getAction(line, currentHand.actions, currentStreet);
             continue;
         }
 
-        // --- WINNERS ---
+        
         if (line.includes(" collected ") || line.startsWith("Uncalled bet of")) {
             let winnerName = getPlayerName(line);
             let amountStr = line.includes("collected")
@@ -181,7 +177,6 @@ export function parsePokerNowLog(csvContent) {
     return hands;
 }
 
-// --- HELPERS ---
 
 function getDealerName(entry) {
     const dealerMatch = entry.match(/\(dealer:\s*"([^"]+)"\)/);
@@ -259,10 +254,6 @@ function getAction(entry, actionArr, street) {
     else if (entry.includes("folds")) action.actionType = "FOLD";
     else action.actionType = "CHECK";
 
-    // Extract the action amount cleanly.
-    // PokerNow formats: `calls 500`, `bets 1000`, `raises to 2000`, `posts small blind of 25`
-    // We grab the first number after the action keyword to avoid grabbing pot sizes
-    // that sometimes appear later in the line (e.g. "... and the pot is 3000").
     let amount = 0;
     const callMatch   = entry.match(/calls (\d[\d,]*)/);
     const raiseMatch  = entry.match(/raises to (\d[\d,]*)/);

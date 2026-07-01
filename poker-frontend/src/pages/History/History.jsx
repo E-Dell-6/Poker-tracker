@@ -8,7 +8,6 @@ import "./History.css";
 
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
 
-// --- Player-mapping modal ---
 function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   const [people, setPeople] = useState([]);
   const [search, setSearch] = useState("");
@@ -174,7 +173,6 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   );
 }
 
-// --- Main History page ---
 export function History() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);

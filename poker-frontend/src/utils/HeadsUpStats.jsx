@@ -1,13 +1,4 @@
-// headsUpStats.js - Utility for calculating Heads-Up poker statistics
 
-/**
- * Calculate comprehensive statistics for a player in Heads-Up games
- * In heads-up:
- * - Small Blind makes ODD bets: Open (1-bet), 3-bet, 5-bet, 7-bet
- * - Big Blind makes EVEN bets: 2-bet, 4-bet, 6-bet, 8-bet
- * 
- * FIXED VERSION - Addresses all tracking and counting issues
- */
 export function calculateHeadsUpStats(hands, playerName) {
   const headsUpHands = hands.filter(hand => hand.gameType === 'Heads-Up');
 
@@ -35,18 +26,15 @@ export function calculateHeadsUpStats(hands, playerName) {
     const preflopActions = hand.actions.filter(a => a.street === 'PREFLOP');
     const playerPreflopActions = preflopActions.filter(a => a.player === playerName);
     
-    // VPIP Calculation (FIXED)
     const didVPIP = calculateVPIP(preflopActions, playerName, position);
     if (didVPIP) {
       vpipHands++;
     }
 
-    // PFR Calculation
     if (playerPreflopActions.some(a => a.actionType === 'RAISE' || a.actionType === 'BET')) {
       pfrHands++;
     }
 
-    // Analyze betting sequence
     analyzeBettingSequence(preflopActions, playerName, position, posStats);
   });
 
@@ -61,9 +49,7 @@ export function calculateHeadsUpStats(hands, playerName) {
   return { totalHands, vpip, pfr, positions };
 }
 
-/**
- * Fixed VPIP calculation
- */
+
 function calculateVPIP(allPreflopActions, playerName, position) {
   const playerActions = allPreflopActions.filter(a => a.player === playerName);
   const realActions = allPreflopActions.filter(a => 
@@ -71,30 +57,25 @@ function calculateVPIP(allPreflopActions, playerName, position) {
   );
   
   if (position === 'Small Blind') {
-    // SB VPIP: Only counts if they RAISE (not limp/complete)
-    // Limping (calling BB) is not considered voluntary in heads-up
+   
     return playerActions.some(a => a.actionType === 'RAISE' || a.actionType === 'BET');
   } else {
-    // BB VPIP: Check what happened BEFORE their action
     let vpipAction = false;
     
     for (let i = 0; i < realActions.length; i++) {
       const action = realActions[i];
       
       if (action.player === playerName) {
-        // Look at what happened before this action
         const previousActions = realActions.slice(0, i);
         const opponentRaised = previousActions.some(a => 
           a.player !== playerName && (a.actionType === 'RAISE' || a.actionType === 'BET')
         );
         
         if (opponentRaised) {
-          // BB faced a raise - calling or raising counts as VPIP
           if (action.actionType === 'CALL' || action.actionType === 'RAISE' || action.actionType === 'BET') {
             vpipAction = true;
           }
         } else {
-          // SB just limped/checked - only BB raising counts as VPIP
           if (action.actionType === 'RAISE' || action.actionType === 'BET') {
             vpipAction = true;
           }
@@ -124,19 +105,16 @@ function initializeBigBlindStats() {
   };
 }
 
-/**
- * COMPLETELY REWRITTEN betting sequence analyzer
- * Fixes all timing and counting issues
- */
+
 function analyzeBettingSequence(actions, playerName, position, stats) {
   const realActions = actions.filter(a => 
     a.actionType !== 'POST_SB' && a.actionType !== 'POST_BB'
   );
   
-  let currentBetLevel = 0;  // Tracks what bet level we're currently at
-  let lastAggressorBetLevel = 0; // Tracks the last bet/raise that was made
+  let currentBetLevel = 0;  
+  let lastAggressorBetLevel = 0; 
   
-  // Track if SB had opportunity to open
+  
   let sbHadOpenOpportunity = false;
 
   
@@ -150,56 +128,44 @@ function analyzeBettingSequence(actions, playerName, position, stats) {
       
       
       if (isPlayer) {
-        // Player made this bet/raise
         recordPlayerAggression(position, currentBetLevel, stats);
       } else {
-        // Opponent made this bet/raise - creates opportunity for player
         recordOpportunity(position, currentBetLevel, stats);
       }
     } 
     else if (action.actionType === 'CALL' && isPlayer) {
-      // Player called - this is a defense against the last bet level
       recordDefense(position, lastAggressorBetLevel, stats);
     }
     else if (action.actionType === 'FOLD') {
       if (isPlayer) {
       }
-      // Fold ends the action, but we've already counted the opportunity
       break;
     }
     else if (action.actionType === 'CHECK') {
       if (isPlayer && position === 'Small Blind' && i === 0) {
-        // SB checked (limped) - they had opportunity to open but didn't
         sbHadOpenOpportunity = true;
         stats.opportunities1Bet++;
       }
     }
   }
   
-  // If SB never had their open opportunity counted yet, count it now
   if (position === 'Small Blind' && !sbHadOpenOpportunity) {
-    // Check if SB took any action at all (if they opened, it's already counted)
     const sbMadeFirstAction = realActions.length > 0 && realActions[0].player === playerName;
     if (sbMadeFirstAction && (realActions[0].actionType === 'RAISE' || realActions[0].actionType === 'BET')) {
-      // SB opened - opportunity already counted in recordPlayerAggression
     } else if (realActions.length > 0) {
-      // SB did something else first (shouldn't happen in heads-up, but count opportunity)
       stats.opportunities1Bet++;
     }
   }
   }
 
-/**
- * Record when player makes a bet/raise
- */
+
 function recordPlayerAggression(position, betLevel, stats) {
   if (position === 'Small Blind') {
-    // SB makes odd bets: 1-bet (open), 3-bet, 5-bet, 7-bet
-    // But in standard notation: open, 4-bet, 6-bet, 8-bet
+  
     switch(betLevel) {
       case 1:
         stats.made1Bet++;
-        stats.opportunities1Bet++; // Counted when they actually open
+        stats.opportunities1Bet++; 
         break;
       case 3:
         stats.made4Bet++;
@@ -212,7 +178,6 @@ function recordPlayerAggression(position, betLevel, stats) {
         break;
     }
   } else {
-    // BB makes even bets: 2-bet (3-bet), 4-bet (5-bet), 6-bet (7-bet), 8-bet (9-bet)
     switch(betLevel) {
       case 2:
         stats.made3Bet++;
@@ -230,12 +195,8 @@ function recordPlayerAggression(position, betLevel, stats) {
   }
 }
 
-/**
- * Record when player faces a bet (opportunity to raise or call)
- */
 function recordOpportunity(position, betLevel, stats) {
   if (position === 'Small Blind') {
-    // SB facing even bets from BB: 2-bet (3-bet), 4-bet (5-bet), 6-bet (7-bet)
     switch(betLevel) {
       case 2:
         stats.opportunities4Bet++;
@@ -248,7 +209,6 @@ function recordOpportunity(position, betLevel, stats) {
         break;
     }
   } else {
-    // BB facing odd bets from SB: 1-bet (open), 3-bet (4-bet), 5-bet (6-bet), 7-bet (8-bet)
     switch(betLevel) {
       case 1:
         stats.facedOpen++;
@@ -266,12 +226,9 @@ function recordOpportunity(position, betLevel, stats) {
   }
 }
 
-/**
- * Record when player defends (calls) against a bet
- */
+
 function recordDefense(position, betLevel, stats) {
   if (position === 'Small Blind') {
-    // SB defending against BB's bets: 3-bet, 5-bet, 7-bet
     switch(betLevel) {
       case 2:
         stats.defended3Bet++;
@@ -284,7 +241,6 @@ function recordDefense(position, betLevel, stats) {
         break;
     }
   } else {
-    // BB defending against SB's bets: open, 4-bet, 6-bet, 8-bet
     switch(betLevel) {
       case 1:
         stats.defended1Bet++;
@@ -314,7 +270,6 @@ function calculatePositionPercentages(stats, position) {
       defend3BetPct: calc(stats.defended3Bet, stats.opportunities4Bet),
       defend5BetPct: calc(stats.defended5Bet, stats.opportunities6Bet),
       defend7BetPct: calc(stats.defended7Bet, stats.opportunities8Bet),
-      // Raw counts for debugging
       _raw: {
         opportunities1Bet: stats.opportunities1Bet,
         made1Bet: stats.made1Bet,
@@ -339,7 +294,6 @@ function calculatePositionPercentages(stats, position) {
       defend4BetPct: calc(stats.defended4Bet, stats.opportunities5Bet),
       defend6BetPct: calc(stats.defended6Bet, stats.opportunities7Bet),
       defend8BetPct: calc(stats.defended8Bet, stats.opportunities9Bet),
-      // Raw counts for debugging
       _raw: {
         facedOpen: stats.facedOpen,
         made3Bet: stats.made3Bet,

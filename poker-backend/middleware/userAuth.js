@@ -16,7 +16,7 @@ const userAuth = async (req, res, next) => {
         }
 
         next();
-    } catch (error) { // ✅ Fixed: was catch{} with no variable — error.message threw ReferenceError
+    } catch (error) { 
         return res.json({ success: false, message: error.message });
     }
 };

@@ -67,7 +67,6 @@ const [hover, setHover] = useState(null);
   const toY = v  => PT + cH - ((v - minV) / range) * cH;
   const zeroY    = toY(0);
 
-  // Build SVG path
   const pts = data.map((d, i) => `${toX(i)},${toY(d.cumulative)}`);
   const linePath  = `M ${pts.join(" L ")}`;
   const areaPath  = `M ${toX(0)},${zeroY} L ${pts.join(" L ")} L ${toX(data.length - 1)},${zeroY} Z`;
@@ -76,14 +75,12 @@ const [hover, setHover] = useState(null);
   const stroke = isUp ? "#22c55e" : "#ef4444";
   const fillId = isUp ? "fillGreen" : "fillRed";
 
-  // Y-axis ticks
   const tickCount = 5;
   const yTicks = Array.from({ length: tickCount }, (_, i) => {
     const v = minV + (range / (tickCount - 1)) * i;
     return { v, y: toY(v) };
   });
 
-  // X-axis ticks — show ~5 labels
   const step = Math.max(1, Math.floor(data.length / 5));
   const xTicks = data
     .map((d, i) => ({ i, label: d.label }))

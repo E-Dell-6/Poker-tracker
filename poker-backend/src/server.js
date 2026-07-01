@@ -16,9 +16,8 @@ import shareRouter from '../routes/shareRoute.js';
 
 const app = express();
 
-// --- CRITICAL FIX FOR AZURE ---
+//fix for azure
 app.set('trust proxy', 1); 
-// ------------------------------
 
 const PORT = process.env.PORT || 1111;
 

@@ -6,12 +6,12 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
   const [hands, setHands] = useState([]);
   const [starredHands, setStarredHands] = useState({});
 
-  // Initialize hands and starredHands when props change
+ 
   useEffect(() => {
     setHands(initialHands || []);
     const initialStars = {};
     (initialHands || []).forEach(hand => {
-      initialStars[hand._id] = true; // all favourite hands start as starred
+      initialStars[hand._id] = true; 
     });
     setStarredHands(initialStars);
   }, [initialHands]);
@@ -20,18 +20,15 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
     setStarredHands(prev => {
       const newStatus = !prev[handId];
 
-      // Delay deletion
       setTimeout(async () => {
         if (!newStatus) {
           try {
             await fetch(`${API_URL}/api/favourites/${handId}`, {
               method: "DELETE"
             });
-            // Remove the hand from local state so UI updates
             setHands(prevHands => prevHands.filter(h => h._id !== handId));
           } catch (err) {
             console.error("Failed to delete hand", err);
-            // Optionally revert star
             setStarredHands(prev => ({ ...prev, [handId]: true }));
           }
         }
