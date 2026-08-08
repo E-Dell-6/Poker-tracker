@@ -8,6 +8,7 @@ import { Players } from './pages/Players/Players';
 import { Study } from './pages/Study/Study';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
+import HandCreator from './pages/HandCreator/HandCreator';
 
 function HandReplayRoute() {
   const [searchParams] = useSearchParams();
@@ -26,6 +27,7 @@ function App() {
       <Route path="/study" element={<Study />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
+      <Route path='/hand-creator' element={<HandCreator />}/>
     </Routes>
   )
 }

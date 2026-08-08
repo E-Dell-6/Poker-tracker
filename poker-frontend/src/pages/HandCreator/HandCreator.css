@@ -1,0 +1,370 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+  --hc-bg: #0a0a0c;
+  --hc-card-bg: #12141b;
+  --hc-card-border: #24262f;
+  --hc-input-bg: #0d0e13;
+  --hc-text: #f2efe6;
+  --hc-text-muted: #8b8d98;
+  --hc-gold: #e3b854;
+  --hc-gold-hover: #edc670;
+  --hc-gold-dim: rgba(227, 184, 84, 0.1);
+  --hc-danger: #e0645f;
+  --hc-danger-dim: rgba(224, 100, 95, 0.12);
+}
+
+.hc-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  background: var(--hc-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+  color: var(--hc-text);
+}
+
+.hc-card {
+  width: 100%;
+  max-width: 960px;
+  background: var(--hc-card-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 16px;
+  padding: 32px 36px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.hc-title {
+  margin: 0 0 28px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--hc-text);
+}
+
+/* -- form grid ------------------------------------------------------- */
+
+.hc-grid {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.hc-grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.hc-grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.hc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hc-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hc-text-muted);
+}
+
+.hc-required {
+  color: var(--hc-gold);
+}
+
+.hc-field input,
+.hc-field select,
+.hc-action-row select,
+.hc-action-row input,
+.hc-seat-popover input {
+  background: var(--hc-input-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 10px;
+  color: var(--hc-text);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.hc-field input:focus,
+.hc-field select:focus,
+.hc-action-row select:focus,
+.hc-action-row input:focus,
+.hc-seat-popover input:focus {
+  border-color: var(--hc-gold);
+}
+
+/* -- oval table -------------------------------------------------------- */
+
+.hc-table-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  height: 400px;
+  margin: 8px auto 20px;
+}
+
+.hc-oval {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--hc-card-border);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, #171a22 0%, #0e0f14 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hc-oval::before {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border: 1px solid rgba(227, 184, 84, 0.12);
+  border-radius: 50%;
+}
+
+.hc-oval-center {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--hc-gold);
+  letter-spacing: 0.04em;
+}
+
+.hc-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: var(--hc-card-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 10px;
+  padding: 8px 16px;
+  min-width: 92px;
+  text-align: center;
+  cursor: default;
+}
+
+.hc-seat[role='button'] {
+  cursor: pointer;
+}
+
+.hc-seat-dealer {
+  border-color: var(--hc-gold);
+}
+
+.hc-seat-pos {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--hc-text-muted);
+  text-transform: uppercase;
+}
+
+.hc-seat-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hc-text);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.hc-seat-dealer-badge {
+  margin-top: 6px;
+  display: inline-block;
+  background: var(--hc-gold);
+  color: #14161c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 2px 8px;
+}
+
+.hc-seat-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hc-input-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 160px;
+  z-index: 10;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  text-align: left;
+}
+
+.hc-seat-popover label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hc-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hc-hero-toggle {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.hc-footer-note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--hc-text-muted);
+  margin-bottom: 24px;
+}
+
+/* -- street tabs (pill style, matches the All / NLH / PLO filters) ------ */
+
+.hc-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.hc-tab {
+  background: transparent;
+  border: 1px solid var(--hc-card-border);
+  border-radius: 999px;
+  color: var(--hc-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hc-tab:hover {
+  color: var(--hc-text);
+}
+
+.hc-tab-active {
+  color: var(--hc-gold);
+  border-color: var(--hc-gold);
+  background: var(--hc-gold-dim);
+}
+
+/* -- action rows --------------------------------------------------------- */
+
+.hc-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.hc-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 100px 40px;
+  gap: 12px;
+  align-items: center;
+}
+
+.hc-amount-dash {
+  text-align: center;
+  color: var(--hc-text-muted);
+}
+
+.hc-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.hc-icon-btn-danger {
+  color: var(--hc-danger);
+}
+
+.hc-icon-btn-danger:hover {
+  background: var(--hc-danger-dim);
+}
+
+.hc-btn-add {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--hc-card-border);
+  color: var(--hc-gold);
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+
+.hc-btn-add:hover {
+  background: var(--hc-gold-dim);
+  border-color: var(--hc-gold);
+}
+
+/* -- buttons -------------------------------------------------------------- */
+
+.hc-actions-row {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--hc-card-border);
+  padding-top: 20px;
+}
+
+.hc-btn {
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.hc-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hc-btn-primary {
+  background: var(--hc-gold);
+  color: #14161c;
+}
+
+.hc-btn-primary:hover {
+  background: var(--hc-gold-hover);
+}
+
+.hc-btn-ghost {
+  background: transparent;
+  color: var(--hc-text-muted);
+  border-color: var(--hc-card-border);
+}
+
+.hc-btn-ghost:hover:not(:disabled) {
+  color: var(--hc-text);
+}
+
+@media (max-width: 640px) {
+  .hc-grid-2,
+  .hc-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .hc-table-wrap {
+    height: 320px;
+  }
+  .hc-action-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'player type'
+      'amount delete';
+  }
+}

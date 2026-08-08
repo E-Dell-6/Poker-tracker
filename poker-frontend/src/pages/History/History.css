@@ -29,11 +29,15 @@
 /* ── HEADER ─────────────────────────────────────────────── */
 .history-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 4px; /* was 32px, then 24px. The row's bottom edge is
+    set by the taller right column (icon + two stacked buttons), not by
+    the title, so this margin was stacking on top of that extra height
+    twice. Trimmed way down since the right column already provides
+    visual separation. */
 }
 
 .history-header h1 {
@@ -45,9 +49,22 @@
 }
 
 /* ── UPLOAD SECTION ─────────────────────────────────────── */
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* was 20px. This column's total height sets the height of
+    the whole .history-header row (flexbox stretches to the tallest
+    child), so a smaller gap here directly shrinks the dead space
+    between the title and the filter tabs below. */
+  align-items: flex-end;
+}
+
 .upload-section {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* was: center. flex-start keeps the info icon
+    pinned to the top of the row (next to the upload button) instead of
+    re-centering against the taller two-button .button-container column,
+    which was shoving the icon and header out of place. */
   gap: 12px;
 }
 
@@ -65,6 +82,24 @@
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
   white-space: nowrap;
 }
+
+.create-button {
+  width: 120px;
+  background: linear-gradient(135deg, #d4af37, #f4c430);
+  color: #0d0f12;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+  white-space: nowrap;
+  font-weight: bold;
+  transform: translateY(15px);
+}
+
+
 
 .upload-button:hover {
   transform: translateY(-2px);
@@ -91,6 +126,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  margin-top: 9px; /* nudges the 22px icon to align with the upload
+    button's center. Replaces the old transform: translateY(-27px) hack,
+    which was calibrated for a single-button row and broke once
+    .button-container started stacking two buttons. */
 }
 
 .upload-info-btn {

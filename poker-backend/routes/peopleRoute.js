@@ -8,7 +8,11 @@ router.use(userAuth);
 
 router.get('/', async (req, res) => {
     try {
-        const people = await Person.find({ userId: req.body.userId });
+        // GET requests can't reliably carry a body (fetch() rejects it outright),
+        // so accept the userId as a query param. Body is kept as a fallback for
+        // any existing callers still sending it that way.
+        const userId = req.query.userId || req.body.userId;
+        const people = await Person.find({ userId });
         res.json(people);
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch people" });

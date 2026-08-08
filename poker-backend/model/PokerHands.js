@@ -25,6 +25,14 @@ const PlayerSetupSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },  
+  // Optional link back to a saved Person. `name` stays a plain string
+  // snapshot so past hands don't change if the Person is renamed later;
+  // personId is only set when the user explicitly links a seat.
+  personId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Person',
+    default: null
+  },
   stack: { type: Number, required: true },
   isDealer: { type: Boolean, default: false },
   isHero: { type: Boolean, default: false},
@@ -44,6 +52,8 @@ const PlayerSetupSchema = new mongoose.Schema({
 export const HandSchema = new mongoose.Schema({
   sessionId: { type: String, index: true },
   handIndex: { type: Number, required: true },
+
+  notes: { type: String, default: '' },
 
   gameType: { type: String, enum: ['NLH', 'PLO']},
   stakes: { type: String },

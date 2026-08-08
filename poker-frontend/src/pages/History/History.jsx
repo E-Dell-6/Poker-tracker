@@ -325,13 +325,20 @@ export function History() {
                 </ul>
               </div>
             </div>
-            <button
-              className="upload-button"
-              onClick={() => fileInputRef.current.click()}
-              disabled={uploadStatus === "uploading"}
-            >
-              {uploadStatus === "uploading" ? "Processing..." : "📂 Upload Log"}
-            </button>
+            <div className="button-container">
+              <button
+                className="upload-button"
+                onClick={() => fileInputRef.current.click()}
+                disabled={uploadStatus === "uploading"}
+              >
+                {uploadStatus === "uploading" ? "Processing..." : "📂 Upload Log"}
+              </button>
+              <button
+                className="create-button"
+                onClick={() => navigate("/hand-creator")}
+              >➕ Create Hand </button>
+            </div>
+
             {error && <div className="error-message">{error}</div>}
           </div>
         </div>
