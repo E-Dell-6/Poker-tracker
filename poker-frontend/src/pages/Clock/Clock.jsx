@@ -1,6 +1,15 @@
 import { Layout } from "../../components/Layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Clock.css";
+
+const normalizeSession = (s) => ({
+  ...s,
+  id: s._id ?? s.id,
+  date: new Date(s.clockInTime),
+  clockInTime: new Date(s.clockInTime),
+  clockOutTime: new Date(s.clockOutTime),
+  profit: s.totalProfit ?? s.profit
+});
 
 export function Clock() {
   const [isClocked, setIsClocked] = useState(false);
@@ -9,6 +18,22 @@ export function Clock() {
   const [showClockOutForm, setShowClockOutForm] = useState(false);
   const [completedSessions, setCompletedSessions] = useState([]);
   const [clockInTime, setClockInTime] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        const res = await fetch("/api/live-sessions", { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to load sessions");
+        const data = await res.json();
+        setCompletedSessions(data.map(normalizeSession));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadSessions();
+  }, []);
 
   const [sessionBlinds, setSessionBlinds] = useState({ bigBlind: "", smallBlind: "" });
   const [activeBuyIns, setActiveBuyIns] = useState([]);
@@ -32,16 +57,14 @@ export function Clock() {
     setShowClockOutForm(true);
   };
 
-  const handleConfirmClockOut = () => {
+  const handleConfirmClockOut = async () => {
     const cashOut = parseFloat(formData.cashOut);
     if (isNaN(cashOut)) return;
 
     const profit = cashOut - totalActiveBuyIn;
     const clockOutTime = new Date();
 
-    const newSession = {
-      id: Date.now(),
-      date: clockInTime,
+    const payload = {
       clockInTime,
       clockOutTime,
       bigBlind: parseFloat(sessionBlinds.bigBlind),
@@ -49,19 +72,40 @@ export function Clock() {
       buyIns: [...activeBuyIns],
       totalBuyIn: totalActiveBuyIn,
       cashOut,
-      profit
+      totalProfit: profit,
+      gameType: "Cash Game"
     };
 
-    setCompletedSessions([newSession, ...completedSessions]);
+    setIsSaving(true);
+    setSaveError(null);
 
-    setIsClocked(false);
-    setClockInTime(null);
-    setSessionBlinds({ bigBlind: "", smallBlind: "" });
-    setActiveBuyIns([]);
-    setShowClockOutForm(false);
-    setShowSessionForm(false);
-    setShowBuyInForm(false);
-    setFormData({ bigBlind: "", smallBlind: "", buyIn: "", cashOut: "" });
+    try {
+      const res = await fetch("/api/live-sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Failed to save session");
+
+      const savedSession = await res.json();
+      setCompletedSessions([normalizeSession(savedSession), ...completedSessions]);
+
+      setIsClocked(false);
+      setClockInTime(null);
+      setSessionBlinds({ bigBlind: "", smallBlind: "" });
+      setActiveBuyIns([]);
+      setShowClockOutForm(false);
+      setShowSessionForm(false);
+      setShowBuyInForm(false);
+      setFormData({ bigBlind: "", smallBlind: "", buyIn: "", cashOut: "" });
+    } catch (err) {
+      console.error(err);
+      setSaveError("Couldn't save this session. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSaveSession = () => {
@@ -282,15 +326,16 @@ export function Clock() {
                       {parseFloat(formData.cashOut) - totalActiveBuyIn >= 0 ? "profit" : "loss"}
                     </div>
                   )}
+                  {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
                   <button className="btn btn-ghost" onClick={() => setShowClockOutForm(false)}>Cancel</button>
                   <button
                     className="btn btn-danger"
                     onClick={handleConfirmClockOut}
-                    disabled={formData.cashOut === "" || isNaN(parseFloat(formData.cashOut))}
+                    disabled={isSaving || formData.cashOut === "" || isNaN(parseFloat(formData.cashOut))}
                   >
-                    End Session
+                    {isSaving ? "Saving..." : "End Session"}
                   </button>
                 </div>
               </div>
@@ -345,4 +390,4 @@ export function Clock() {
       </div>
     </Layout>
   );
-}
+} 

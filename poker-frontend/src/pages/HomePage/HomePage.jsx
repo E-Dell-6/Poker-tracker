@@ -6,9 +6,8 @@ import './HomePage.css';
 
 const STAT_CARDS = [
   { label: 'Total Hands', key: 'totalHands', icon: '♠', suffix: '' },
-  { label: 'Sessions Logged', key: 'sessions', icon: '≡', suffix: '' },
-  { label: 'VPIP', key: 'vpip', icon: '%', suffix: '%' },
-  { label: 'PFR', key: 'pfr', icon: '↑', suffix: '%' },
+  { label: 'Online Sessions', key: 'onlineSessions', icon: '≡', suffix: '' },
+  { label: 'Live Sessions', key: 'liveSessions', icon: '♣', suffix: '' },
 ];
 
 // Demo data shown to guests
@@ -20,16 +19,39 @@ const GUEST_SESSIONS = [
   { _id: 'g5', gameType: 'PLO', date: '2024-10-28', hands: Array(72), totalProfit: 220 },
 ];
 
-const GUEST_STATS = { totalHands: 367, sessions: 5, vpip: '28', pfr: '19' };
-const GUEST_PULSE = [-55, 142, 310, -88, 220];
+const GUEST_LIVE_SESSIONS = [
+  { _id: 'gl1', gameType: 'Cash Game', date: '2024-11-09', clockInTime: '2024-11-09T19:00:00', clockOutTime: '2024-11-09T22:30:00', totalProfit: 180 },
+  { _id: 'gl2', gameType: 'Cash Game', date: '2024-11-03', clockInTime: '2024-11-03T20:00:00', clockOutTime: '2024-11-03T23:15:00', totalProfit: -60 },
+];
+
+const GUEST_STATS = { totalHands: 367, onlineSessions: 5, liveSessions: 2 };
+const GUEST_PULSE = [-55, 142, -60, 310, -88, 180, 220];
+
+const computeTrendSlope = (values) => {
+  const n = values.length;
+  if (n < 2) return 0;
+
+  const xs = values.map((_, i) => i);
+  const sumX = xs.reduce((a, b) => a + b, 0);
+  const sumY = values.reduce((a, b) => a + b, 0);
+  const sumXY = xs.reduce((sum, x, i) => sum + x * values[i], 0);
+  const sumXX = xs.reduce((sum, x) => sum + x * x, 0);
+
+  const denominator = n * sumXX - sumX * sumX;
+  if (denominator === 0) return 0;
+
+  return (n * sumXY - sumX * sumY) / denominator;
+};
 
 export function HomePage() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
   const [sessions, setSessions] = useState([]);
+  const [combinedSessions, setCombinedSessions] = useState([]);
   const [stats, setStats] = useState(null);
   const [pulse, setPulse] = useState([]);
+  const [showPulse, setShowPulse] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/user/data`, { credentials: 'include' })
@@ -41,52 +63,77 @@ export function HomePage() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    fetch(`${API_URL}/api/sessions`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
-        if (!Array.isArray(data)) return;
+    Promise.all([
+      fetch(`${API_URL}/api/sessions`, { credentials: 'include' })
+        .then(r => r.json())
+        .catch(() => []),
+      fetch(`${API_URL}/api/live-sessions`, { credentials: 'include' })
+        .then(r => r.json())
+        .catch(() => []),
+    ]).then(([onlineData, liveData]) => {
+      const onlineSessions = Array.isArray(onlineData) ? onlineData : [];
+      const liveSessions = Array.isArray(liveData) ? liveData : [];
 
-        setSessions(data);
+      setSessions(onlineSessions);
 
-        const recent = [...data]
-          .sort((a, b) => new Date(a.date) - new Date(b.date))
-          .slice(-10);
+      const combined = [
+        ...onlineSessions.map(s => ({ ...s, isLive: false })),
+        ...liveSessions.map(s => ({ ...s, isLive: true })),
+      ];
 
-        setPulse(recent.map(s => s.totalProfit ?? 0));
+      setCombinedSessions(combined);
 
-        const totalHands = data.reduce(
-          (sum, s) => sum + (s.hands?.length ?? 0),
-          0
-        );
+      const recent = [...combined]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(-10);
 
-        setStats({
-          totalHands,
-          sessions: data.length,
-          vpip: '--',
-          pfr: '--',
-        });
-      })
-      .catch(() => {});
+      setPulse(recent.map(s => s.totalProfit ?? 0));
+
+      const totalHands = onlineSessions.reduce(
+        (sum, s) => sum + (s.hands?.length ?? 0),
+        0
+      );
+
+      setStats({
+        totalHands,
+        onlineSessions: onlineSessions.length,
+        liveSessions: liveSessions.length,
+      });
+    });
   }, [isLoggedIn]);
 
   const handleGuestMode = () => {
     setIsGuest(true);
     setSessions(GUEST_SESSIONS);
+    setCombinedSessions([
+      ...GUEST_SESSIONS.map(s => ({ ...s, isLive: false })),
+      ...GUEST_LIVE_SESSIONS.map(s => ({ ...s, isLive: true })),
+    ]);
     setStats(GUEST_STATS);
     setPulse(GUEST_PULSE);
   };
 
-  const recentSessions = [...sessions]
+  const recentSessions = [...combinedSessions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
-  const Sparkline = ({ values }) => {
+  const formatSessionDuration = (start, end) => {
+    if (!start || !end) return null;
+    const diff = Math.floor((new Date(end) - new Date(start)) / 1000);
+    const h = Math.floor(diff / 3600);
+    const m = Math.floor((diff % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  };
+
+  const Sparkline = ({ values, positive }) => {
     if (!values.length) return null;
 
     const w = 200, h = 48, pad = 4;
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min || 1;
+    const color = positive ? '#22c55e' : '#ef4444';
 
     const pts = values.map((v, i) => {
       const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
@@ -101,15 +148,15 @@ export function HomePage() {
       <svg viewBox={`0 0 ${w} ${h}`} className="sparkline">
         <defs>
           <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#sg)" />
         <path
           d={line}
           fill="none"
-          stroke="#22c55e"
+          stroke={color}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -235,11 +282,31 @@ export function HomePage() {
           </div>
 
           {pulse.length > 1 && (
-            <div className="hp-sparkline-card">
+            <div
+              className="hp-sparkline-card"
+              onClick={() => !showPulse && setShowPulse(true)}
+              style={{ cursor: showPulse ? 'default' : 'pointer' }}
+            >
               <div className="hp-sparkline-label">
                 Session Profit Trend
               </div>
-              <Sparkline values={pulse} />
+              {showPulse ? (
+                <Sparkline values={pulse} positive={computeTrendSlope(pulse) >= 0} />
+              ) : (
+                <div
+                  className="sparkline"
+                  style={{
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--muted, #6b7280)',
+                    fontSize: '13px',
+                  }}
+                >
+                  Click to reveal
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -258,7 +325,7 @@ export function HomePage() {
                 >
                   <div className="hp-feed-left">
                     <span className="hp-feed-type">
-                      {s.gameType ?? '—'}
+                      {s.isLive ? 'Live · ' : ''}{s.gameType ?? '—'}
                     </span>
 
                     <span className="hp-feed-date">
@@ -270,7 +337,9 @@ export function HomePage() {
                     </span>
 
                     <span className="hp-feed-hands">
-                      {s.hands?.length ?? 0} hands
+                      {s.isLive
+                        ? formatSessionDuration(s.clockInTime, s.clockOutTime) ?? 'Live session'
+                        : `${s.hands?.length ?? 0} hands`}
                     </span>
                   </div>
 
@@ -306,7 +375,7 @@ export function HomePage() {
           </section>
         )}
 
-        {sessions.length === 0 && stats && (
+        {combinedSessions.length === 0 && stats && (
           <section className="hp-section">
             <div className="hp-empty">
               <div className="hp-empty-icon">♠</div>

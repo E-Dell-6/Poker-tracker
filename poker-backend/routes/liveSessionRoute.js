@@ -1,12 +1,12 @@
 import express from 'express';
 import LiveSession from '../model/LiveSession.js';
+import userAuth from '../middleware/userAuth.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+router.get('/', userAuth, async (req, res) => {
     try {
-        const userId = req.user?._id ?? req.userId;
-        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+        const userId = req.body.userId;
 
         const sessions = await LiveSession.find({ userId }).sort({ date: -1 }).lean();
         res.json(sessions);
@@ -16,12 +16,10 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', userAuth, async (req, res) => {
     try {
-        const userId = req.user?._id ?? req.userId;
-        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-
         const {
+            userId,
             clockInTime, clockOutTime,
             smallBlind, bigBlind,
             buyIns, totalBuyIn,
@@ -49,10 +47,9 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', userAuth, async (req, res) => {
     try {
-        const userId = req.user?._id ?? req.userId;
-        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+        const userId = req.body.userId;
 
         const session = await LiveSession.findOneAndDelete({ _id: req.params.id, userId });
         if (!session) return res.status(404).json({ message: 'Not found' });
