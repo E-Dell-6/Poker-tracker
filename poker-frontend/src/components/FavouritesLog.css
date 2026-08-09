@@ -15,115 +15,104 @@
   --muted: #6b7280;
 }
 
-/* ── SESSIONS LIST ──────────────────────────────────────── */
-ul.sessions-list {
-  list-style: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
+/* ── CONTAINER ──────────────────────────────────────────── */
+/* Unlike SessionLog, there's no per-session wrapper card here — Favourites
+   is a flat list, so this just holds the filter bar + hands list. */
+.favourites-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-/* ── SESSION CARD ───────────────────────────────────────── */
-ul.sessions-list > li.session-card {
-  list-style: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  background: var(--bg3) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  cursor: pointer;
+  gap: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  padding: 0 !important;
-  margin: 0 !important;
 }
 
-ul.sessions-list > li.session-card::before,
-ul.sessions-list > li.session-card::marker {
-  display: none !important;
-  content: none !important;
-}
-
-ul.sessions-list > li.session-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--gold-border) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-/* ── SESSION HEADER ─────────────────────────────────────── */
-.session-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.session-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-grow: 1;
-  flex-wrap: wrap;
-}
-
-.session-info span {
-  display: inline-block;
-  white-space: nowrap;
+/* ── EMPTY STATE (no favourites at all) ─────────────────── */
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--muted);
   font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
 }
 
-.session-date {
-  color: var(--text);
-  font-weight: 600;
-  font-size: 0.95rem;
+/* ── HAND FILTER BAR ─────────────────────────────────────── */
+/* Matches SessionLog.css exactly — same filters mean the same thing in
+   both views. */
+.hand-filter-bar {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
 }
 
-.session-game-type {
+.hand-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
   font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.hand-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.hand-filter-btn.active {
   background: var(--gold-dim);
   color: var(--gold);
-  padding: 4px 10px;
-  border-radius: 6px;
+  border-color: var(--gold-border);
 }
 
-.session-players {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-/* ── SESSION PROFIT ─────────────────────────────────────── */
-.session-profit {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
+.hand-filter-count {
+  font-size: 10px;
   font-weight: 700;
-  text-align: right;
-  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 1px 6px;
+  border-radius: 100px;
+  min-width: 18px;
+  text-align: center;
 }
 
-.session-profit.win { color: var(--green); }
-.session-profit.loss { color: var(--red); }
+.hand-filter-btn.active .hand-filter-count {
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--gold);
+}
 
-/* ── HANDS LIST (ACCORDION) ─────────────────────────────── */
-ul.hands-list {
-  list-style: none !important;
-  padding: 8px 16px 16px !important;
-  margin: 0 !important;
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  animation: slideDown 0.2s ease-out;
+/* ── EMPTY FILTER STATE ─────────────────────────────────── */
+.hands-empty-filter {
+  padding: 24px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  font-style: italic;
+  list-style: none;
+}
+
+/* ── HANDS LIST ─────────────────────────────────────────── */
+.hands-list {
+  list-style: none;
+  padding: 8px 16px 16px;
+  margin: 0;
 }
 
 /* ── HAND ITEM ──────────────────────────────────────────── */
-ul.hands-list > li.hand-item {
-  list-style: none !important;
-  display: flex !important;
+.hand-item {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 10px;
@@ -136,17 +125,11 @@ ul.hands-list > li.hand-item {
   transition: background 0.15s ease;
 }
 
-ul.hands-list > li.hand-item::before,
-ul.hands-list > li.hand-item::marker {
-  display: none !important;
-  content: none !important;
-}
-
-ul.hands-list > li.hand-item:last-child {
+.hand-item:last-child {
   border-bottom: none;
 }
 
-ul.hands-list > li.hand-item:hover {
+.hand-item:hover {
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -165,10 +148,62 @@ ul.hands-list > li.hand-item:hover {
   min-width: 36px;
 }
 
+/* ── PER-HAND DATE / GAME-TYPE ──────────────────────────── */
+/* SessionLog shows these once, in the session header, since every hand
+   under it shares the same session. Favourites has no such grouping —
+   each hand can come from a different session entirely — so these render
+   inline per hand instead. Blank/omitted for hands that were created
+   directly into Favourites rather than favourited from a session. */
+.hand-date {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.hand-game-type {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: #3a3000;
+  color: #fde68a;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid rgba(253, 230, 138, 0.25);
+}
+
 .hand-cards {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.card-wrapper {
+  width: 40px;
+  height: 56px;
+  background: #CCCCCC;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.no-cards {
+  color: var(--muted);
+  font-size: 0.85em;
 }
 
 .hand-winner {
@@ -176,359 +211,75 @@ ul.hands-list > li.hand-item:hover {
   font-size: 0.88em;
 }
 
-/* ── HAND RIGHT GROUP (pot + profit inline) ─────────────── */
+/* ── HAND RIGHT GROUP ───────────────────────────────────── */
 .hand-right {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 /* ── HAND POT ───────────────────────────────────────────── */
 .hand-pot {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.hand-pot strong {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .pot-label {
+  font-family: 'DM Sans', sans-serif;
   color: var(--muted);
-  font-size: 0.8em;
+  font-size: 0.75em;
   font-weight: 500;
 }
 
-/* ── HAND PROFIT (inline pill beside pot) ───────────────── */
+/* ── HAND PROFIT ────────────────────────────────────────── */
 .hand-profit {
   font-family: 'Playfair Display', serif;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
-  padding: 3px 10px;
+  padding: 2px 10px;
   border-radius: 6px;
-  white-space: nowrap;
+  text-align: right;
 }
 
 .hand-profit.win {
   color: var(--green);
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .hand-profit.loss {
   color: var(--red);
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
 }
 
-/* ── CONTEXT MENU ───────────────────────────────────────── */
-.context-menu {
-  position: absolute;
-  z-index: 1000;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  min-width: 160px;
-  overflow: hidden;
-}
-
-.menu-item {
-  padding: 11px 16px;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  transition: background 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.menu-item:hover {
-  background: var(--gold-dim);
-  color: var(--gold);
-}
-
-.menu-item.delete:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--red);
-}
-
-/* ── EDIT MODAL ─────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: var(--bg3);
-  padding: 32px;
-  border-radius: 20px;
-  width: 420px;
-  max-width: 92%;
-  color: var(--text);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--border);
-  max-height: 85vh;
-  overflow-y: auto;
-  font-family: 'DM Sans', sans-serif;
-}
-
-.modal-content::-webkit-scrollbar { width: 6px; }
-.modal-content::-webkit-scrollbar-track { background: var(--bg2); border-radius: 3px; }
-.modal-content::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 3px; }
-
-.modal-content h3 {
-  font-family: 'Playfair Display', serif;
-  margin-top: 0;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-  margin-bottom: 24px;
-  font-size: 1.4rem;
-  color: #fff;
-}
-
-/* ── MODAL FORM ─────────────────────────────────────────── */
-.modal-label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.modal-input {
-  width: 100%;
-  padding: 10px 14px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg2);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.modal-input:focus {
-  border-color: var(--gold-border);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
-}
-
-.modal-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6) sepia(1) saturate(2) hue-rotate(5deg);
-  cursor: pointer;
-}
-
-select.modal-input { cursor: pointer; }
-select.modal-input option { background: var(--bg3); }
-
-/* ── OPPONENTS ──────────────────────────────────────────── */
-.opponents-section { margin-top: 8px; }
-
-.opponents-scroll-container {
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  padding: 10px;
-  border-radius: 10px;
-  background: var(--bg2);
-  margin-bottom: 20px;
-}
-
-.opponents-scroll-container::-webkit-scrollbar { width: 6px; }
-.opponents-scroll-container::-webkit-scrollbar-track { background: var(--bg); border-radius: 3px; }
-.opponents-scroll-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.25); border-radius: 3px; }
-
-.opponent-row { margin-bottom: 12px; display: flex; flex-direction: column; }
-.opponent-row:last-child { margin-bottom: 0; }
-
-.opponent-original-name {
-  font-size: 0.78em;
-  color: var(--muted);
-  margin-bottom: 5px;
-  margin-left: 2px;
-}
-
-.opponent-name-input {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.9rem;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-  cursor: pointer;
-}
-
-.opponent-name-input:focus { border-color: var(--gold-border); outline: none; }
-
-/* ── CREATE PERSON SECTION ──────────────────────────────── */
-.create-person-section { margin-top: 8px; }
-
-.create-person-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px dashed var(--gold-border);
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.create-person-btn:hover { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); }
-
-.new-person-form {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-}
-
-.new-person-form h4 {
-  font-family: 'Playfair Display', serif;
-  color: #fff;
-  margin: 0 0 16px;
-  font-size: 1rem;
-}
-
-.new-person-actions { display: flex; gap: 8px; margin-top: 12px; }
-
-.new-person-actions button {
-  flex: 1;
-  padding: 9px 16px;
-  border: none;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text);
-}
-
-.new-person-actions button:hover { background: rgba(255, 255, 255, 0.12); }
-
-.upload-image-btn {
-  padding: 8px 14px;
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px solid var(--gold-border);
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.upload-image-btn:hover { background: rgba(212, 175, 55, 0.2); }
-
-.remove-image-btn {
-  padding: 6px 10px;
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.remove-image-btn:hover { background: rgba(239, 68, 68, 0.25); }
-
-/* ── MODAL ACTIONS ──────────────────────────────────────── */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.modal-actions button {
-  padding: 10px 22px;
+/* ── STAR BUTTON ────────────────────────────────────────── */
+/* Favourites-only — SessionLog uses the separate HandleStars component
+   for its add/remove-favourite toggle, which isn't reused here (this
+   list's star action is always a removal, never an add). */
+.star-btn {
+  background: none;
   border: none;
   cursor: pointer;
-  border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: background 0.2s, transform 0.15s;
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
 }
 
-.modal-actions button:first-child {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text);
-}
-
-.modal-actions button:first-child:hover { background: rgba(255, 255, 255, 0.12); }
-
-.save-btn {
-  background: linear-gradient(135deg, #d4af37, #f4c430) !important;
-  color: #0d0f12 !important;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
-}
-
-.save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4) !important;
-}
-
-/* ── SPINNER ────────────────────────────────────────────── */
-.lb-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── ANIMATIONS ─────────────────────────────────────────── */
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+.star-btn:hover {
+  transform: scale(1.15);
 }
 
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .session-header { padding: 16px 18px; gap: 12px; }
-  .session-info { gap: 12px; font-size: 0.88rem; }
-  .session-profit { font-size: 1.1em; }
   .hand-info { gap: 10px; }
-  .modal-content { padding: 24px 20px; }
-  .hand-right { gap: 8px; }
+  .hand-right { gap: 3px; }
 }
