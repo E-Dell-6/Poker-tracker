@@ -4,10 +4,6 @@ import './HandCreator.css';
 import CardSelector from '../../components/CardSelector';
 import { API_URL } from '../../config';
 
-// ---------------------------------------------------------------------------
-// Constants derived from your PokerHands schema
-// ---------------------------------------------------------------------------
-
 const STREETS = ['PREFLOP', 'FLOP', 'TURN', 'RIVER'];
 
 const ACTION_TYPES = [
@@ -22,20 +18,12 @@ const ACTION_TYPES = [
   'MUCK',
 ];
 
-// Action types the user can pick when adding/editing a hand action row.
-// POST_SB/POST_BB only ever happen automatically at the start of the hand
-// (seeded from the table setup), and show hand/muck aren't offered here —
-// keep it to the actions that make sense mid-street.
 const SELECTABLE_ACTION_TYPES = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
 
-// Actions that carry a chip amount worth entering
 const AMOUNT_ACTIONS = new Set(['POST_SB', 'POST_BB', 'BET', 'RAISE', 'CALL']);
 
-// Actions that end a player's involvement in the hand
 const FOLD_ACTIONS = new Set(['FOLD', 'MUCK']);
 
-// Standard position order, read clockwise starting at the button.
-// Heads-up is special-cased (BTN also posts the SB).
 const POSITIONS_BY_COUNT = {
   2: ['BTN/SB', 'BB'],
   3: ['BTN', 'SB', 'BB'],
@@ -68,17 +56,11 @@ const STREET_LABELS = {
 
 const STREET_INDEX = { PREFLOP: 0, FLOP: 1, TURN: 2, RIVER: 3 };
 
-// Board slot layout — matches HandSchema.board.{flop,turn,river}, each an
-// array of card strings.
 const BOARD_KEY_BY_STREET = { FLOP: 'flop', TURN: 'turn', RIVER: 'river' };
 const BOARD_SLOT_COUNTS = { FLOP: 3, TURN: 1, RIVER: 1 };
 
-// Hole card slot counts — mirrors the cardLimit validator on
-// PlayerSetupSchema.holeCards (must end up 0, 2, or 4 cards).
 const HOLE_CARD_COUNTS = { NLH: 2, PLO: 4 };
 
-// Card string format is "<rank><suit>", e.g. "Ah", "Td", "9c" — matches
-// the plain String entries the schema expects for board + holeCards.
 const SUIT_META = {
   s: { label: '♠', color: 'black' },
   h: { label: '♥', color: 'red' },
@@ -89,13 +71,6 @@ const SUIT_META = {
 let idCounter = 0;
 const nextId = () => `a${Date.now()}_${idCounter++}`;
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// Walks clockwise from the dealer seat, handing out positions in order.
-// Returns seats in CLOCKWISE order (index-aligned with POSITIONS_BY_COUNT),
-// i.e. seatsInOrder[0] is the button, seatsInOrder[1] is the SB, etc.
 function clockwiseSeatOrder(numPlayers, dealerSeat) {
   const seats = [];
   for (let i = 0; i < numPlayers; i++) {
@@ -112,10 +87,6 @@ function assignSeats(numPlayers, dealerSeat) {
   return bySeat.sort((a, b) => a.seat - b.seat);
 }
 
-// Returns the seats in the order they act for a given street.
-// Preflop: first to act is the seat after BB, last to act is BB.
-// Postflop: first to act is SB (first active seat after the button),
-// last to act is BTN.
 function actionOrderSeats(street, numPlayers, dealerSeat) {
   const posOrder = POSITIONS_BY_COUNT[numPlayers];
   const seats = clockwiseSeatOrder(numPlayers, dealerSeat);
@@ -127,7 +98,6 @@ function actionOrderSeats(street, numPlayers, dealerSeat) {
   return [...seats.slice(1), ...seats.slice(0, 1)];
 }
 
-// Places seat 1 at the top of the oval, then walks clockwise.
 function seatCoordinates(seat, totalSeats) {
   const angleDeg = -90 + (seat - 1) * (360 / totalSeats);
   const angleRad = (angleDeg * Math.PI) / 180;
@@ -138,8 +108,6 @@ function seatCoordinates(seat, totalSeats) {
   return { left: `${x}%`, top: `${y}%` };
 }
 
-// Recomputes potSizeAfter for every action in table order (antes count as
-// dead money in the pot before the first posted blind).
 function withPotSizes(actions, ante, numPlayers) {
   let pot = (ante || 0) * (numPlayers || 0);
   return actions.map((a) => {
@@ -148,15 +116,6 @@ function withPotSizes(actions, ante, numPlayers) {
   });
 }
 
-// Replays actions in order to work out, for each one, how much its player
-// needed to put in to call, the smallest legal bet/raise size, and how
-// many chips they had left in their stack right before that action.
-// Betting resets at the start of every street (currentBetToMatch and
-// lastRaiseSize both drop back to 0/bigBlind), but stacks carry over the
-// whole hand — this is what lets us flag "you can't put in more than you
-// have" and "the next player must call at least X or fold".
-//
-// Returns an array parallel to `actions`.
 function computeBettingState(actions, players, bigBlind) {
   const remainingStack = {};
   players.forEach((p) => {
@@ -190,8 +149,6 @@ function computeBettingState(actions, players, bigBlind) {
       isFacingBet: currentBetToMatch - alreadyCommitted > 0,
     };
 
-    // Apply this action's effect so the next action in line sees the
-    // right state.
     const amt = Math.max(Number(a.amount) || 0, 0);
     remainingStack[a.player] = stackBefore - amt;
     const newCommitted = alreadyCommitted + amt;
@@ -210,8 +167,6 @@ function computeBettingState(actions, players, bigBlind) {
   });
 }
 
-// Short grey status line shown under each action row (stack left, and
-// whatever the player is facing).
 function bettingHintText(action, constraint) {
   const parts = [`Stack: ${constraint.stackBefore}`];
   if (action.actionType === 'BET' || action.actionType === 'RAISE') {
@@ -222,10 +177,6 @@ function bettingHintText(action, constraint) {
   return parts.join(' · ');
 }
 
-// Returns a warning string if this action's amount/type doesn't line up
-// with what the previous action left them facing — null if it's fine.
-// This is informational, not a hard block, since edge cases (a short
-// stack going all-in for less than a "full" call or raise) are legal.
 function bettingWarning(action, constraint) {
   const amount = Number(action.amount) || 0;
 
@@ -247,8 +198,6 @@ function bettingWarning(action, constraint) {
   return null;
 }
 
-// Sets a value at a given index in an array, padding with null as needed
-// so card slots keep a stable position even before every slot is filled.
 function setArrayIndex(arr, index, value) {
   const next = [...(arr || [])];
   while (next.length <= index) next.push(null);
@@ -256,15 +205,10 @@ function setArrayIndex(arr, index, value) {
   return next;
 }
 
-// Strips empty slots — used right before the hand is submitted, so the
-// stored arrays match what the schema expects (no null placeholders).
 function compactCards(arr) {
   return (arr || []).filter(Boolean);
 }
 
-// All cards already in play anywhere in the hand (board + every player's
-// hole cards), so the selector can grey out duplicates. `excludeCard` lets
-// the slot currently being edited re-select its own card.
 function collectUsedCards(hand, excludeCard) {
   const used = new Set();
   const add = (c) => {
@@ -285,9 +229,6 @@ function defaultTableSetup() {
     numPlayers: 4,
     dealerSeat: 2,
     heroSeat: 1,
-    // Optional, keyed by seat number. Any seat left blank defaults to
-    // 100bb (see proceedToActions) and can still be tweaked per-seat in
-    // step 2 as well.
     stacksBySeat: {},
   };
 }
@@ -310,10 +251,6 @@ function defaultHand() {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export default function HandCreator({ onSubmit }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -322,7 +259,6 @@ export default function HandCreator({ onSubmit }) {
   const [activeStreet, setActiveStreet] = useState('PREFLOP');
   const [editingSeat, setEditingSeat] = useState(null);
 
-  // -- Step 3 (review / finalize) state ------------------------------------
   const [people, setPeople] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -333,9 +269,6 @@ export default function HandCreator({ onSubmit }) {
     setTimeout(() => setStatusMessage(null), 3000);
   };
 
-  // Describes whichever card slot is currently open in the CardSelector
-  // modal: { type: 'board', street, index, current } or
-  // { type: 'hole', seat, index, current }.
   const [cardSelector, setCardSelector] = useState(null);
 
   const { smallBlind, bigBlind, ante, numPlayers, dealerSeat, heroSeat, stacksBySeat } = tableSetup;
@@ -345,8 +278,6 @@ export default function HandCreator({ onSubmit }) {
     [numPlayers, dealerSeat]
   );
 
-  // Turn order (by seat) for each street, recomputed whenever the table
-  // shape changes.
   const preflopOrderSeats = useMemo(
     () => actionOrderSeats('PREFLOP', numPlayers, dealerSeat),
     [numPlayers, dealerSeat]
@@ -359,8 +290,6 @@ export default function HandCreator({ onSubmit }) {
   const orderSeatsForStreet = (street) =>
     street === 'PREFLOP' ? preflopOrderSeats : postflopOrderSeats;
 
-  // Seats that have folded (or mucked) anywhere in the hand so far - once
-  // out, a player stays out for every remaining street.
   const foldedSeats = useMemo(() => {
     const folded = new Set();
     hand.actions.forEach((a) => {
@@ -372,9 +301,6 @@ export default function HandCreator({ onSubmit }) {
     return folded;
   }, [hand.actions, hand.players]);
 
-  // Given a street, figures out which seat acts next: the seat after the
-  // last action's player in that street's order, skipping folded players.
-  // If nobody has acted yet on the street, returns the first seat to act.
   const nextToActSeat = (street) => {
     const order = orderSeatsForStreet(street).filter((s) => !foldedSeats.has(s));
     if (order.length === 0) return null;
@@ -395,7 +321,6 @@ export default function HandCreator({ onSubmit }) {
   const updateTableField = (field, value) => {
     setTableSetup((prev) => {
       const next = { ...prev, [field]: value };
-      // Keep dealer/hero seat valid if the table size shrinks
       if (field === 'numPlayers') {
         if (prev.dealerSeat > value) next.dealerSeat = 1;
         if (prev.heroSeat > value) next.heroSeat = 1;
@@ -410,8 +335,6 @@ export default function HandCreator({ onSubmit }) {
       stacksBySeat: { ...prev.stacksBySeat, [seat]: value },
     }));
   };
-
-  // -- Step 1 -> Step 2 -------------------------------------------------
 
   const proceedToActions = () => {
     const players = seatPositions.map(({ seat, position }) => {
@@ -469,8 +392,6 @@ export default function HandCreator({ onSubmit }) {
     setStep(2);
   };
 
-  // -- Seat editing (name / stack / hero) --------------------------------
-
   const updatePlayerField = (seat, field, value) => {
     setHand((prev) => ({
       ...prev,
@@ -478,8 +399,6 @@ export default function HandCreator({ onSubmit }) {
     }));
   };
 
-  // Toggles a player in/out of hand.winners (an array of player names —
-  // more than one supports split pots).
   const toggleWinner = (playerName) => {
     setHand((prev) => ({
       ...prev,
@@ -489,8 +408,6 @@ export default function HandCreator({ onSubmit }) {
     }));
   };
 
-  // -- Step 2 action list -------------------------------------------------
-
   const setActions = (updater) => {
     setHand((prev) => {
       const raw = typeof updater === 'function' ? updater(prev.actions) : updater;
@@ -498,8 +415,6 @@ export default function HandCreator({ onSubmit }) {
     });
   };
 
-  // Adds a new action row, pre-filled with whichever player is next to act
-  // on this street (in position order, skipping anyone who has folded).
   const addAction = (street) => {
     const seat = nextToActSeat(street);
     const playerName =
@@ -522,9 +437,6 @@ export default function HandCreator({ onSubmit }) {
       const index = prev.findIndex((a) => a.id === id);
       if (index === -1) return prev;
 
-      // Apply the raw edit first — constraint math below depends on which
-      // player/street/type this action now has (e.g. reassigning the
-      // player changes whose stack and street-commitment we're checking).
       const applied = prev.map((a) => (a.id === id ? { ...a, [field]: value } : a));
       const meta = computeBettingState(applied, hand.players, bigBlind);
       const constraint = meta[index];
@@ -538,17 +450,11 @@ export default function HandCreator({ onSubmit }) {
           if (!AMOUNT_ACTIONS.has(value)) {
             next.amount = 0;
           } else if (value === 'CALL') {
-            // Pre-fill the exact amount needed to match the previous bet
-            // (capped at the player's stack — a short stack can only call
-            // for what they have left).
             next.amount = constraint.callAmount;
           } else if (value === 'BET' || value === 'RAISE') {
-            // Pre-fill the smallest legal bet/raise: matching whatever's
-            // already in plus at least the size of the last bet/raise.
             next.amount = constraint.minRaiseAmount;
           }
         } else if (field === 'amount') {
-          // Can never put in more than what's left in the stack.
           next.amount = Math.max(0, Math.min(Number(value) || 0, constraint.stackBefore));
         }
 
@@ -560,8 +466,6 @@ export default function HandCreator({ onSubmit }) {
   const removeAction = (id) => {
     setActions((prev) => prev.filter((a) => a.id !== id));
   };
-
-  // -- Card selection (board + hole cards) --------------------------------
 
   const openCardSelector = (descriptor) => setCardSelector(descriptor);
   const closeCardSelector = () => setCardSelector(null);
@@ -637,18 +541,9 @@ export default function HandCreator({ onSubmit }) {
     }
   };
 
-  // -- Step 3 (review / finalize) ------------------------------------------
-
-  // Whether a given player already has a SHOW_HAND action recorded.
   const hasRevealed = (playerName) =>
     hand.actions.some((a) => a.actionType === 'SHOW_HAND' && a.player === playerName);
 
-  // Toggles a player's "revealed hand at showdown" state. Turning it on
-  // records a SHOW_HAND action (street: RIVER, the showdown street) and
-  // seeds showedHand from their hole cards if those are already fully
-  // filled in; otherwise it starts empty so the cards can be entered here
-  // (useful for opponents whose hole cards weren't known during play).
-  // Turning it off removes the action and clears showedHand.
   const toggleRevealHand = (seat) => {
     const player = hand.players.find((p) => p.seat === seat);
     if (!player) return;
@@ -705,9 +600,6 @@ export default function HandCreator({ onSubmit }) {
     return result.imageUrl;
   };
 
-  // Creates a new Person (name/image may differ from the seat's in-hand
-  // name — both are editable in the inline "create" form) and links the
-  // seat to it.
   const createAndLinkPerson = async (seat, name, imageFile) => {
     try {
       let imageUrl = '';
@@ -733,16 +625,6 @@ export default function HandCreator({ onSubmit }) {
 
   const goToReview = () => setStep(3);
 
-  // Saves the finished hand into the user's favourites.
-  //
-  // NOTE: handRoute.js's `POST /:id` doubles as both "toggle favourite" and
-  // "create favourite" — if the :id in the URL doesn't match any hand
-  // already in the user's favourites, it pushes whatever's in the body as
-  // a brand-new favourited hand. So a fresh client-side id (never seen by
-  // the server) is enough to make this a "create".
-  //
-  // Adjust FAVOURITES endpoint below if your server mounts handRoute.js
-  // somewhere other than /api/favourites.
   const saveHand = async () => {
     if (!hand.winners.length) {
       showStatus('error', 'Select at least one winner before saving');
@@ -753,8 +635,6 @@ export default function HandCreator({ onSubmit }) {
       ? hand.actions[hand.actions.length - 1].potSizeAfter
       : 0;
 
-    // Drop empty slot placeholders so what gets submitted matches the
-    // schema shape exactly (plain arrays of card strings).
     const finalHand = {
       ...hand,
       finalPotSize,
@@ -796,17 +676,12 @@ export default function HandCreator({ onSubmit }) {
   const actionsForStreet = hand.actions.filter((a) => a.street === activeStreet);
   const activeNextSeat = nextToActSeat(activeStreet);
 
-  // Lets the action rows show "to call: X" / "min raise: X" / "stack: X"
-  // hints, and flag anything that's out of line, without every row
-  // re-deriving the whole betting sequence itself.
   const bettingMetaById = useMemo(() => {
     const meta = computeBettingState(hand.actions, hand.players, bigBlind);
     const map = new Map();
     hand.actions.forEach((a, i) => map.set(a.id, meta[i]));
     return map;
   }, [hand.actions, hand.players, bigBlind]);
-
-  // -- Render ---------------------------------------------------------------
 
   return (
     <div className="hc-page">
@@ -883,10 +758,6 @@ export default function HandCreator({ onSubmit }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Step 1: Required Table Details
-// ---------------------------------------------------------------------------
 
 function TableDetailsStep({ tableSetup, seatPositions, updateTableField, updateSeatStack, onNext, onExit }) {
   const { smallBlind, bigBlind, ante, numPlayers, dealerSeat, heroSeat, stacksBySeat } = tableSetup;
@@ -1005,10 +876,6 @@ function TableDetailsStep({ tableSetup, seatPositions, updateTableField, updateS
   );
 }
 
-// ---------------------------------------------------------------------------
-// Step 3: Review & Finalize — notes, date, rename players, link to People
-// ---------------------------------------------------------------------------
-
 function ReviewStep({
   hand,
   setHand,
@@ -1027,14 +894,10 @@ function ReviewStep({
   onSave,
   isSaving,
 }) {
-  // Which seat, if any, has its "link to person" control expanded to the
-  // "create new" inline form.
   const [creatingSeat, setCreatingSeat] = useState(null);
 
   const updateNotes = (value) => setHand((prev) => ({ ...prev, notes: value }));
 
-  // <input type="date"> works in yyyy-mm-dd; datePlayed is stored as an ISO
-  // string, so convert both directions.
   const dateValue = hand.datePlayed ? hand.datePlayed.slice(0, 10) : '';
   const updateDate = (value) => {
     if (!value) return;
@@ -1053,23 +916,18 @@ function ReviewStep({
     <div className="hc-card">
       <h1 className="hc-title">Review &amp; Finalize</h1>
 
-      {/* Inline status message */}
       {statusMessage && (
-        <div style={{
-          padding: '10px 14px',
-          borderRadius: '6px',
-          marginBottom: '12px',
-          fontSize: '14px',
-          fontWeight: 500,
-          background: statusMessage.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-          color: statusMessage.type === 'success' ? '#22c55e' : '#ef4444',
-          border: `1px solid ${statusMessage.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-        }}>
-          {statusMessage.type === 'success' ? '✓ ' : '✕ '}{statusMessage.text}
+        <div
+          className={`hc-status-message ${
+            statusMessage.type === 'success' ? 'hc-status-success' : 'hc-status-error'
+          }`}
+        >
+          {statusMessage.type === 'success' ? '✓ ' : '✕ '}
+          {statusMessage.text}
         </div>
       )}
 
-      <div className="hc-grid hc-grid-2">
+      <div className="hc-grid">
         <Field label="Date played">
           <input type="date" value={dateValue} onChange={(e) => updateDate(e.target.value)} />
         </Field>
@@ -1084,9 +942,7 @@ function ReviewStep({
         />
       </Field>
 
-      <div className="hc-field-label" style={{ margin: '16px 0 8px' }}>
-        Players
-      </div>
+      <div className="hc-field-label hc-section-label">Players</div>
 
       <div className="hc-review-players">
         {hand.players.map((player) => {
@@ -1096,20 +952,16 @@ function ReviewStep({
           const holeCardCount = HOLE_CARD_COUNTS[hand.gameType] || 2;
 
           return (
-            <div
-              className="hc-review-player-row"
-              key={player.seat}
-              style={{ padding: '8px 0', borderBottom: '1px solid #333' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                <div style={{ minWidth: 60, fontSize: 12, color: '#999', marginTop: 8 }}>
+            <div className="hc-review-player-row" key={player.seat}>
+              <div className="hc-review-player-main">
+                <span className="hc-review-seat-label">
                   Seat {player.seat} · {position}
-                </div>
+                </span>
 
                 <input
+                  className="hc-review-name-input"
                   value={player.name}
                   onChange={(e) => updatePlayerField(player.seat, 'name', e.target.value)}
-                  style={{ minWidth: 140 }}
                 />
 
                 {creatingSeat === player.seat ? (
@@ -1124,6 +976,7 @@ function ReviewStep({
                   />
                 ) : (
                   <select
+                    className="hc-review-link-select"
                     value={player.personId || ''}
                     onChange={(e) => handleLinkChange(player.seat, e.target.value)}
                     disabled={peopleLoading}
@@ -1138,15 +991,11 @@ function ReviewStep({
                   </select>
                 )}
 
-                {linkedPerson && (
-                  <span className="hc-review-linked-badge" style={{ fontSize: 12, color: '#4ade80', marginTop: 8 }}>
-                    ✓ linked
-                  </span>
-                )}
+                {linkedPerson && <span className="hc-review-linked-badge">✓ Linked</span>}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, marginLeft: 72 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#ccc' }}>
+              <div className="hc-review-reveal-row">
+                <label className="hc-checkbox-label">
                   <input
                     type="checkbox"
                     checked={revealed}
@@ -1156,7 +1005,7 @@ function ReviewStep({
                 </label>
 
                 {revealed && (
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div className="hc-review-cards">
                     {Array.from({ length: holeCardCount }).map((_, i) => (
                       <CardSlot
                         key={i}
@@ -1184,15 +1033,12 @@ function ReviewStep({
         })}
       </div>
 
-      <div className="hc-field-label" style={{ margin: '16px 0 8px' }}>
-        Winner(s) <span style={{ color: '#f87171' }}>*</span>
+      <div className="hc-field-label hc-section-label">
+        Winner(s) <span className="hc-required">*</span>
       </div>
-      <div className="hc-review-winners" style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+      <div className="hc-review-winners">
         {hand.players.map((player) => (
-          <label
-            key={player.seat}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}
-          >
+          <label className="hc-winner-chip" key={player.seat}>
             <input
               type="checkbox"
               checked={hand.winners.includes(player.name)}
@@ -1203,7 +1049,7 @@ function ReviewStep({
         ))}
       </div>
       {hand.winners.length === 0 && (
-        <div style={{ fontSize: 12, color: '#f87171', marginTop: 6 }}>
+        <div className="hc-warning-text">
           Select at least one winner (more than one for a split pot).
         </div>
       )}
@@ -1225,10 +1071,6 @@ function ReviewStep({
   );
 }
 
-// Inline "create a new Person" form, shown when the user picks "+ Add as a
-// new player…" from the link dropdown. Mirrors the new-person-form in
-// EditSessionLog.jsx: name + optional profile image, uploaded before the
-// Person is created.
 function InlineCreatePerson({ seat, defaultName, onCancel, onCreate }) {
   const [name, setName] = useState(defaultName || '');
   const [imagePreview, setImagePreview] = useState(null);
@@ -1262,7 +1104,7 @@ function InlineCreatePerson({ seat, defaultName, onCancel, onCreate }) {
   };
 
   return (
-    <div className="new-person-form" style={{ flex: 1 }}>
+    <div className="new-person-form">
       <label className="modal-label">Name:</label>
       <input
         type="text"
@@ -1320,10 +1162,6 @@ function InlineCreatePerson({ seat, defaultName, onCancel, onCreate }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Step 2: Hand Action
-// ---------------------------------------------------------------------------
 
 function HandActionStep({
   hand,
@@ -1409,15 +1247,7 @@ function HandActionStep({
           return (
             <div className="hc-action-row-wrapper" key={action.id}>
               <div className="hc-action-row">
-                <div
-                  className="hc-action-player"
-                  style={{
-                    minWidth: 120,
-                    padding: '6px 8px',
-                    fontSize: 13,
-                    color: '#ddd',
-                  }}
-                >
+                <div className="hc-action-player">
                   {positionLabel(seatPositions, hand.players.find((p) => p.name === action.player)?.seat)}
                   {' · '}
                   {action.player}
@@ -1463,14 +1293,7 @@ function HandActionStep({
               </div>
 
               {constraint && (
-                <div
-                  className="hc-action-hint"
-                  style={{
-                    fontSize: 11,
-                    color: warning ? '#f87171' : '#888',
-                    padding: '0 8px 8px',
-                  }}
-                >
+                <div className={`hc-action-hint ${warning ? 'hc-action-hint-warning' : ''}`}>
                   {warning || bettingHintText(action, constraint)}
                 </div>
               )}
@@ -1513,10 +1336,6 @@ function positionLabel(seatPositions, seat) {
   return seatPositions.find((s) => s.seat === seat)?.position || '';
 }
 
-// ---------------------------------------------------------------------------
-// Hero's hole cards — same empty "+" slot UI, always visible in step 2
-// ---------------------------------------------------------------------------
-
 function HeroCards({ hero, gameType, openCardSelector, onCardRemove }) {
   if (!hero) return null;
 
@@ -1551,10 +1370,6 @@ function HeroCards({ hero, gameType, openCardSelector, onCardRemove }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Board cards — flop/turn/river slots, revealed street by street
-// ---------------------------------------------------------------------------
 
 function BoardCards({ board, activeStreet, openCardSelector, onCardRemove }) {
   if (activeStreet === 'PREFLOP') return null;
@@ -1599,10 +1414,6 @@ function BoardCards({ board, activeStreet, openCardSelector, onCardRemove }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// A single empty ("+") or filled card slot
-// ---------------------------------------------------------------------------
 
 const slotBaseStyle = {
   width: 38,
@@ -1685,10 +1496,6 @@ function CardSlot({ card, onClick, onRemove }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Shared: oval table visualization
-// ---------------------------------------------------------------------------
 
 function PokerTable({
   numPlayers,
@@ -1802,10 +1609,6 @@ function PokerTable({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Small field wrapper
-// ---------------------------------------------------------------------------
 
 function Field({ label, required, children }) {
   return (
