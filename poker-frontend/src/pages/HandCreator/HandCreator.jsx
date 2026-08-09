@@ -24,9 +24,9 @@ const ACTION_TYPES = [
 
 // Action types the user can pick when adding/editing a hand action row.
 // POST_SB/POST_BB only ever happen automatically at the start of the hand
-// (seeded from the table setup), and raise/show hand/muck aren't offered
-// here — keep it to the actions that make sense mid-street.
-const SELECTABLE_ACTION_TYPES = ['FOLD', 'CHECK', 'CALL', 'BET'];
+// (seeded from the table setup), and show hand/muck aren't offered here —
+// keep it to the actions that make sense mid-street.
+const SELECTABLE_ACTION_TYPES = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
 
 // Actions that carry a chip amount worth entering
 const AMOUNT_ACTIONS = new Set(['POST_SB', 'POST_BB', 'BET', 'RAISE', 'CALL']);
@@ -146,6 +146,105 @@ function withPotSizes(actions, ante, numPlayers) {
     pot += Number(a.amount) || 0;
     return { ...a, potSizeAfter: pot };
   });
+}
+
+// Replays actions in order to work out, for each one, how much its player
+// needed to put in to call, the smallest legal bet/raise size, and how
+// many chips they had left in their stack right before that action.
+// Betting resets at the start of every street (currentBetToMatch and
+// lastRaiseSize both drop back to 0/bigBlind), but stacks carry over the
+// whole hand — this is what lets us flag "you can't put in more than you
+// have" and "the next player must call at least X or fold".
+//
+// Returns an array parallel to `actions`.
+function computeBettingState(actions, players, bigBlind) {
+  const remainingStack = {};
+  players.forEach((p) => {
+    remainingStack[p.name] = p.stack;
+  });
+
+  let currentStreet = null;
+  let currentBetToMatch = 0;
+  let lastRaiseSize = bigBlind || 0;
+  const streetCommitted = {};
+
+  return actions.map((a) => {
+    if (a.street !== currentStreet) {
+      currentStreet = a.street;
+      Object.keys(streetCommitted).forEach((k) => {
+        streetCommitted[k] = 0;
+      });
+      currentBetToMatch = 0;
+      lastRaiseSize = bigBlind || 0;
+    }
+
+    const alreadyCommitted = streetCommitted[a.player] || 0;
+    const stackBefore = remainingStack[a.player] ?? 0;
+    const callAmount = Math.min(Math.max(currentBetToMatch - alreadyCommitted, 0), stackBefore);
+    const minRaiseAmount = Math.min(callAmount + lastRaiseSize, stackBefore);
+
+    const meta = {
+      stackBefore,
+      callAmount,
+      minRaiseAmount,
+      isFacingBet: currentBetToMatch - alreadyCommitted > 0,
+    };
+
+    // Apply this action's effect so the next action in line sees the
+    // right state.
+    const amt = Math.max(Number(a.amount) || 0, 0);
+    remainingStack[a.player] = stackBefore - amt;
+    const newCommitted = alreadyCommitted + amt;
+    streetCommitted[a.player] = newCommitted;
+
+    if (a.actionType === 'BET' || a.actionType === 'RAISE' || a.actionType === 'POST_BB') {
+      if (newCommitted > currentBetToMatch) {
+        lastRaiseSize = newCommitted - currentBetToMatch;
+        currentBetToMatch = newCommitted;
+      }
+    } else if (a.actionType === 'CALL' || a.actionType === 'POST_SB') {
+      currentBetToMatch = Math.max(currentBetToMatch, newCommitted);
+    }
+
+    return meta;
+  });
+}
+
+// Short grey status line shown under each action row (stack left, and
+// whatever the player is facing).
+function bettingHintText(action, constraint) {
+  const parts = [`Stack: ${constraint.stackBefore}`];
+  if (action.actionType === 'BET' || action.actionType === 'RAISE') {
+    parts.push(`Min: ${constraint.minRaiseAmount}`);
+  } else if (constraint.callAmount > 0) {
+    parts.push(`To call: ${constraint.callAmount}`);
+  }
+  return parts.join(' · ');
+}
+
+// Returns a warning string if this action's amount/type doesn't line up
+// with what the previous action left them facing — null if it's fine.
+// This is informational, not a hard block, since edge cases (a short
+// stack going all-in for less than a "full" call or raise) are legal.
+function bettingWarning(action, constraint) {
+  const amount = Number(action.amount) || 0;
+
+  if (amount > constraint.stackBefore) {
+    return `Exceeds stack (${constraint.stackBefore} left)`;
+  }
+  if (action.actionType === 'CHECK' && constraint.isFacingBet) {
+    return `Can't check — facing a bet of ${constraint.callAmount}`;
+  }
+  if (action.actionType === 'CALL' && amount !== constraint.callAmount) {
+    return `Call should be ${constraint.callAmount} to match the previous bet`;
+  }
+  if (
+    (action.actionType === 'BET' || action.actionType === 'RAISE') &&
+    amount < constraint.minRaiseAmount
+  ) {
+    return `Minimum raise is ${constraint.minRaiseAmount}`;
+  }
+  return null;
 }
 
 // Sets a value at a given index in an array, padding with null as needed
@@ -379,6 +478,17 @@ export default function HandCreator({ onSubmit }) {
     }));
   };
 
+  // Toggles a player in/out of hand.winners (an array of player names —
+  // more than one supports split pots).
+  const toggleWinner = (playerName) => {
+    setHand((prev) => ({
+      ...prev,
+      winners: prev.winners.includes(playerName)
+        ? prev.winners.filter((n) => n !== playerName)
+        : [...prev.winners, playerName],
+    }));
+  };
+
   // -- Step 2 action list -------------------------------------------------
 
   const setActions = (updater) => {
@@ -408,14 +518,43 @@ export default function HandCreator({ onSubmit }) {
   };
 
   const updateAction = (id, field, value) => {
-    setActions((prev) =>
-      prev.map((a) => {
+    setActions((prev) => {
+      const index = prev.findIndex((a) => a.id === id);
+      if (index === -1) return prev;
+
+      // Apply the raw edit first — constraint math below depends on which
+      // player/street/type this action now has (e.g. reassigning the
+      // player changes whose stack and street-commitment we're checking).
+      const applied = prev.map((a) => (a.id === id ? { ...a, [field]: value } : a));
+      const meta = computeBettingState(applied, hand.players, bigBlind);
+      const constraint = meta[index];
+      if (!constraint) return applied;
+
+      return applied.map((a) => {
         if (a.id !== id) return a;
-        const next = { ...a, [field]: value };
-        if (field === 'actionType' && !AMOUNT_ACTIONS.has(value)) next.amount = 0;
+        const next = { ...a };
+
+        if (field === 'actionType') {
+          if (!AMOUNT_ACTIONS.has(value)) {
+            next.amount = 0;
+          } else if (value === 'CALL') {
+            // Pre-fill the exact amount needed to match the previous bet
+            // (capped at the player's stack — a short stack can only call
+            // for what they have left).
+            next.amount = constraint.callAmount;
+          } else if (value === 'BET' || value === 'RAISE') {
+            // Pre-fill the smallest legal bet/raise: matching whatever's
+            // already in plus at least the size of the last bet/raise.
+            next.amount = constraint.minRaiseAmount;
+          }
+        } else if (field === 'amount') {
+          // Can never put in more than what's left in the stack.
+          next.amount = Math.max(0, Math.min(Number(value) || 0, constraint.stackBefore));
+        }
+
         return next;
-      })
-    );
+      });
+    });
   };
 
   const removeAction = (id) => {
@@ -605,6 +744,11 @@ export default function HandCreator({ onSubmit }) {
   // Adjust FAVOURITES endpoint below if your server mounts handRoute.js
   // somewhere other than /api/favourites.
   const saveHand = async () => {
+    if (!hand.winners.length) {
+      showStatus('error', 'Select at least one winner before saving');
+      return;
+    }
+
     const finalPotSize = hand.actions.length
       ? hand.actions[hand.actions.length - 1].potSizeAfter
       : 0;
@@ -652,6 +796,16 @@ export default function HandCreator({ onSubmit }) {
   const actionsForStreet = hand.actions.filter((a) => a.street === activeStreet);
   const activeNextSeat = nextToActSeat(activeStreet);
 
+  // Lets the action rows show "to call: X" / "min raise: X" / "stack: X"
+  // hints, and flag anything that's out of line, without every row
+  // re-deriving the whole betting sequence itself.
+  const bettingMetaById = useMemo(() => {
+    const meta = computeBettingState(hand.actions, hand.players, bigBlind);
+    const map = new Map();
+    hand.actions.forEach((a, i) => map.set(a.id, meta[i]));
+    return map;
+  }, [hand.actions, hand.players, bigBlind]);
+
   // -- Render ---------------------------------------------------------------
 
   return (
@@ -675,6 +829,7 @@ export default function HandCreator({ onSubmit }) {
           activeStreet={activeStreet}
           setActiveStreet={setActiveStreet}
           actionsForStreet={actionsForStreet}
+          bettingMetaById={bettingMetaById}
           addAction={addAction}
           updateAction={updateAction}
           removeAction={removeAction}
@@ -696,6 +851,11 @@ export default function HandCreator({ onSubmit }) {
           setHand={setHand}
           seatPositions={seatPositions}
           updatePlayerField={updatePlayerField}
+          toggleWinner={toggleWinner}
+          hasRevealed={hasRevealed}
+          toggleRevealHand={toggleRevealHand}
+          openCardSelector={openCardSelector}
+          onCardRemove={handleCardRemove}
           people={people}
           peopleLoading={peopleLoading}
           statusMessage={statusMessage}
@@ -854,6 +1014,11 @@ function ReviewStep({
   setHand,
   seatPositions,
   updatePlayerField,
+  toggleWinner,
+  hasRevealed,
+  toggleRevealHand,
+  openCardSelector,
+  onCardRemove,
   people,
   peopleLoading,
   statusMessage,
@@ -927,70 +1092,132 @@ function ReviewStep({
         {hand.players.map((player) => {
           const position = seatPositions.find((s) => s.seat === player.seat)?.position;
           const linkedPerson = people.find((pn) => pn._id === player.personId);
+          const revealed = hasRevealed(player.name);
+          const holeCardCount = HOLE_CARD_COUNTS[hand.gameType] || 2;
 
           return (
             <div
               className="hc-review-player-row"
               key={player.seat}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 12,
-                padding: '8px 0',
-                borderBottom: '1px solid #333',
-              }}
+              style={{ padding: '8px 0', borderBottom: '1px solid #333' }}
             >
-              <div style={{ minWidth: 60, fontSize: 12, color: '#999', marginTop: 8 }}>
-                Seat {player.seat} · {position}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ minWidth: 60, fontSize: 12, color: '#999', marginTop: 8 }}>
+                  Seat {player.seat} · {position}
+                </div>
+
+                <input
+                  value={player.name}
+                  onChange={(e) => updatePlayerField(player.seat, 'name', e.target.value)}
+                  style={{ minWidth: 140 }}
+                />
+
+                {creatingSeat === player.seat ? (
+                  <InlineCreatePerson
+                    seat={player.seat}
+                    defaultName={player.name}
+                    onCancel={() => setCreatingSeat(null)}
+                    onCreate={async (name, imageFile) => {
+                      await onCreatePerson(player.seat, name, imageFile);
+                      setCreatingSeat(null);
+                    }}
+                  />
+                ) : (
+                  <select
+                    value={player.personId || ''}
+                    onChange={(e) => handleLinkChange(player.seat, e.target.value)}
+                    disabled={peopleLoading}
+                  >
+                    <option value="">— not linked —</option>
+                    {people.map((pn) => (
+                      <option key={pn._id} value={pn._id}>
+                        {pn.name}
+                      </option>
+                    ))}
+                    <option value="__create__">+ Add "{player.name}" as a new player…</option>
+                  </select>
+                )}
+
+                {linkedPerson && (
+                  <span className="hc-review-linked-badge" style={{ fontSize: 12, color: '#4ade80', marginTop: 8 }}>
+                    ✓ linked
+                  </span>
+                )}
               </div>
 
-              <input
-                value={player.name}
-                onChange={(e) => updatePlayerField(player.seat, 'name', e.target.value)}
-                style={{ minWidth: 140 }}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, marginLeft: 72 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#ccc' }}>
+                  <input
+                    type="checkbox"
+                    checked={revealed}
+                    onChange={() => toggleRevealHand(player.seat)}
+                  />
+                  Revealed hand at showdown
+                </label>
 
-              {creatingSeat === player.seat ? (
-                <InlineCreatePerson
-                  seat={player.seat}
-                  defaultName={player.name}
-                  onCancel={() => setCreatingSeat(null)}
-                  onCreate={async (name, imageFile) => {
-                    await onCreatePerson(player.seat, name, imageFile);
-                    setCreatingSeat(null);
-                  }}
-                />
-              ) : (
-                <select
-                  value={player.personId || ''}
-                  onChange={(e) => handleLinkChange(player.seat, e.target.value)}
-                  disabled={peopleLoading}
-                >
-                  <option value="">— not linked —</option>
-                  {people.map((pn) => (
-                    <option key={pn._id} value={pn._id}>
-                      {pn.name}
-                    </option>
-                  ))}
-                  <option value="__create__">+ Add "{player.name}" as a new player…</option>
-                </select>
-              )}
-
-              {linkedPerson && (
-                <span className="hc-review-linked-badge" style={{ fontSize: 12, color: '#4ade80', marginTop: 8 }}>
-                  ✓ linked
-                </span>
-              )}
+                {revealed && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {Array.from({ length: holeCardCount }).map((_, i) => (
+                      <CardSlot
+                        key={i}
+                        card={player.showedHand?.[i]}
+                        onClick={() =>
+                          openCardSelector({
+                            type: 'showedHand',
+                            seat: player.seat,
+                            index: i,
+                            current: player.showedHand?.[i],
+                          })
+                        }
+                        onRemove={
+                          player.showedHand?.[i]
+                            ? () => onCardRemove({ type: 'showedHand', seat: player.seat, index: i })
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
+      <div className="hc-field-label" style={{ margin: '16px 0 8px' }}>
+        Winner(s) <span style={{ color: '#f87171' }}>*</span>
+      </div>
+      <div className="hc-review-winners" style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        {hand.players.map((player) => (
+          <label
+            key={player.seat}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}
+          >
+            <input
+              type="checkbox"
+              checked={hand.winners.includes(player.name)}
+              onChange={() => toggleWinner(player.name)}
+            />
+            {player.name}
+          </label>
+        ))}
+      </div>
+      {hand.winners.length === 0 && (
+        <div style={{ fontSize: 12, color: '#f87171', marginTop: 6 }}>
+          Select at least one winner (more than one for a split pot).
+        </div>
+      )}
+
       <div className="hc-actions-row">
         <button className="hc-btn hc-btn-ghost" type="button" onClick={onBack} disabled={isSaving}>
           ‹ Back
         </button>
-        <button className="hc-btn hc-btn-primary" type="button" onClick={onSave} disabled={isSaving}>
+        <button
+          className="hc-btn hc-btn-primary"
+          type="button"
+          onClick={onSave}
+          disabled={isSaving || hand.winners.length === 0}
+        >
           {isSaving ? 'Saving…' : 'Create Hand'}
         </button>
       </div>
@@ -1105,6 +1332,7 @@ function HandActionStep({
   activeStreet,
   setActiveStreet,
   actionsForStreet,
+  bettingMetaById,
   addAction,
   updateAction,
   removeAction,
@@ -1174,60 +1402,81 @@ function HandActionStep({
       )}
 
       <div className="hc-actions-list">
-        {actionsForStreet.map((action) => (
-          <div className="hc-action-row" key={action.id}>
-            <div
-              className="hc-action-player"
-              style={{
-                minWidth: 120,
-                padding: '6px 8px',
-                fontSize: 13,
-                color: '#ddd',
-              }}
-            >
-              {positionLabel(seatPositions, hand.players.find((p) => p.name === action.player)?.seat)}
-              {' · '}
-              {action.player}
-              {foldedSeats.has(hand.players.find((p) => p.name === action.player)?.seat)
-                ? ' (folded)'
-                : ''}
+        {actionsForStreet.map((action) => {
+          const constraint = bettingMetaById.get(action.id);
+          const warning = constraint ? bettingWarning(action, constraint) : null;
+
+          return (
+            <div className="hc-action-row-wrapper" key={action.id}>
+              <div className="hc-action-row">
+                <div
+                  className="hc-action-player"
+                  style={{
+                    minWidth: 120,
+                    padding: '6px 8px',
+                    fontSize: 13,
+                    color: '#ddd',
+                  }}
+                >
+                  {positionLabel(seatPositions, hand.players.find((p) => p.name === action.player)?.seat)}
+                  {' · '}
+                  {action.player}
+                  {foldedSeats.has(hand.players.find((p) => p.name === action.player)?.seat)
+                    ? ' (folded)'
+                    : ''}
+                </div>
+
+                <select
+                  value={action.actionType}
+                  onChange={(e) => updateAction(action.id, 'actionType', e.target.value)}
+                >
+                  {(SELECTABLE_ACTION_TYPES.includes(action.actionType)
+                    ? SELECTABLE_ACTION_TYPES
+                    : [action.actionType, ...SELECTABLE_ACTION_TYPES]
+                  ).map((type) => (
+                    <option key={type} value={type}>
+                      {ACTION_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+
+                {AMOUNT_ACTIONS.has(action.actionType) ? (
+                  <input
+                    type="number"
+                    min="0"
+                    max={constraint ? constraint.stackBefore : undefined}
+                    value={action.amount}
+                    onChange={(e) => updateAction(action.id, 'amount', Number(e.target.value))}
+                  />
+                ) : (
+                  <div className="hc-amount-dash">—</div>
+                )}
+
+                <button
+                  type="button"
+                  className="hc-icon-btn hc-icon-btn-danger"
+                  onClick={() => removeAction(action.id)}
+                  aria-label="Delete action"
+                >
+                  🗑
+                </button>
+              </div>
+
+              {constraint && (
+                <div
+                  className="hc-action-hint"
+                  style={{
+                    fontSize: 11,
+                    color: warning ? '#f87171' : '#888',
+                    padding: '0 8px 8px',
+                  }}
+                >
+                  {warning || bettingHintText(action, constraint)}
+                </div>
+              )}
             </div>
-
-            <select
-              value={action.actionType}
-              onChange={(e) => updateAction(action.id, 'actionType', e.target.value)}
-            >
-              {(SELECTABLE_ACTION_TYPES.includes(action.actionType)
-                ? SELECTABLE_ACTION_TYPES
-                : [action.actionType, ...SELECTABLE_ACTION_TYPES]
-              ).map((type) => (
-                <option key={type} value={type}>
-                  {ACTION_LABELS[type]}
-                </option>
-              ))}
-            </select>
-
-            {AMOUNT_ACTIONS.has(action.actionType) ? (
-              <input
-                type="number"
-                min="0"
-                value={action.amount}
-                onChange={(e) => updateAction(action.id, 'amount', Number(e.target.value))}
-              />
-            ) : (
-              <div className="hc-amount-dash">—</div>
-            )}
-
-            <button
-              type="button"
-              className="hc-icon-btn hc-icon-btn-danger"
-              onClick={() => removeAction(action.id)}
-              aria-label="Delete action"
-            >
-              🗑
-            </button>
-          </div>
-        ))}
+          );
+        })}
 
         <button
           type="button"
