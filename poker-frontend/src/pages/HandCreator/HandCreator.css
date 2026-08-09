@@ -12,6 +12,8 @@
   --hc-gold-dim: rgba(227, 184, 84, 0.1);
   --hc-danger: #e0645f;
   --hc-danger-dim: rgba(224, 100, 95, 0.12);
+  --hc-success: #6fcf7a;
+  --hc-success-dim: rgba(111, 207, 122, 0.12);
 }
 
 .hc-page {
@@ -353,6 +355,348 @@
   color: var(--hc-text);
 }
 
+/* -- status message (Review & Finalize) ---------------------------------- */
+
+.hc-status-message {
+  padding: 11px 15px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.hc-status-success {
+  background: var(--hc-success-dim);
+  color: var(--hc-success);
+  border-color: rgba(111, 207, 122, 0.3);
+}
+
+.hc-status-error {
+  background: var(--hc-danger-dim);
+  color: var(--hc-danger);
+  border-color: rgba(224, 100, 95, 0.3);
+}
+
+/* -- section labels (Players / Winner(s), sit between grids) ------------ */
+
+.hc-section-label {
+  margin: 26px 0 12px;
+}
+
+.hc-section-label:first-of-type {
+  margin-top: 4px;
+}
+
+/* -- review: players list -------------------------------------------------- */
+
+.hc-review-players {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.hc-review-player-row {
+  background: var(--hc-input-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.15s ease;
+}
+
+.hc-review-player-row:hover {
+  border-color: rgba(227, 184, 84, 0.3);
+}
+
+.hc-review-player-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hc-review-seat-label {
+  min-width: 84px;
+  font-size: 12px;
+  color: var(--hc-text-muted);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.hc-review-player-main input,
+.hc-review-player-main select {
+  background: var(--hc-card-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 8px;
+  color: var(--hc-text);
+  padding: 9px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.hc-review-player-main input:focus,
+.hc-review-player-main select:focus {
+  border-color: var(--hc-gold);
+}
+
+.hc-review-name-input {
+  flex: 1 1 150px;
+  min-width: 130px;
+}
+
+.hc-review-link-select {
+  flex: 1.4 1 190px;
+  min-width: 170px;
+}
+
+.hc-review-linked-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--hc-success);
+  background: var(--hc-success-dim);
+  border: 1px solid rgba(111, 207, 122, 0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* -- review: revealed hand / showdown cards ------------------------------- */
+
+.hc-review-reveal-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hc-card-border);
+}
+
+.hc-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--hc-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.hc-checkbox-label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--hc-gold);
+  cursor: pointer;
+}
+
+.hc-review-cards {
+  display: flex;
+  gap: 6px;
+}
+
+/* -- review: winner selection (pill chips) -------------------------------- */
+
+.hc-review-winners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.hc-winner-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--hc-card-border);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hc-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.hc-winner-chip:hover {
+  color: var(--hc-text);
+  border-color: rgba(227, 184, 84, 0.4);
+}
+
+.hc-winner-chip input[type='checkbox'] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.hc-winner-chip:has(input:checked) {
+  background: var(--hc-gold-dim);
+  border-color: var(--hc-gold);
+  color: var(--hc-gold);
+}
+
+.hc-warning-text {
+  font-size: 12px;
+  color: var(--hc-danger);
+  margin-top: 8px;
+}
+
+/* -- action rows: per-action hint + player label -------------------------- */
+
+.hc-action-row-wrapper {
+  background: var(--hc-input-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.hc-action-row-wrapper .hc-action-row {
+  padding: 8px 10px;
+  margin-bottom: 0;
+}
+
+.hc-action-player {
+  min-width: 120px;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--hc-text-muted);
+}
+
+.hc-action-hint {
+  font-size: 11px;
+  color: var(--hc-text-muted);
+  padding: 0 12px 10px;
+}
+
+.hc-action-hint-warning {
+  color: var(--hc-danger);
+}
+
+/* -- inline "create new person" form -------------------------------------- */
+
+.new-person-form {
+  background: var(--hc-card-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.modal-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hc-text-muted);
+}
+
+.modal-input {
+  width: 100%;
+  background: var(--hc-input-bg);
+  border: 1px solid var(--hc-card-border);
+  border-radius: 8px;
+  color: var(--hc-text);
+  padding: 9px 12px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.modal-input:focus {
+  border-color: var(--hc-gold);
+}
+
+.image-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upload-image-btn {
+  align-self: flex-start;
+  background: var(--hc-gold-dim);
+  color: var(--hc-gold);
+  border: 1px solid rgba(227, 184, 84, 0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.upload-image-btn:hover:not(:disabled) {
+  background: rgba(227, 184, 84, 0.2);
+}
+
+.image-preview {
+  display: flex;
+  align-items: center;
+}
+
+.remove-image-btn {
+  background: var(--hc-danger-dim);
+  color: var(--hc-danger);
+  border: 1px solid rgba(224, 100, 95, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.remove-image-btn:hover:not(:disabled) {
+  background: rgba(224, 100, 95, 0.22);
+}
+
+.new-person-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.new-person-actions button {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--hc-card-border);
+  background: transparent;
+  color: var(--hc-text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.new-person-actions button:hover:not(:disabled) {
+  color: var(--hc-text);
+}
+
+.new-person-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.new-person-actions .save-btn {
+  background: var(--hc-gold);
+  color: #14161c;
+  border-color: transparent;
+}
+
+.new-person-actions .save-btn:hover:not(:disabled) {
+  background: var(--hc-gold-hover);
+}
+
 @media (max-width: 640px) {
   .hc-grid-2,
   .hc-grid-3 {
@@ -366,5 +710,12 @@
     grid-template-areas:
       'player type'
       'amount delete';
+  }
+  .hc-review-player-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hc-review-seat-label {
+    min-width: 0;
   }
 }
