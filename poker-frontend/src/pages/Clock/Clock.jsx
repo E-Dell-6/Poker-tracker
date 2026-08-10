@@ -18,8 +18,10 @@ export function Clock() {
   const [showClockOutForm, setShowClockOutForm] = useState(false);
   const [completedSessions, setCompletedSessions] = useState([]);
   const [clockInTime, setClockInTime] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [isRestoring, setIsRestoring] = useState(true);
 
   useEffect(() => {
     const loadSessions = async () => {
@@ -32,7 +34,31 @@ export function Clock() {
         console.error(err);
       }
     };
+
+    const restoreActiveSession = async () => {
+      try {
+        const res = await fetch("/api/live-sessions/active", { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to check active session");
+        const active = await res.json();
+        if (active) {
+          setSessionId(active._id ?? active.id);
+          setIsClocked(true);
+          setClockInTime(new Date(active.clockInTime));
+          setSessionBlinds({
+            bigBlind: String(active.bigBlind),
+            smallBlind: String(active.smallBlind)
+          });
+          setActiveBuyIns(active.buyIns ?? []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+
     loadSessions();
+    restoreActiveSession();
   }, []);
 
   const [sessionBlinds, setSessionBlinds] = useState({ bigBlind: "", smallBlind: "" });
@@ -48,7 +74,6 @@ export function Clock() {
   const totalActiveBuyIn = activeBuyIns.reduce((sum, b) => sum + b, 0);
 
   const handleClockIn = () => {
-    setIsClocked(true);
     setClockInTime(new Date());
     setShowSessionForm(true);
   };
@@ -59,32 +84,17 @@ export function Clock() {
 
   const handleConfirmClockOut = async () => {
     const cashOut = parseFloat(formData.cashOut);
-    if (isNaN(cashOut)) return;
-
-    const profit = cashOut - totalActiveBuyIn;
-    const clockOutTime = new Date();
-
-    const payload = {
-      clockInTime,
-      clockOutTime,
-      bigBlind: parseFloat(sessionBlinds.bigBlind),
-      smallBlind: parseFloat(sessionBlinds.smallBlind),
-      buyIns: [...activeBuyIns],
-      totalBuyIn: totalActiveBuyIn,
-      cashOut,
-      totalProfit: profit,
-      gameType: "Cash Game"
-    };
+    if (isNaN(cashOut) || !sessionId) return;
 
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      const res = await fetch("/api/live-sessions", {
+      const res = await fetch(`/api/live-sessions/${sessionId}/clock-out`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ cashOut })
       });
 
       if (!res.ok) throw new Error("Failed to save session");
@@ -94,6 +104,7 @@ export function Clock() {
 
       setIsClocked(false);
       setClockInTime(null);
+      setSessionId(null);
       setSessionBlinds({ bigBlind: "", smallBlind: "" });
       setActiveBuyIns([]);
       setShowClockOutForm(false);
@@ -108,24 +119,72 @@ export function Clock() {
     }
   };
 
-  const handleSaveSession = () => {
-    if (formData.bigBlind && formData.smallBlind && formData.buyIn) {
+  const handleSaveSession = async () => {
+    if (!(formData.bigBlind && formData.smallBlind && formData.buyIn)) return;
+
+    const buyIn = parseFloat(formData.buyIn);
+    if (isNaN(buyIn)) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const res = await fetch("/api/live-sessions/clock-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          clockInTime: clockInTime ?? new Date(),
+          bigBlind: parseFloat(formData.bigBlind),
+          smallBlind: parseFloat(formData.smallBlind),
+          buyIns: [buyIn],
+          totalBuyIn: buyIn
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to start session");
+
+      const session = await res.json();
+      setSessionId(session._id ?? session.id);
+      setIsClocked(true);
+      setClockInTime(new Date(session.clockInTime));
       setSessionBlinds({
         bigBlind: formData.bigBlind,
         smallBlind: formData.smallBlind
       });
-      setActiveBuyIns([parseFloat(formData.buyIn)]);
+      setActiveBuyIns([buyIn]);
       setShowSessionForm(false);
       setFormData({ bigBlind: "", smallBlind: "", buyIn: "", cashOut: "" });
+    } catch (err) {
+      console.error(err);
+      setSaveError("Couldn't start the session. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleAddBuyIn = () => {
+  const handleAddBuyIn = async () => {
     const amount = parseFloat(formData.buyIn);
-    if (!isNaN(amount) && amount > 0) {
+    if (isNaN(amount) || amount <= 0 || !sessionId) return;
+
+    setSaveError(null);
+
+    try {
+      const res = await fetch(`/api/live-sessions/${sessionId}/buy-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ amount })
+      });
+
+      if (!res.ok) throw new Error("Failed to add buy-in");
+
       setActiveBuyIns([...activeBuyIns, amount]);
       setShowBuyInForm(false);
       setFormData({ ...formData, buyIn: "" });
+    } catch (err) {
+      console.error(err);
+      setSaveError("Couldn't add that buy-in. Please try again.");
     }
   };
 
@@ -177,7 +236,7 @@ export function Clock() {
             <div className="status-indicator">
               <div className={`status-dot ${isClocked ? "active" : ""}`}></div>
               <span className="status-text">
-                {isClocked ? "Session Active" : "Not Clocked In"}
+                {isRestoring ? "Checking for active session..." : isClocked ? "Session Active" : "Not Clocked In"}
               </span>
             </div>
 
@@ -201,7 +260,7 @@ export function Clock() {
 
             <div className="clock-actions">
               {!isClocked ? (
-                <button className="btn btn-primary" onClick={handleClockIn}>
+                <button className="btn btn-primary" onClick={handleClockIn} disabled={isRestoring}>
                   <span className="btn-icon">▶</span>
                   Clock In
                 </button>
@@ -218,6 +277,9 @@ export function Clock() {
                 </>
               )}
             </div>
+            {saveError && !showSessionForm && !showBuyInForm && !showClockOutForm && (
+              <p className="modal-info">{saveError}</p>
+            )}
           </div>
 
           {/* Session Form Modal (clock-in) */}
@@ -256,10 +318,13 @@ export function Clock() {
                       onChange={(e) => setFormData({ ...formData, buyIn: e.target.value })}
                     />
                   </div>
+                  {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
                   <button className="btn btn-ghost" onClick={() => setShowSessionForm(false)}>Cancel</button>
-                  <button className="btn btn-primary" onClick={handleSaveSession}>Start Session</button>
+                  <button className="btn btn-primary" onClick={handleSaveSession} disabled={isSaving}>
+                    {isSaving ? "Starting..." : "Start Session"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -286,6 +351,7 @@ export function Clock() {
                       onChange={(e) => setFormData({ ...formData, buyIn: e.target.value })}
                     />
                   </div>
+                  {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
                   <button className="btn btn-ghost" onClick={() => setShowBuyInForm(false)}>Cancel</button>
@@ -390,4 +456,4 @@ export function Clock() {
       </div>
     </Layout>
   );
-} 
+}
