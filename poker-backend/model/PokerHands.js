@@ -18,8 +18,7 @@ const ActionSchema = new mongoose.Schema({
 
 const PlayerSetupSchema = new mongoose.Schema({
   seat: { 
-    type: Number, 
-    required: true 
+    type: Number
   },  
   name: { 
     type: String, 
@@ -33,9 +32,17 @@ const PlayerSetupSchema = new mongoose.Schema({
     ref: 'Person',
     default: null
   },
-  stack: { type: Number, required: true },
+  // Not required: a player who sat out this hand has no stack figure to
+  // record (both parsers store `null` for them), so this must be able to
+  // stay empty rather than fail validation.
+  stack: { type: Number, default: null },
   isDealer: { type: Boolean, default: false },
   isHero: { type: Boolean, default: false},
+  // True when this player was seated at the table but not dealt into this
+  // particular hand. Distinguishes "sitting out this hand" from "not part
+  // of the session at all" — previously both cases just meant the player
+  // was absent from `players`, with no way to tell them apart.
+  isSittingOut: { type: Boolean, default: false },
   
   holeCards: {
     type: [String], 

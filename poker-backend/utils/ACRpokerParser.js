@@ -82,26 +82,43 @@ export function parseACRLog(fileContent) {
                     p.seat = parseInt(seatMatch[1], 10);
                     p.name = seatMatch[2];
                     p.stack = parseMoney(seatMatch[3]);
+                    p.isSittingOut = false;
                     if (buttonSeat === p.seat) p.isDealer = true;
                     if (globalHeroName && p.name === globalHeroName) p.isHero = true;
                     currentHand.players.push(p);
                     continue;
                 }
-                // Seat announced but not actually dealt in (no stack shown yet)
-                if (/^Seat \d+:/.test(line)) continue;
+                // Seat announced but with no ($X.XX) stack — this player is
+                // sitting out this hand. Record them (stack: null,
+                // isSittingOut: true) instead of silently dropping them, so
+                // "sitting out this hand" is distinguishable from "not part
+                // of this session at all" further down the pipeline.
+                const sittingOutMatch = line.match(/^Seat (\d+): (\S+)/);
+                if (sittingOutMatch) {
+                    const p = createEmptyPlayer();
+                    p.seat = parseInt(sittingOutMatch[1], 10);
+                    p.name = sittingOutMatch[2];
+                    p.stack = null;
+                    p.isSittingOut = true;
+                    if (buttonSeat === p.seat) p.isDealer = true;
+                    if (globalHeroName && p.name === globalHeroName) p.isHero = true;
+                    currentHand.players.push(p);
+                    continue;
+                }
+                if (/^Seat \d+:/.test(line)) continue; // fallback: any other unmatched seat-line format
 
                 if (line.startsWith('*** FLOP ***')) {
-                    currentHand.board.flop = extractACRBoardCards(line, false);
+                    currentHand.board.flop = extractACRBoardCards(line);
                     currentStreet = 'FLOP';
                     continue;
                 }
                 if (line.startsWith('*** TURN ***')) {
-                    currentHand.board.turn = extractACRBoardCards(line, true);
+                    currentHand.board.turn = extractACRBoardCards(line);
                     currentStreet = 'TURN';
                     continue;
                 }
                 if (line.startsWith('*** RIVER ***')) {
-                    currentHand.board.river = extractACRBoardCards(line, true);
+                    currentHand.board.river = extractACRBoardCards(line);
                     currentStreet = 'RIVER';
                     continue;
                 }
@@ -261,11 +278,18 @@ function parseMoney(str) {
 //   *** FLOP *** [6s Kd Kh]
 //   *** TURN *** [6s Kd Kh] [Ad]
 //   *** RIVER *** [6s Kd Kh Ad] [8s]
-// Flop has one bracket group (all 3 cards). Turn/River have two groups
-// (the running board, then the single new card) — we only want the new card.
-function extractACRBoardCards(line, newCardOnly) {
+// Flop has one bracket group (all 3 cards). Turn/River have two groups: the
+// running board so far, then the single new card. HandReplayer's derivedState
+// treats hand.board.turn / hand.board.river as the CUMULATIVE board for that
+// street (it replaces currentBoard wholesale, it doesn't append to the flop),
+// so we concatenate every bracket group here rather than picking just one —
+// otherwise turn/river only ever show a single new card instead of 4/5 total.
+function extractACRBoardCards(line) {
     const groups = line.match(/\[([^\]]*)\]/g) || [];
     if (groups.length === 0) return [];
-    const target = newCardOnly ? groups[groups.length - 1] : groups[0];
-    return target.replace('[', '').replace(']', '').trim().split(/\s+/).filter(Boolean);
+    return groups
+        .map(g => g.slice(1, -1).trim())
+        .join(' ')
+        .split(/\s+/)
+        .filter(Boolean);
 }

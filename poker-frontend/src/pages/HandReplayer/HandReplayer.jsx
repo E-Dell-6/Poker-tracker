@@ -7,7 +7,7 @@ import PlayerSeat from "./PlayerSeat";
 import Controller from "../../components/controller";
 
 import { API_URL } from "../../config";
-import { getSeatStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
+import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 import { formatAmount } from "../../utils/formatMoney";
 
 const HAND_FILTERS = [
@@ -389,6 +389,17 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     />
   ));
 
+  const dealerIndex = displayedPlayers.findIndex((p) => p.isDealer);
+  const dealerButtonNode = dealerIndex !== -1 ? (
+    <div
+      key="dealer-button"
+      className="dealer-button"
+      style={getDealerButtonStyle(dealerIndex, displayedPlayers.length)}
+    >
+      D
+    </div>
+  ) : null;
+
   return (
     <div className="hand-replayer">
       <div className="controller-wrapper">
@@ -546,7 +557,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
           currency={currency}
           winners={actionIndex === actionsWithReveals.length ? hand?.winners : null}
           secondBoard={derivedState.showSecondBoard ? derivedState.currentSecondBoard : null}
-          seats={seatNodes}
+          seats={dealerButtonNode ? [...seatNodes, dealerButtonNode] : seatNodes}
         />
       </div>
     </div>

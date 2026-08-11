@@ -33,6 +33,21 @@ export function parsePokerNowLog(csvContent) {
         if (line.toLowerCase().startsWith("-- ending hand")) tempHeroCards = null;
     }
 
+    // PokerNow never logs a "sitting out" marker the way ACR does — a
+    // player who sits out a hand is just absent from that hand's "Player
+    // stacks:" line entirely. Detecting them requires knowing who's part
+    // of the session at all, so pre-scan every "Player stacks:" line up
+    // front (same two-pass approach as the hero detection above) and keep
+    // each name's most recently seen seat number.
+    const sessionPlayerSeats = new Map();
+    for (const record of sortedRecords) {
+        const line = String(record.entry || "");
+        if (!line.startsWith("Player stacks:")) continue;
+        for (const p of parsePlayerStacks(line.substring(15))) {
+            if (p.name) sessionPlayerSeats.set(p.name, p.seat);
+        }
+    }
+
     const hands = [];
     let currentHand = null;
     let handNumber = 1;
@@ -84,6 +99,22 @@ export function parsePokerNowLog(csvContent) {
                 const dp = currentHand.players.find(p => p.name === currentHand.dealerName);
                 if (dp) dp.isDealer = true;
             }
+
+            // Anyone known to be part of this session (seen in at least one
+            // "Player stacks:" line anywhere in the log) but missing from
+            // THIS hand's list was sitting out this hand. Record them
+            // explicitly instead of letting them silently vanish, so
+            // "sitting out" is distinguishable from "never at this table".
+            for (const [name, seat] of sessionPlayerSeats.entries()) {
+                if (currentHand.players.some(p => p.name === name)) continue;
+                const sittingOutPlayer = createEmptyPlayer();
+                sittingOutPlayer.name = name;
+                sittingOutPlayer.seat = seat ?? null;
+                sittingOutPlayer.stack = null;
+                sittingOutPlayer.isSittingOut = true;
+                currentHand.players.push(sittingOutPlayer);
+            }
+
             continue;
         }
 
@@ -256,6 +287,7 @@ function parsePlayerStacks(playerString) {
         if (seatMatch) p.seat = parseInt(seatMatch[1]);
         if (nameMatch) p.name = nameMatch[1].split(' @ ')[0].trim();
         if (stackMatch) p.stack = parseInt(stackMatch[1].replace(',', ''));
+        p.isSittingOut = false;
         return p;
     });
 }

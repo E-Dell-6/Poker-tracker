@@ -124,13 +124,12 @@ export default function PlayerSeat({
   return (
     <>
       <div
-        className={`player-seat ${player.isHero ? "hero" : ""} ${isFolded ? "folded" : ""}`}
+        className={`player-seat ${player.isHero ? "hero" : ""} ${isFolded ? "folded" : ""} ${player.isSittingOut ? "sitting-out" : ""}`}
         style={style}
       >
-        <div className={player.isDealer ? "Dealer" : "nothing"}>Dealer</div>
         <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{formatAmount(betAmount, currency)}</div>
         <div className={isChecked && !handIsOver ? "check" : "nothing"}>Check</div>
-        <div className={player.stack === 0 && !isFolded ? "all-in" : "nothing"}>All-In</div>
+        <div className={player.stack === 0 && !isFolded && !player.isSittingOut ? "all-in" : "nothing"}>All-In</div>
         {isWinner && <div className="winner">{formatAmount(player.winnings || 0, currency)}</div>}
 
         <div className="player-name">{player.name}</div>
@@ -150,10 +149,14 @@ export default function PlayerSeat({
           ) : null}
         </div>
 
-        <div className="player-stack">Stack: {formatAmount(player.stack, currency)}</div>
+        {player.isSittingOut ? (
+          <div className="player-stack player-stack--sitting-out">Sitting Out</div>
+        ) : (
+          <div className="player-stack">Stack: {formatAmount(player.stack, currency)}</div>
+        )}
 
         <div className="hole-cards">
-          {player.isHero && player.holeCards?.length > 0 ? (
+          {player.isSittingOut ? null : player.isHero && player.holeCards?.length > 0 ? (
             player.holeCards.map((card, index) => (
               <img key={index} src={`/images/cards/${card}.png`} alt={card} className="card-image" />
             ))

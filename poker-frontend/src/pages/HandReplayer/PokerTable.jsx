@@ -1,6 +1,7 @@
 import "./PokerTable.css";
+import { formatAmount } from "../../utils/formatMoney";
 
-export default function PokerTable({ board, secondBoard, pot, bigBlind, winners, seats }) {
+export default function PokerTable({ board, secondBoard, pot, bigBlind, winners, seats, currency = "CHIPS" }) {
   const isWinner = (winners === null);
   const doesPotExist = (pot > 0);
   
