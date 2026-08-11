@@ -14,6 +14,7 @@ const userAuth = async (req, res, next) => {
 
         req.body = req.body || {};
         req.body.userId = tokenDecode.id;
+        req.userId = tokenDecode.id; // survives multer overwriting req.body on multipart routes
 
         next();
     } catch (error) {

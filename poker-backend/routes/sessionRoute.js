@@ -64,9 +64,13 @@ router.post('/sessions', userAuth, async (req, res) => {
     }
 });
 
-router.post('/upload', userAuth, upload.single('csvFile'), async (req, res) => { // auth before multer now
+// auth before multer now. NOTE: multer replaces req.body entirely once it parses
+// the multipart form, so we can't rely on req.body.userId (set by userAuth) surviving
+// past the upload.single() middleware. userAuth also stashes the id on req.userId,
+// which multer never touches, so we read from there instead.
+router.post('/upload', userAuth, upload.single('csvFile'), async (req, res) => {
     try {
-        const userId = req.body.userId;
+        const userId = req.userId;
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
         const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');

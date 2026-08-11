@@ -278,12 +278,6 @@ function parseMoney(str) {
 //   *** FLOP *** [6s Kd Kh]
 //   *** TURN *** [6s Kd Kh] [Ad]
 //   *** RIVER *** [6s Kd Kh Ad] [8s]
-// Flop has one bracket group (all 3 cards). Turn/River have two groups: the
-// running board so far, then the single new card. HandReplayer's derivedState
-// treats hand.board.turn / hand.board.river as the CUMULATIVE board for that
-// street (it replaces currentBoard wholesale, it doesn't append to the flop),
-// so we concatenate every bracket group here rather than picking just one —
-// otherwise turn/river only ever show a single new card instead of 4/5 total.
 function extractACRBoardCards(line) {
     const groups = line.match(/\[([^\]]*)\]/g) || [];
     if (groups.length === 0) return [];
