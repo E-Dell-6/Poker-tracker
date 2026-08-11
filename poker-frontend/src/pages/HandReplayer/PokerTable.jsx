@@ -51,7 +51,7 @@ export default function PokerTable({ board, secondBoard, pot, bigBlind, winners,
             className={`pot-image ${potImage}`}
           />
         )}
-        <span className="pot-text">Pot: {pot || 0}</span>
+        <span className="pot-text">Pot: {formatAmount(pot || 0, currency)}</span>
       </div>
 
       {/* ── Board: own anchor, centered ── */}
