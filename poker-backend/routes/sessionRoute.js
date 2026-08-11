@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import crypto from 'crypto';
-import { parsePokerNowLog } from '../utils/pokerNowParser.js';
+import { parsePokerLog } from '../utils/parsePokerLog.js';
 import Session from '../model/Session.js';
 import LiveSession from '../model/LiveSession.js';
 import mongoose from 'mongoose';
@@ -9,6 +9,14 @@ import userAuth from '../middleware/userAuth.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Which currency each parser's `format` produces. Add a new site here
+// (and to the Session schema's enums) rather than growing a ternary.
+const FORMAT_CURRENCY = {
+    ACR: 'USD',
+    GGPOKER: 'CAD',
+    POKERNOW: 'CHIPS',
+};
 
 router.get('/sessions', userAuth, async (req, res) => {
     try {
@@ -64,14 +72,23 @@ router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
             return res.status(409).json({ duplicate: true, error: "This log file has already been uploaded." });
         }
 
-        const csvContent = req.file.buffer.toString('utf8');
-        const parsedHands = parsePokerNowLog(csvContent);
+        const fileContent = req.file.buffer.toString('utf8');
+
+        let format, parsedHands;
+        try {
+            ({ format, hands: parsedHands } = parsePokerLog(fileContent));
+        } catch (parseError) {
+            return res.status(400).json({ error: parseError.message });
+        }
+
         if (parsedHands.length === 0) return res.status(400).json({ error: "No hands found in the uploaded file" });
         parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
         const session = new Session({
             userId,
             fileHash,
             sessionType: 'upload',
+            source: format,
+            currency: FORMAT_CURRENCY[format] ?? 'CHIPS',
             date: parsedHands[0].datePlayed,
             gameType: parsedHands[0].gameType,
             totalHands: parsedHands.length,
@@ -79,7 +96,7 @@ router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
             hands: parsedHands
         });
         await session.save();
-        res.status(200).json({ message: "Success", sessionId: session._id, totalHands: parsedHands.length });
+        res.status(200).json({ message: "Success", sessionId: session._id, totalHands: parsedHands.length, source: format });
     } catch (error) {
         res.status(500).json({ error: "Failed to process upload", details: error.message });
     }

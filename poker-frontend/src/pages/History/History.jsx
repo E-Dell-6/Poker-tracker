@@ -312,7 +312,7 @@ export function History() {
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
-              accept=".csv"
+              accept=".csv,.txt"
               style={{ display: "none" }}
             />
             <div className="upload-info-wrap">
@@ -320,7 +320,8 @@ export function History() {
               <div className="upload-info-tooltip">
                 <div>Supported Logs:</div>
                 <ul>
-                  <li>PokerNow.com</li>
+                  <li>PokerNow.com (.csv)</li>
+                  <li>ACR (.txt)</li>
                   <li>No-Limit Hold'em (NLH)</li>
                 </ul>
               </div>

@@ -8,6 +8,7 @@ import Controller from "../../components/controller";
 
 import { API_URL } from "../../config";
 import { getSeatStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
+import { formatAmount } from "../../utils/formatMoney";
 
 const HAND_FILTERS = [
   { key: "flop",  label: "Saw Flop" },
@@ -332,9 +333,12 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
       }
       if (action.actionType === "CHECK") { checked.push(action.player); return; }
       if (action.actionType === "CALL") {
-        const add = amount - previousBet;
-        bets[action.player] = amount; maxBet = Math.max(maxBet, amount);
-        player.stack -= add; currentStreetBets += add;
+        // action.amount for a CALL is the increment the player adds this
+        // action (e.g. "calls $0.16"), not a running total like BET/RAISE.
+        // Their new street total is what they already had in plus this call.
+        const newTotal = previousBet + amount;
+        bets[action.player] = newTotal; maxBet = Math.max(maxBet, newTotal);
+        player.stack -= amount; currentStreetBets += amount;
         const ci = checked.indexOf(action.player); if (ci > -1) checked.splice(ci, 1); return;
       }
       if (action.actionType === "FOLD") { folded[action.player] = true; return; }
@@ -366,6 +370,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
   const bigBlind = Math.max(...allBlinds, 0);
 
   const displayedPlayers = reorderPlayersForDisplay(derivedState.players);
+  const currency = session?.currency || "CHIPS"; // 'USD' (ACR, cents) or 'CHIPS' (PokerNow, raw)
 
   const seatNodes = displayedPlayers.map((player, index) => (
     <PlayerSeat
@@ -373,6 +378,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
       player={player}
       style={getSeatStyle(index, displayedPlayers.length)}
       betAmount={derivedState.currentBetAmount[player.name] || 0}
+      currency={currency}
       isFolded={derivedState.folded[player.name] === true}
       winners={actionIndex === actionsWithReveals.length ? hand?.winners : null}
       isChecked={derivedState.checked.includes(player.name)}
@@ -517,7 +523,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
                           </div>
                           <div className="hand-item-pot">
                             <span className="pot-label">Pot</span>
-                            <span className="pot-value">{h.finalPotSize}</span>
+                            <span className="pot-value">{formatAmount(h.finalPotSize, currency)}</span>
                           </div>
                         </div>
                       </li>
@@ -537,6 +543,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
           board={derivedState.currentBoard}
           pot={derivedState.pot}
           bigBlind={bigBlind}
+          currency={currency}
           winners={actionIndex === actionsWithReveals.length ? hand?.winners : null}
           secondBoard={derivedState.showSecondBoard ? derivedState.currentSecondBoard : null}
           seats={seatNodes}

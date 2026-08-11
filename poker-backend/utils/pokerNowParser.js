@@ -36,6 +36,13 @@ export function parsePokerNowLog(csvContent) {
     let currentHand = null;
     let handNumber = 1;
     let currentStreet = 'PREFLOP';
+    // Tracks each player's total committed amount on the CURRENT street.
+    // PokerNow logs "calls X" as the player's new TOTAL for the street
+    // (same convention as "raises to X"), not the chips added by this
+    // action. HandReplayer expects action.amount for a CALL to be the
+    // increment (matching ACR's log format), so we normalize it here at
+    // parse time using this tracker.
+    let streetBets = {};
 
     for (const record of sortedRecords) {
         const line = String(record.entry || "");
@@ -50,6 +57,7 @@ export function parsePokerNowLog(csvContent) {
             const gameTypeStr = getGameType(line);
             currentHand.gameType = gameTypeStr === "No Limit Texas Hold'em" ? 'NLH' : 'PLO';
             currentStreet = 'PREFLOP';
+            streetBets = {};
 
             const dealerName = getDealerName(line);
             if (dealerName) currentHand.dealerName = dealerName;
@@ -90,16 +98,19 @@ export function parsePokerNowLog(csvContent) {
         if (line.startsWith("Flop:")) {
             currentHand.board.flop = extractBoardCards(line);
             currentStreet = "FLOP";
+            streetBets = {};
             continue;
         }
         if (line.startsWith("Turn:")) {
             currentHand.board.turn = extractBoardCards(line);
             currentStreet = "TURN";
+            streetBets = {};
             continue;
         }
         if (line.startsWith("River:")) {
             currentHand.board.river = extractBoardCards(line);
             currentStreet = "RIVER";
+            streetBets = {};
             continue;
         }
 
@@ -145,7 +156,7 @@ export function parsePokerNowLog(csvContent) {
 
       
         if (/calls|raises|posts|bets|checks|folds/.test(line)) {
-            getAction(line, currentHand.actions, currentStreet);
+            getAction(line, currentHand.actions, currentStreet, streetBets);
             continue;
         }
 
@@ -211,7 +222,8 @@ function getPlayerName(entry) {
 }
 
 function getHoleCards(entry) {
-    return entry.substring(13).trim().split(', ').map(convertToStandardNotation);
+    return entry.substring(13).trim().replace(/\.$/, '').split(', ').map(convertToStandardNotation);
+
 }
 
 const suitMap = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };
@@ -241,7 +253,7 @@ function parsePlayerStacks(playerString) {
     });
 }
 
-function getAction(entry, actionArr, street) {
+function getAction(entry, actionArr, street, streetBets = {}) {
     const action = createEmptyAction();
     action.street = street;
     action.player = getPlayerName(entry);
@@ -260,11 +272,30 @@ function getAction(entry, actionArr, street) {
     const betMatch    = entry.match(/bets (\d[\d,]*)/);
     const blindMatch  = entry.match(/blind of (\d[\d,]*)/);
 
-    if (action.actionType === "CALL" && callMatch)              amount = parseInt(callMatch[1].replace(/,/g, ''), 10);
-    else if (action.actionType === "RAISE" && raiseMatch)       amount = parseInt(raiseMatch[1].replace(/,/g, ''), 10);
-    else if (action.actionType === "BET" && betMatch)           amount = parseInt(betMatch[1].replace(/,/g, ''), 10);
-    else if ((action.actionType === "POST_SB" || action.actionType === "POST_BB") && blindMatch)
-                                                                amount = parseInt(blindMatch[1].replace(/,/g, ''), 10);
+    if (action.actionType === "CALL" && callMatch) {
+        // PokerNow reports "calls X" as the player's new TOTAL for this
+        // street (same convention as "raises to X"), not the chips added
+        // by this action. Normalize to an increment here so it matches
+        // what HandReplayer expects (and what the ACR parser produces),
+        // regardless of how many chips this player already had in front
+        // of them on this street (e.g. a 3-bet pot: raise, re-raise, call).
+        const totalThisStreet = parseInt(callMatch[1].replace(/,/g, ''), 10);
+        const alreadyInThisStreet = streetBets[action.player] || 0;
+        amount = totalThisStreet - alreadyInThisStreet;
+        streetBets[action.player] = totalThisStreet;
+    }
+    else if (action.actionType === "RAISE" && raiseMatch) {
+        amount = parseInt(raiseMatch[1].replace(/,/g, ''), 10);
+        streetBets[action.player] = amount;
+    }
+    else if (action.actionType === "BET" && betMatch) {
+        amount = parseInt(betMatch[1].replace(/,/g, ''), 10);
+        streetBets[action.player] = amount;
+    }
+    else if ((action.actionType === "POST_SB" || action.actionType === "POST_BB") && blindMatch) {
+        amount = parseInt(blindMatch[1].replace(/,/g, ''), 10);
+        streetBets[action.player] = amount;
+    }
 
     action.amount = amount;
     const prevPot = actionArr.length > 0 ? actionArr[actionArr.length - 1].potSizeAfter : 0;

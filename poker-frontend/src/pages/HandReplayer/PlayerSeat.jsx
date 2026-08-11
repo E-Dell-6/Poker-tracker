@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import "./PlayerSeat.css";
 import { API_URL } from "../../config";
+import { formatAmount } from "../../utils/formatMoney";
 
 export default function PlayerSeat({
   player, style, betAmount, isFolded, winners,
   isChecked, shownPlayerHand,
-  isPublic = false,  
+  isPublic = false,
+  currency = "CHIPS",
 }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [people, setPeople] = useState([]);
@@ -126,10 +128,10 @@ export default function PlayerSeat({
         style={style}
       >
         <div className={player.isDealer ? "Dealer" : "nothing"}>Dealer</div>
-        <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{betAmount}</div>
+        <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{formatAmount(betAmount, currency)}</div>
         <div className={isChecked ? "check" : "nothing"}>Check</div>
         <div className={player.stack === 0 && !isFolded ? "all-in" : "nothing"}>All-In</div>
-        {isWinner && <div className="winner">{player.winnings || 0}</div>}
+        {isWinner && <div className="winner">{formatAmount(player.winnings || 0, currency)}</div>}
 
         <div className="player-name">{player.name}</div>
 
@@ -148,7 +150,7 @@ export default function PlayerSeat({
           ) : null}
         </div>
 
-        <div className="player-stack">Stack: {player.stack}</div>
+        <div className="player-stack">Stack: {formatAmount(player.stack, currency)}</div>
 
         <div className="hole-cards">
           {player.isHero && player.holeCards?.length > 0 ? (

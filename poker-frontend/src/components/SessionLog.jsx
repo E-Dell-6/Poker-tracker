@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
 import { API_URL } from "../config";
+import { formatAmount, formatSignedAmount } from "../utils/formatMoney";
 import "./SessionLog.css";
 
 // ── Filter definitions ───────────────────────────────────
@@ -199,7 +200,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                   <span className="session-players">{hands.length} hands</span>
                 </div>
                 <div className={`session-profit ${session.totalProfit >= 0 ? "win" : "loss"}`}>
-                  {session.totalProfit >= 0 ? "+" : ""}{session.totalProfit}
+                  {formatSignedAmount(session.totalProfit, session.currency)}
                 </div>
               </div>
 
@@ -257,11 +258,11 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                           <div className="hand-right">
                             <div className="hand-pot">
                               <span className="pot-label">Pot:</span>
-                              <strong>{hand.finalPotSize}</strong>
+                              <strong>{formatAmount(hand.finalPotSize, session.currency)}</strong>
                             </div>
                             {handProfit !== null && (
                               <div className={`hand-profit ${handProfit >= 0 ? "win" : "loss"}`}>
-                                {handProfit >= 0 ? "+" : ""}{handProfit}
+                                {formatSignedAmount(handProfit, session.currency)}
                               </div>
                             )}
                           </div>

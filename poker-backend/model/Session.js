@@ -6,6 +6,12 @@ const SessionSchema = new mongoose.Schema({
     uploadID: String,
     date: Date,
     gameType: String,
+    // Which parser produced this session, and what currency amounts in
+    // `hands` are logged in. The frontend's formatMoney.js uses `currency`
+    // to decide whether to divide by 100 and what symbol to show (see the
+    // CURRENCY_META map there) - add new currencies there, not just here.
+    source: { type: String, enum: ['ACR', 'POKERNOW', 'GGPOKER'] },
+    currency: { type: String, enum: ['USD', 'CAD', 'CHIPS'], default: 'CHIPS' },
     totalHands: Number,
     totalProfit: Number,
     hands: [HandSchema], 
