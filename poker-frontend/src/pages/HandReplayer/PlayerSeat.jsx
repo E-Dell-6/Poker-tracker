@@ -129,7 +129,7 @@ export default function PlayerSeat({
       >
         <div className={player.isDealer ? "Dealer" : "nothing"}>Dealer</div>
         <div className={betAmount > 0 && !handIsOver ? "bet" : "nothing"}>{formatAmount(betAmount, currency)}</div>
-        <div className={isChecked ? "check" : "nothing"}>Check</div>
+        <div className={isChecked && !handIsOver ? "check" : "nothing"}>Check</div>
         <div className={player.stack === 0 && !isFolded ? "all-in" : "nothing"}>All-In</div>
         {isWinner && <div className="winner">{formatAmount(player.winnings || 0, currency)}</div>}
 
