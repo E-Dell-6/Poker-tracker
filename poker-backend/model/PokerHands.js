@@ -46,7 +46,15 @@ const PlayerSetupSchema = new mongoose.Schema({
     type: [String], 
     default: []
   },
-  winnings: { type: Number, default: 0 }
+  winnings: { type: Number, default: 0 },
+  // Actual net result for this player for this hand: winnings minus
+  // chips they put into the pot (not just pot-size-if-won). Computed by
+  // handProfitCalculator.js at parse time. Deliberately has NO default —
+  // hands parsed before this field existed should stay `undefined` here,
+  // so SessionLog.jsx's `typeof hero.profitLoss === "number"` check falls
+  // through to its old estimate instead of every historical hand reading
+  // as a false $0.00 break-even.
+  profitLoss: { type: Number }
 });
 
 export const HandSchema = new mongoose.Schema({

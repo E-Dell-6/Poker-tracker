@@ -1,5 +1,6 @@
 import { parse } from 'csv-parse/sync';
 import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas.js';
+import { computeHandProfits } from './handProfitCalculator.js';
 
 export function parsePokerNowLog(csvContent) {
     const records = parse(csvContent, {
@@ -49,7 +50,10 @@ export function parsePokerNowLog(csvContent) {
         if (line === "" || line.startsWith("Game Config") || line.startsWith("The admin") || line.startsWith("*")) continue;
 
         if (line.startsWith("-- starting hand")) {
-            if (currentHand) hands.push(currentHand);
+            if (currentHand) {
+                computeHandProfits(currentHand);
+                hands.push(currentHand);
+            }
             currentHand = createEmptyHand();
             currentHand.handIndex = handNumber++;
             currentHand.datePlayed = record.at;
@@ -178,13 +182,17 @@ export function parsePokerNowLog(csvContent) {
         }
 
         if (line.toLowerCase().startsWith("-- ending hand")) {
+            computeHandProfits(currentHand);
             hands.push(currentHand);
             currentHand = null;
             continue;
         }
     }
 
-    if (currentHand) hands.push(currentHand);
+    if (currentHand) {
+        computeHandProfits(currentHand);
+        hands.push(currentHand);
+    }
     return hands;
 }
 
@@ -222,8 +230,7 @@ function getPlayerName(entry) {
 }
 
 function getHoleCards(entry) {
-    return entry.substring(13).trim().replace(/\.$/, '').split(', ').map(convertToStandardNotation);
-
+    return entry.substring(13).trim().split(', ').map(convertToStandardNotation);
 }
 
 const suitMap = { '♥': 'h', '♦': 'd', '♣': 'c', '♠': 's' };

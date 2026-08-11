@@ -92,7 +92,10 @@ router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
             date: parsedHands[0].datePlayed,
             gameType: parsedHands[0].gameType,
             totalHands: parsedHands.length,
-            totalProfit: parsedHands.reduce((sum, h) => sum + (h.finalPotSize || 0), 0),
+            totalProfit: parsedHands.reduce((sum, h) => {
+                const hero = h.players?.find(p => p.isHero);
+                return sum + (hero?.profitLoss || 0);
+            }, 0),
             hands: parsedHands
         });
         await session.save();

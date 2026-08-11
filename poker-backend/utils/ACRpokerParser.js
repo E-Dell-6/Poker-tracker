@@ -1,4 +1,5 @@
 import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas.js';
+import { computeHandProfits } from './handProfitCalculator.js';
 
 /**
  * Parses an ACR (America's CardRoom) plain-text hand history export into
@@ -136,9 +137,23 @@ export function parseACRLog(fileContent) {
                 }
 
                 // Informational lines that don't map to a recorded action.
-                // Pot totals are read from the SUMMARY's "Total pot" line instead,
-                // so an uncalled bet returned to a player is not counted as a win.
-                if (/^Uncalled bet \(/.test(line)) continue;
+                // Pot totals are read from the SUMMARY's "Total pot" line
+                // instead, so an uncalled bet return is never counted as a
+                // win against `finalPotSize`/`winners` — the player is just
+                // getting their own excess bet back, not winning it off
+                // someone else. But the returned amount IS added to their
+                // `winnings` here, because computeHandProfits needs it to
+                // correctly net "chips back" against "chips put in" for
+                // this hand — otherwise a raise that goes uncalled would
+                // look like a pure loss of the full raise size.
+                const uncalledMatch = line.match(/^Uncalled bet \(\$([\d,]+\.?\d*)\) returned to (\S+)/);
+                if (uncalledMatch) {
+                    const amt = parseMoney(uncalledMatch[1]);
+                    const name = uncalledMatch[2];
+                    const p = currentHand.players.find(pl => pl.name === name);
+                    if (p) p.winnings = (p.winnings || 0) + amt;
+                    continue;
+                }
                 if (/^Main pot /.test(line)) continue;
                 if (/waits for (the )?big blind$/.test(line)) continue;
 
@@ -174,6 +189,7 @@ export function parseACRLog(fileContent) {
             currentHand.finalPotSize = 0;
         }
 
+        computeHandProfits(currentHand);
         hands.push(currentHand);
     }
 
