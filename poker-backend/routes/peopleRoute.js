@@ -6,12 +6,20 @@ const router = express.Router();
 
 router.use(userAuth);
 
+// whitelist: blocks operator keys (e.g. $unset) from reaching Mongo
+const EDITABLE_FIELDS = ['name', 'image'];
+
+function pickEditableFields(body) {
+    const updates = {};
+    for (const field of EDITABLE_FIELDS) {
+        if (body[field] !== undefined) updates[field] = body[field];
+    }
+    return updates;
+}
+
 router.get('/', async (req, res) => {
     try {
-        // GET requests can't reliably carry a body (fetch() rejects it outright),
-        // so accept the userId as a query param. Body is kept as a fallback for
-        // any existing callers still sending it that way.
-        const userId = req.query.userId || req.body.userId;
+        const userId = req.body.userId; // query param dropped: was an IDOR
         const people = await Person.find({ userId });
         res.json(people);
     } catch (err) {
@@ -76,9 +84,9 @@ router.delete('/:personId/tags/:tagLabel', async (req, res) => {
 
 router.put('/:personId', async (req, res) => {
     try {
-        const { userId, ...updates } = req.body;
+        const updates = pickEditableFields(req.body);
         const person = await Person.findOneAndUpdate(
-            { _id: req.params.personId, userId },
+            { _id: req.params.personId, userId: req.body.userId },
             updates,
             { new: true, runValidators: true }
         );
@@ -91,9 +99,9 @@ router.put('/:personId', async (req, res) => {
 
 router.patch('/:personId', async (req, res) => {
     try {
-        const { userId, ...updates } = req.body;
+        const updates = pickEditableFields(req.body);
         const person = await Person.findOneAndUpdate(
-            { _id: req.params.personId, userId },
+            { _id: req.params.personId, userId: req.body.userId },
             { $set: updates },
             { new: true, runValidators: true }
         );

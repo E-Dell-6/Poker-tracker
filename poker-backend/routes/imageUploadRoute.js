@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
+import userAuth from '../middleware/userAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,8 +17,25 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('Created uploads directory at:', uploadsDir);
 }
 
+// SVG excluded on purpose: served statically, can embed <script> -> stored XSS
+const ALLOWED_MIME_TO_EXT = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+
 function hashBuffer(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+// Checks actual file bytes, not the client-supplied mimetype
+function sniffImageType(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer.length >= 8 && buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (buffer.length >= 12 && buffer.slice(0, 4).toString('ascii') === 'RIFF' && buffer.slice(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+  if (buffer.length >= 6 && (buffer.slice(0, 6).toString('ascii') === 'GIF87a' || buffer.slice(0, 6).toString('ascii') === 'GIF89a')) return 'image/gif';
+  return null;
 }
 
 function findDuplicateInDir(incomingHash, incomingSize) {
@@ -28,37 +46,15 @@ function findDuplicateInDir(incomingHash, incomingSize) {
     return null;
   }
 
-  console.log(`[DEDUP] Scanning ${files.length} existing file(s) in ${uploadsDir}`);
-
   for (const filename of files) {
     const filePath = path.join(uploadsDir, filename);
     try {
       const stat = fs.statSync(filePath);
-      const existingSize = stat.size;
-
-      console.log(`[DEDUP]   Checking: ${filename} | size: ${existingSize} bytes`);
-
-      if (existingSize !== incomingSize) {
-        console.log(`[DEDUP]     → Size mismatch (${incomingSize} vs ${existingSize}), skipping`);
-        continue;
-      }
-
+      if (stat.size !== incomingSize) continue;
       const buffer = fs.readFileSync(filePath);
-      const existingHash = hashBuffer(buffer);
-      console.log(`[DEDUP]     → Size match! Comparing hashes: incoming=${incomingHash} existing=${existingHash}`);
-
-      if (existingHash === incomingHash) {
-        console.log(`[DEDUP]     → DUPLICATE FOUND: ${filename}`);
-        return filename;
-      } else {
-        console.log(`[DEDUP]     → Hash mismatch, not a duplicate`);
-      }
-    } catch (err) {
-      console.warn(`[DEDUP]   Could not read ${filename}:`, err.message);
-    }
+      if (hashBuffer(buffer) === incomingHash) return filename;
+    } catch {}
   }
-
-  console.log(`[DEDUP] No duplicate found.`);
   return null;
 }
 
@@ -66,60 +62,48 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    if (ALLOWED_MIME_TO_EXT[file.mimetype]) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed!'));
+      cb(new Error('Only JPEG, PNG, WEBP, or GIF images are allowed!'));
     }
   }
 });
 
-
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', userAuth, upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
-      console.log('[UPLOAD] No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    console.log('[UPLOAD] ─────────────────────────────────');
-    console.log('[UPLOAD] Original name :', req.file.originalname);
-    console.log('[UPLOAD] MIME type     :', req.file.mimetype);
-    console.log('[UPLOAD] Buffer size   :', req.file.buffer.length, 'bytes');
+    const sniffed = sniffImageType(req.file.buffer);
+    if (!sniffed) {
+      return res.status(400).json({ error: 'File content does not match a supported image type' });
+    }
 
     const incomingHash = hashBuffer(req.file.buffer);
     const incomingSize = req.file.buffer.length;
 
-    console.log('[UPLOAD] SHA-256 hash  :', incomingHash);
-
     const duplicateFilename = findDuplicateInDir(incomingHash, incomingSize);
-
     if (duplicateFilename) {
-      const imageUrl = `/uploads/profile-images/${duplicateFilename}`;
-      console.log('[UPLOAD] → Returning duplicate, no file written:', imageUrl);
       return res.status(200).json({
         success: true,
-        imageUrl,
+        imageUrl: `/uploads/profile-images/${duplicateFilename}`,
         filename: duplicateFilename,
         duplicate: true,
         message: 'This image has already been uploaded.',
       });
     }
 
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const filename = uniqueSuffix + path.extname(req.file.originalname);
+    const ext = ALLOWED_MIME_TO_EXT[sniffed];
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     const filePath = path.join(uploadsDir, filename);
 
     fs.writeFileSync(filePath, req.file.buffer);
 
-    const writtenSize = fs.statSync(filePath).size;
-    console.log('[UPLOAD] → New file written:', filePath);
-    console.log('[UPLOAD]   Written size    :', writtenSize, 'bytes');
-
-    const imageUrl = `/uploads/profile-images/${filename}`;
     res.status(200).json({
       success: true,
-      imageUrl,
+      imageUrl: `/uploads/profile-images/${filename}`,
       filename,
       duplicate: false,
     });
@@ -129,13 +113,17 @@ router.post('/', upload.single('image'), (req, res) => {
   }
 });
 
-router.delete('/:filename', (req, res) => {
+router.delete('/:filename', userAuth, (req, res) => {
   try {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, filename);
+    const safeName = path.basename(req.params.filename); // blocks path traversal
+    const filePath = path.join(uploadsDir, safeName);
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(path.resolve(uploadsDir) + path.sep)) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
 
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (fs.existsSync(resolved)) {
+      fs.unlinkSync(resolved);
       res.json({ success: true, message: 'Image deleted' });
     } else {
       res.status(404).json({ error: 'Image not found' });

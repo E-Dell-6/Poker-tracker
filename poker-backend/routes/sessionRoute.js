@@ -8,10 +8,13 @@ import mongoose from 'mongoose';
 import userAuth from '../middleware/userAuth.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-// Which currency each parser's `format` produces. Add a new site here
-// (and to the Session schema's enums) rather than growing a ternary.
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB, adjust as needed
+});
+
+// currency per parser format; add new sites here + Session schema enum
 const FORMAT_CURRENCY = {
     ACR: 'USD',
     GGPOKER: 'CAD',
@@ -61,7 +64,7 @@ router.post('/sessions', userAuth, async (req, res) => {
     }
 });
 
-router.post('/upload', upload.single('csvFile'), userAuth, async (req, res) => {
+router.post('/upload', userAuth, upload.single('csvFile'), async (req, res) => { // auth before multer now
     try {
         const userId = req.body.userId;
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });

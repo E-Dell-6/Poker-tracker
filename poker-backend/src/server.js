@@ -1,9 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import connectDB from '../config/db.js'; 
+import connectDB from '../config/db.js';
 import cors from 'cors';
 import cookieParser from "cookie-parser";
-import 'dotenv/config'; 
+import helmet from 'helmet'; // npm install helmet
+import 'dotenv/config';
 
 import sessionRouter from '../routes/sessionRoute.js';
 import favouritesRouter from '../routes/handRoute.js';
@@ -13,25 +14,29 @@ import authRouter from '../routes/authRoutes.js';
 import userRouter from '../routes/userRoutes.js';
 import liveSessionRouter from '../routes/liveSessionRoute.js';
 import shareRouter from '../routes/shareRoute.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 
 const app = express();
 
 //fix for azure
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 1111;
 
+app.use(helmet());
 app.use(cookieParser());
-app.use(cors({ 
-  credentials: true, 
+app.use(cors({
+  credentials: true,
   origin: [
-    'https://www.pokerflow.live', 
-    'https://pokerflow.live', 
+    'https://www.pokerflow.live',
+    'https://pokerflow.live',
     'https://api.pokerflow.live',
     'http://localhost:5173',
   ],
 }));
-app.use(express.json());
+
+// Body size capped to stop large-payload DoS attempts. 
+app.use(express.json({ limit: '1mb' }));
 
 // Routes
 app.use('/api/', sessionRouter);
@@ -39,7 +44,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/upload-image', imageUploadRouter);
 app.use('/api/favourites', favouritesRouter);
 app.use('/api/people', peopleRouter);
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/live-sessions', liveSessionRouter);
 app.use('/api/share', shareRouter);

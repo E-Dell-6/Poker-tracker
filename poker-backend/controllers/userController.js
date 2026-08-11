@@ -1,21 +1,26 @@
 import UserModel from "../model/User.js";
 
-export const getUserData = async (req,res) => {
-    try{
+export const getUserData = async (req, res) => {
+    try {
         const userId = req.body.userId;
-        const user = await UserModel.findById(userId);
-        if(!user){
-            return res.json({success: false, message: 'User not Found'});
+        if (typeof userId !== 'string' || userId.trim().length === 0) {
+            return res.json({ success: false, message: 'Not Authorized' });
         }
 
-        res.json({
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: 'User not Found' });
+        }
+
+        return res.json({
             success: true,
             userData: {
                 name: user.name,
                 isAccountVerified: user.isAccountVerified,
-            } 
+            }
         });
-    }catch (error){
-        res.json({success: false, message: error.message});
+    } catch (error) {
+        console.error('getUserData error:', error);
+        return res.json({ success: false, message: 'Something went wrong, please try again' });
     }
-}
+};
