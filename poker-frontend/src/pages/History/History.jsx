@@ -179,6 +179,7 @@ export function History() {
   const [selectedGame, setSelectedGame] = useState("All");
   const [uploadStatus, setUploadStatus] = useState(null);
   const [error, setError] = useState(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const fileInputRef = useRef(null);
 
   const [renamingState, setRenamingState] = useState(null);
@@ -207,15 +208,15 @@ export function History() {
     return sessions.filter((s) => s.gameType === selectedGame);
   }, [selectedGame, sessions]);
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const uploadFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
 
     setError(null);
     setUploadStatus("uploading");
 
     const formData = new FormData();
-    formData.append("csvFile", file);
+    files.forEach((file) => formData.append("csvFile", file));
 
     try {
       const response = await fetch(`${API_URL}/api/upload`, {
@@ -226,22 +227,87 @@ export function History() {
 
       const result = await response.json();
 
-      if (response.status === 409 || result.duplicate) {
-        setUploadStatus(null);
-        setError("This log file has already been uploaded.");
-        event.target.value = null;
-        return;
+      // Older single-file error shape (network/server-level failure before
+      // any per-file results exist)
+      if (!response.ok && !result.results) {
+        throw new Error(result.error || "Upload failed");
       }
 
-      if (!response.ok) throw new Error(result.error || "Upload failed");
+      const perFileResults = result.results || [];
+      const duplicates = perFileResults.filter((r) => !r.success && r.duplicate);
+      const otherFailures = perFileResults.filter((r) => !r.success && !r.duplicate);
+      const successCount = perFileResults.filter((r) => r.success).length;
+
+      const messageParts = [];
+      if (otherFailures.length > 0) {
+        // Real errors are rarer and need attention, so name the files.
+        const names = otherFailures.map((f) => `${f.filename}: ${f.error}`).join(" | ");
+        messageParts.push(names);
+      }
+      if (duplicates.length > 0) {
+        messageParts.push(
+          duplicates.length === 1
+            ? "1 file was already uploaded."
+            : `${duplicates.length} files were already uploaded.`
+        );
+      }
+      if (successCount > 0 && (duplicates.length > 0 || otherFailures.length > 0)) {
+        messageParts.unshift(
+          `Uploaded ${successCount} of ${files.length} file(s).`
+        );
+      }
+
+      if (messageParts.length > 0) {
+        setError(messageParts.join(" "));
+      }
 
       setUploadStatus("success-" + Date.now());
     } catch (err) {
       setUploadStatus("error");
       setError(err.message);
     }
+  };
 
+  const handleFileUpload = async (event) => {
+    await uploadFiles(event.target.files);
     event.target.value = null;
+  };
+
+  const handleDragEnter = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploadStatus === "uploading") return;
+    setIsDraggingFile(true);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Only clear once the pointer actually leaves the drop zone, not when it
+    // moves over a child element inside it.
+    if (event.currentTarget.contains(event.relatedTarget)) return;
+    setIsDraggingFile(false);
+  };
+
+  const handleDrop = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDraggingFile(false);
+    if (uploadStatus === "uploading") return;
+
+    const dropped = Array.from(event.dataTransfer.files || []).filter((f) =>
+      /\.(csv|txt)$/i.test(f.name)
+    );
+    if (dropped.length === 0) {
+      setError("Please drop a .csv or .txt log file.");
+      return;
+    }
+    await uploadFiles(dropped);
   };
 
   const onPlayerMapped = async (person) => {
@@ -307,14 +373,24 @@ export function History() {
 
         <div className="history-header">
           <h1>Hand History Review</h1>
-          <div className="upload-section">
+          <div
+            className={`upload-section${isDraggingFile ? " drag-active" : ""}`}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
               accept=".csv,.txt"
-              style={{ display: "none" }}
+              multiple
+              className="visually-hidden-input"
             />
+
+            {error && <div className="error-message">{error}</div>}
+
             <div className="upload-info-wrap">
               <button className="upload-info-btn" aria-label="Upload requirements">i</button>
               <div className="upload-info-tooltip">
@@ -324,6 +400,7 @@ export function History() {
                   <li>ACR (.txt)</li>
                   <li>No-Limit Hold'em (NLH)</li>
                 </ul>
+                <div>You can select or drag in multiple files at once.</div>
               </div>
             </div>
             <div className="button-container">
@@ -332,7 +409,7 @@ export function History() {
                 onClick={() => fileInputRef.current.click()}
                 disabled={uploadStatus === "uploading"}
               >
-                {uploadStatus === "uploading" ? "Processing..." : "📂 Upload Log"}
+                {uploadStatus === "uploading" ? "Processing..." : "📂 Upload Logs"}
               </button>
               <button
                 className="create-button"
@@ -340,7 +417,9 @@ export function History() {
               >➕ Create Hand </button>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {isDraggingFile && (
+              <div className="drop-overlay">Drop .csv / .txt files to upload</div>
+            )}
           </div>
         </div>
 

@@ -68,45 +68,72 @@ router.post('/sessions', userAuth, async (req, res) => {
 // the multipart form, so we can't rely on req.body.userId (set by userAuth) surviving
 // past the upload.single() middleware. userAuth also stashes the id on req.userId,
 // which multer never touches, so we read from there instead.
-router.post('/upload', userAuth, upload.single('csvFile'), async (req, res) => {
+// upload.array lets the client send several files under the same 'csvFile'
+// field name in one request. Each file is processed independently so one
+// duplicate/bad file in the batch doesn't block the rest.
+router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) => {
     try {
         const userId = req.userId;
-        if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+        if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No files uploaded" });
 
-        const fileHash = crypto.createHash('sha256').update(req.file.buffer).digest('hex');
-        const existing = await Session.findOne({ userId, fileHash });
-        if (existing) {
-            return res.status(409).json({ duplicate: true, error: "This log file has already been uploaded." });
+        const results = [];
+
+        for (const file of req.files) {
+            const filename = file.originalname;
+            try {
+                const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+                const existing = await Session.findOne({ userId, fileHash });
+                if (existing) {
+                    results.push({ filename, success: false, duplicate: true, error: "This log file has already been uploaded." });
+                    continue;
+                }
+
+                const fileContent = file.buffer.toString('utf8');
+
+                let format, parsedHands;
+                try {
+                    ({ format, hands: parsedHands } = parsePokerLog(fileContent));
+                } catch (parseError) {
+                    results.push({ filename, success: false, error: parseError.message });
+                    continue;
+                }
+
+                if (parsedHands.length === 0) {
+                    results.push({ filename, success: false, error: "No hands found in the uploaded file" });
+                    continue;
+                }
+                parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
+                const session = new Session({
+                    userId,
+                    fileHash,
+                    sessionType: 'upload',
+                    source: format,
+                    currency: FORMAT_CURRENCY[format] ?? 'CHIPS',
+                    date: parsedHands[0].datePlayed,
+                    gameType: parsedHands[0].gameType,
+                    totalHands: parsedHands.length,
+                    totalProfit: parsedHands.reduce((sum, h) => {
+                        const hero = h.players?.find(p => p.isHero);
+                        return sum + (hero?.profitLoss || 0);
+                    }, 0),
+                    hands: parsedHands
+                });
+                await session.save();
+                results.push({ filename, success: true, sessionId: session._id, totalHands: parsedHands.length, source: format });
+            } catch (fileError) {
+                results.push({ filename, success: false, error: fileError.message });
+            }
         }
 
-        const fileContent = req.file.buffer.toString('utf8');
-
-        let format, parsedHands;
-        try {
-            ({ format, hands: parsedHands } = parsePokerLog(fileContent));
-        } catch (parseError) {
-            return res.status(400).json({ error: parseError.message });
-        }
-
-        if (parsedHands.length === 0) return res.status(400).json({ error: "No hands found in the uploaded file" });
-        parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
-        const session = new Session({
-            userId,
-            fileHash,
-            sessionType: 'upload',
-            source: format,
-            currency: FORMAT_CURRENCY[format] ?? 'CHIPS',
-            date: parsedHands[0].datePlayed,
-            gameType: parsedHands[0].gameType,
-            totalHands: parsedHands.length,
-            totalProfit: parsedHands.reduce((sum, h) => {
-                const hero = h.players?.find(p => p.isHero);
-                return sum + (hero?.profitLoss || 0);
-            }, 0),
-            hands: parsedHands
+        const successCount = results.filter(r => r.success).length;
+        // 400 only if every single file failed; otherwise 200 with a per-file breakdown
+        const status = successCount === 0 ? 400 : 200;
+        res.status(status).json({
+            message: successCount === req.files.length ? "Success" : "Some files could not be processed",
+            results,
+            successCount,
+            totalCount: req.files.length,
         });
-        await session.save();
-        res.status(200).json({ message: "Success", sessionId: session._id, totalHands: parsedHands.length, source: format });
     } catch (error) {
         res.status(500).json({ error: "Failed to process upload", details: error.message });
     }

@@ -60,12 +60,21 @@
 }
 
 .upload-section {
+  position: relative; /* lets .error-message and .drop-overlay anchor
+    against this box without joining its flex flow, so they can never
+    change the size/position of the icon or the buttons next to them. */
   display: flex;
   align-items: flex-start; /* was: center. flex-start keeps the info icon
     pinned to the top of the row (next to the upload button) instead of
     re-centering against the taller two-button .button-container column,
     which was shoving the icon and header out of place. */
   gap: 12px;
+}
+
+.upload-section.drag-active {
+  outline: 2px dashed var(--gold);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .upload-button {
@@ -113,12 +122,41 @@
 }
 
 .error-message {
+  position: absolute;
+  top: 0;
+  right: 100%; /* places the box just outside the left edge of
+    .upload-section, i.e. to the left of the info icon/buttons, so its
+    width never affects their layout. */
+  margin-right: 12px;
+  width: 260px;
   color: var(--red);
   font-size: 13px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.25);
   padding: 6px 12px;
   border-radius: 6px;
+  text-align: right;
+}
+
+/* ── DRAG & DROP ────────────────────────────────────────── */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 175, 55, 0.08);
+  border-radius: 8px;
+  pointer-events: none;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--gold);
+  text-align: center;
+  padding: 8px;
+}
+
+.visually-hidden-input {
+  display: none;
 }
 
 /* ── UPLOAD INFO BUTTON ─────────────────────────────────── */
@@ -224,6 +262,10 @@
 .upload-info-tooltip ul li {
   font-size: 13px;
   color: var(--muted);
+}
+
+.upload-info-tooltip ul + div {
+  margin-top: 6px;
 }
 
 /* ── GAME FILTER ────────────────────────────────────────── */
