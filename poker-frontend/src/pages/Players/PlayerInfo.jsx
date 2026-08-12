@@ -4,7 +4,7 @@ import { PlayerStats } from './PlayerStats';
 import { useState, useRef, useEffect } from 'react';
 import { API_URL } from '../../config';
 
-export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
+export function PlayerInfo({ player, onPlayerUpdate }) {
 
     const [isTagMenuOpen, setIsTagMenuOpen] = useState(false);
     const [currentPlayer, setCurrentPlayer] = useState(player);
@@ -197,7 +197,7 @@ export function PlayerInfo({ player, sessions, onPlayerUpdate }) {
                 )}
             </div>
 
-            <PlayerStats player={currentPlayer} sessions={sessions} />
+            <PlayerStats player={currentPlayer} />
 
             {isTagMenuOpen && (
                 <TagMenu

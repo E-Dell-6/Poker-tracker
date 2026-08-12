@@ -6,22 +6,14 @@ import { API_URL } from "../../config";
 
 export function Players() {
   const [players, setPlayers] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [currInfoPlayer, setCurrInfoPlayer] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [peopleRes, sessionsRes] = await Promise.all([
-          fetch(`${API_URL}/api/people`, { credentials: "include" }),
-          fetch(`${API_URL}/api/sessions`, { credentials: "include" }),
-        ]);
-
+        const peopleRes = await fetch(`${API_URL}/api/people`, { credentials: "include" });
         const peopleData = await peopleRes.json();
-        const sessionsData = await sessionsRes.json();
-
         setPlayers(Array.isArray(peopleData) ? peopleData : []);
-        setSessions(Array.isArray(sessionsData) ? sessionsData : []);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -74,7 +66,6 @@ export function Players() {
               <div className="player-info-container">
                 <PlayerInfo
                   player={currInfoPlayer}
-                  sessions={sessions}
                   onPlayerUpdate={handlePlayerUpdate}
                 />
               </div>
