@@ -102,8 +102,10 @@ router.delete('/:id', userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
 
-        const session = await LiveSession.findOneAndDelete({ _id: req.params.id, userId });
-        if (!session) return res.status(404).json({ message: 'Not found' });
+        // Only completed sessions can be deleted this way; an active session
+        // should be ended (clock-out) rather than removed outright.
+        const session = await LiveSession.findOneAndDelete({ _id: req.params.id, userId, status: 'completed' });
+        if (!session) return res.status(404).json({ message: 'Session not found' });
         res.json({ success: true });
     } catch (err) {
         console.error('DELETE /api/live-sessions:', err);

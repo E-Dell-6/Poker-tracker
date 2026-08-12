@@ -9,6 +9,18 @@ import { computeHandProfits } from './handProfitCalculator.js';
  * chip logs. All dollar amounts (stacks, bet sizes, pot sizes, winnings)
  * are converted to integer CENTS (e.g. "$2.07" -> 207) so pot/action math
  * stays exact and never drifts due to floating point rounding.
+ *
+ * Note on multi-word names: ACR player names can contain spaces (e.g.
+ * "Tony Champaroney"), so most lines can't be parsed with a naive \S+
+ * token match. The "Seat N: Name ($X.XX)" lines are always the FIRST
+ * thing ACR prints for a hand, so by the time we reach any later line
+ * (Dealt to / shows / does not show / action lines / summary "won $"
+ * lines / Uncalled bet returns) `currentHand.players` already holds the
+ * full, correctly-parsed name list for that hand. Those later lines are
+ * matched against that known list (see matchKnownPlayerName) instead of
+ * being re-parsed with a generic name regex, so a multi-word name is
+ * resolved consistently everywhere instead of each call site guessing
+ * independently and risking disagreeing with each other.
  */
 export function parseACRLog(fileContent) {
     const text = String(fileContent || '').replace(/\r\n/g, '\n');
@@ -25,10 +37,12 @@ export function parseACRLog(fileContent) {
 
     // ACR only reveals hole cards for the hero ("Dealt to X [..]"), so the
     // first occurrence of that line anywhere in the file tells us who the
-    // hero is for the whole session.
+    // hero is for the whole session. There's only ever one "[" (the hole
+    // cards) on this line, so a greedy match up to " [" correctly captures
+    // a multi-word name without any ambiguity.
     let globalHeroName = null;
     for (const block of blocks) {
-        const m = block.match(/^Dealt to (\S+) \[/m);
+        const m = block.match(/^Dealt to (.+) \[/m);
         if (m) {
             globalHeroName = m[1];
             break;
@@ -76,28 +90,31 @@ export function parseACRLog(fileContent) {
             }
 
             if (!inSummary) {
-                const seatMatch = line.match(/^Seat (\d+): (\S+) \(\$([\d,]+\.?\d*)\)/);
+                // Seat line: "Seat N: Name ($X.XX)" optionally followed by
+                // " is sitting out". (.+?) allows a multi-word name; the
+                // trailing $ anchor plus the optional group means we
+                // actually look for "is sitting out" instead of the old
+                // code's unanchored match silently ignoring it.
+                const seatMatch = line.match(/^Seat (\d+): (.+?) \(\$([\d,]+\.?\d*)\)(\s+is sitting out)?$/);
                 if (seatMatch) {
                     const p = createEmptyPlayer();
                     p.seat = parseInt(seatMatch[1], 10);
                     p.name = seatMatch[2];
                     p.stack = parseMoney(seatMatch[3]);
-                    p.isSittingOut = false;
+                    p.isSittingOut = Boolean(seatMatch[4]);
                     if (buttonSeat === p.seat) p.isDealer = true;
                     if (globalHeroName && p.name === globalHeroName) p.isHero = true;
                     currentHand.players.push(p);
                     continue;
                 }
-                // Seat announced but with no ($X.XX) stack — this player is
-                // sitting out this hand. Record them (stack: null,
-                // isSittingOut: true) instead of silently dropping them, so
-                // "sitting out this hand" is distinguishable from "not part
-                // of this session at all" further down the pipeline.
-                const sittingOutMatch = line.match(/^Seat (\d+): (\S+)/);
-                if (sittingOutMatch) {
+
+                // Seat announced but not yet in the hand, e.g.
+                // "Seat 4: AlexSexy will be allowed to play after the button"
+                const waitingMatch = line.match(/^Seat (\d+): (.+?) will be allowed to play after the button$/);
+                if (waitingMatch) {
                     const p = createEmptyPlayer();
-                    p.seat = parseInt(sittingOutMatch[1], 10);
-                    p.name = sittingOutMatch[2];
+                    p.seat = parseInt(waitingMatch[1], 10);
+                    p.name = waitingMatch[2];
                     p.stack = null;
                     p.isSittingOut = true;
                     if (buttonSeat === p.seat) p.isDealer = true;
@@ -105,6 +122,7 @@ export function parseACRLog(fileContent) {
                     currentHand.players.push(p);
                     continue;
                 }
+
                 if (/^Seat \d+:/.test(line)) continue; // fallback: any other unmatched seat-line format
 
                 if (line.startsWith('*** FLOP ***')) {
@@ -124,31 +142,45 @@ export function parseACRLog(fileContent) {
                 }
 
                 if (line.startsWith('Dealt to ')) {
-                    const m = line.match(/^Dealt to (\S+) \[(.+)\]/);
-                    if (m) {
-                        const hp = currentHand.players.find(p => p.name === m[1]);
+                    // Only one "[" on this line (the hole cards), so slicing
+                    // on its index handles a multi-word name with no ambiguity.
+                    const bracketStart = line.indexOf('[');
+                    const bracketEnd = line.lastIndexOf(']');
+                    if (bracketStart !== -1 && bracketEnd !== -1) {
+                        const name = line.slice('Dealt to '.length, bracketStart).trim();
+                        const cards = line.slice(bracketStart + 1, bracketEnd);
+                        const hp = currentHand.players.find(p => p.name === name);
                         if (hp) {
-                            hp.holeCards = m[2].split(/\s+/).filter(Boolean);
+                            hp.holeCards = cards.split(/\s+/).filter(Boolean);
                             hp.isHero = true;
                         }
                     }
                     continue;
                 }
 
-                if (/^\S+ shows \[/.test(line)) {
-                    const m = line.match(/^(\S+) shows \[(.+?)\]/);
-                    if (m) {
-                        const name = m[1];
-                        const cards = m[2].split(/\s+/).filter(c => c && c !== '-');
-                        const hp = currentHand.players.find(p => p.name === name);
-                        if (hp) hp.showedHand = cards;
-                        pushZeroAmountAction(currentHand, 'SHOW_HAND', name, currentStreet);
-                    }
+                const showsIdx = line.indexOf(' shows [');
+                if (showsIdx !== -1) {
+                    const name = line.slice(0, showsIdx);
+                    const cardsStart = showsIdx + ' shows ['.length;
+                    // Use the FIRST ']' after the hole cards, not the last
+                    // ']' in the line — lines like "shows [Ac 4c] (two pair,
+                    // Fours and Deuces [4d 4c 2d 2c Ac])" have a second
+                    // bracketed group (the hand description's board refs)
+                    // whose closing bracket comes later in the line.
+                    const bracketEnd = line.indexOf(']', cardsStart);
+                    const cardsPart = bracketEnd !== -1
+                        ? line.slice(cardsStart, bracketEnd)
+                        : '';
+                    const cards = cardsPart.split(/\s+/).filter(c => c && c !== '-');
+                    const hp = currentHand.players.find(p => p.name === name);
+                    if (hp) hp.showedHand = cards;
+                    pushZeroAmountAction(currentHand, 'SHOW_HAND', name, currentStreet);
                     continue;
                 }
 
-                if (/^\S+ does not show$/.test(line)) {
-                    const name = line.split(' ')[0];
+                const DOES_NOT_SHOW = ' does not show';
+                if (line.endsWith(DOES_NOT_SHOW)) {
+                    const name = line.slice(0, -DOES_NOT_SHOW.length);
                     pushZeroAmountAction(currentHand, 'MUCK', name, currentStreet);
                     continue;
                 }
@@ -163,7 +195,9 @@ export function parseACRLog(fileContent) {
                 // correctly net "chips back" against "chips put in" for
                 // this hand — otherwise a raise that goes uncalled would
                 // look like a pure loss of the full raise size.
-                const uncalledMatch = line.match(/^Uncalled bet \(\$([\d,]+\.?\d*)\) returned to (\S+)/);
+                // Name runs to the end of the line, so it can be a
+                // multi-word name with no ambiguity.
+                const uncalledMatch = line.match(/^Uncalled bet \(\$([\d,]+\.?\d*)\) returned to (.+)$/);
                 if (uncalledMatch) {
                     const amt = parseMoney(uncalledMatch[1]);
                     const name = uncalledMatch[2];
@@ -172,11 +206,34 @@ export function parseACRLog(fileContent) {
                     continue;
                 }
                 if (/^Main pot /.test(line)) continue;
-                if (/waits for (the )?big blind$/.test(line)) continue;
 
-                if (/^\S+ (posts|calls|raises|bets|folds|checks)\b/.test(line)) {
-                    parseACRAction(line, currentHand.actions, currentStreet);
+                // "Name waits for big blind" means the player is seated but
+                // hasn't been dealt into THIS hand yet (waiting for their
+                // forced BB post). Their seat line above has no "is sitting
+                // out" suffix, so without this they'd be left looking like a
+                // fully active player who simply never acted. Mark them the
+                // same way the "will be allowed to play after the button"
+                // case above already does, so the UI treats both the same.
+                const waitsMatch = line.match(/^(.+?) waits for (the )?big blind$/);
+                if (waitsMatch) {
+                    const name = matchKnownPlayerName(waitsMatch[1], currentHand.players) || waitsMatch[1];
+                    const p = currentHand.players.find(pl => pl.name === name);
+                    if (p) p.isSittingOut = true;
                     continue;
+                }
+
+                // Action lines ("Name posts/calls/raises/bets/folds/checks
+                // ..."). The actor's name is resolved against the hand's
+                // already-known player list (longest name first, so
+                // "Tony Champaroney" is preferred over a bare "Tony")
+                // instead of assuming the name is a single token.
+                const actorName = matchKnownPlayerName(line, currentHand.players);
+                if (actorName) {
+                    const rest = line.slice(actorName.length);
+                    if (/^\s+(posts|calls|raises|bets|folds|checks)\b/.test(rest)) {
+                        parseACRAction(line, actorName, currentHand.actions, currentStreet);
+                        continue;
+                    }
                 }
 
                 continue; // unrecognized line, ignore
@@ -190,16 +247,22 @@ export function parseACRLog(fileContent) {
             }
             if (line.startsWith('Board [')) continue; // already captured street-by-street above
 
-            const winMatch = line.match(/^Seat \d+: (\S+).*\bwon \$([\d,]+\.?\d*)/);
-            if (winMatch) {
-                const name = winMatch[1];
-                const amount = parseMoney(winMatch[2]);
-                if (!currentHand.winners.includes(name)) currentHand.winners.push(name);
-                const wp = currentHand.players.find(p => p.name === name);
-                if (wp) wp.winnings = (wp.winnings || 0) + amount;
-                continue;
+            const summarySeatMatch = line.match(/^Seat \d+: (.+)$/);
+            if (summarySeatMatch) {
+                const rest = summarySeatMatch[1];
+                const name = matchKnownPlayerName(rest, currentHand.players);
+                if (name) {
+                    const wonMatch = rest.slice(name.length).match(/\bwon \$([\d,]+\.?\d*)/);
+                    if (wonMatch) {
+                        const amount = parseMoney(wonMatch[1]);
+                        if (!currentHand.winners.includes(name)) currentHand.winners.push(name);
+                        const wp = currentHand.players.find(p => p.name === name);
+                        if (wp) wp.winnings = (wp.winnings || 0) + amount;
+                    }
+                }
+                continue; // other summary lines (e.g. "folded on the Pre-Flop") carry no data we need
             }
-            continue; // other summary lines (e.g. "folded on the Pre-Flop") carry no data we need
+            continue;
         }
 
         if (currentHand.finalPotSize === undefined || currentHand.finalPotSize === null) {
@@ -211,6 +274,24 @@ export function parseACRLog(fileContent) {
     }
 
     return hands;
+}
+
+// Resolves the player name that `text` starts with, matching against the
+// hand's already-parsed player list rather than guessing from whitespace.
+// Longest names are tried first so a multi-word name (e.g.
+// "Tony Champaroney") is preferred over a shorter name that happens to be
+// a prefix of it (e.g. "Tony") — this is what keeps every call site
+// (actions, shows, summary lines, etc.) agreeing on the same name instead
+// of each one independently truncating it.
+function matchKnownPlayerName(text, players) {
+    const sorted = [...players].sort((a, b) => b.name.length - a.name.length);
+    for (const p of sorted) {
+        const name = p.name;
+        if (text === name || text.startsWith(name + ' ') || text.startsWith(name + '[')) {
+            return name;
+        }
+    }
+    return null;
 }
 
 function pushZeroAmountAction(currentHand, actionType, playerName, street) {
@@ -226,10 +307,10 @@ function pushZeroAmountAction(currentHand, actionType, playerName, street) {
     currentHand.actions.push(action);
 }
 
-function parseACRAction(line, actionArr, street) {
+function parseACRAction(line, playerName, actionArr, street) {
     const action = createEmptyAction();
     action.street = street;
-    action.player = line.split(' ')[0];
+    action.player = playerName;
 
     let amount = 0;
 
@@ -239,7 +320,7 @@ function parseACRAction(line, actionArr, street) {
     } else if (/posts the big blind/.test(line)) {
         action.actionType = 'POST_BB';
         amount = parseMoney(line.match(/\$([\d,]+\.?\d*)/)[1]);
-    } else if (/^\S+ posts \$/.test(line)) {
+    } else if (/ posts \$/.test(line)) {
         // Dead blind / missed-blind post with no explicit sb/bb label.
         action.actionType = 'POST_BB';
         const m = line.match(/\$([\d,]+\.?\d*)/);

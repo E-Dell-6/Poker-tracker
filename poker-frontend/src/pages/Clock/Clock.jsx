@@ -22,6 +22,8 @@ export function Clock() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
 
   useEffect(() => {
     const loadSessions = async () => {
@@ -60,6 +62,13 @@ export function Clock() {
     loadSessions();
     restoreActiveSession();
   }, []);
+
+  useEffect(() => {
+    if (contextMenu === null) return;
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener("click", closeMenu);
+    return () => window.removeEventListener("click", closeMenu);
+  }, [contextMenu]);
 
   const [sessionBlinds, setSessionBlinds] = useState({ bigBlind: "", smallBlind: "" });
   const [activeBuyIns, setActiveBuyIns] = useState([]);
@@ -185,6 +194,36 @@ export function Clock() {
     } catch (err) {
       console.error(err);
       setSaveError("Couldn't add that buy-in. Please try again.");
+    }
+  };
+
+  const handleSessionContextMenu = (e, id) => {
+    e.preventDefault();
+    setContextMenu({ x: e.pageX, y: e.pageY, id });
+  };
+
+  const handleDeleteClick = async (id) => {
+    setContextMenu(null);
+
+    const confirmed = window.confirm("Delete this session? This can't be undone.");
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+
+    try {
+      const res = await fetch(`/api/live-sessions/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
+      if (!res.ok) throw new Error("Failed to delete session");
+
+      setCompletedSessions(completedSessions.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't delete this session. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -414,9 +453,16 @@ export function Clock() {
               <h2 className="history-title">Session History</h2>
               <div className="session-list">
                 {completedSessions.map((session) => (
-                  <div key={session.id} className="session-item">
+                  <div
+                    key={session.id}
+                    className="session-item"
+                    onContextMenu={(e) => handleSessionContextMenu(e, session.id)}
+                    title="Right-click for options"
+                  >
                     <div className="session-time">
-                      <div>{formatDate(session.date)}</div>
+                      <div className="session-time-header">
+                        <span>{formatDate(session.date)}</span>
+                      </div>
                       <div className="session-duration">
                         {formatTime(session.clockInTime)} – {formatTime(session.clockOutTime)}
                         {" · "}
@@ -449,6 +495,21 @@ export function Clock() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+          {/* Session Context Menu (positioned at right-click location) */}
+          {contextMenu && (
+            <div
+              className="session-context-menu"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="context-menu-item delete"
+                onClick={() => handleDeleteClick(contextMenu.id)}
+              >
+                🗑️ Delete
               </div>
             </div>
           )}

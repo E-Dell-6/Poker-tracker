@@ -432,11 +432,50 @@
   min-width: 140px;
 }
 
-.session-time > div:first-child {
+.session-time-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.session-time-header > span {
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--text);
-  margin-bottom: 4px;
+}
+
+.session-context-menu {
+  position: fixed;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 140px;
+  animation: scaleIn 0.15s ease;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.context-menu-item.delete {
+  color: var(--red);
+}
+
+.context-menu-item.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .session-duration {
