@@ -7,6 +7,7 @@
 │   │   └── nodeMailer.js
 │   ├── controllers
 │   │   ├── authController.js
+│   │   ├── statsController.js
 │   │   └── userController.js
 │   ├── dockerfile
 │   ├── middleware
@@ -15,6 +16,7 @@
 │   ├── model
 │   │   ├── LiveSession.js
 │   │   ├── People.js
+│   │   ├── PlayerStats.js
 │   │   ├── PokerHands.js
 │   │   ├── Session.js
 │   │   ├── User.js
@@ -28,7 +30,11 @@
 │   │   ├── peopleRoute.js
 │   │   ├── sessionRoute.js
 │   │   ├── shareRoute.js
+│   │   ├── statsRoute.js
 │   │   └── userRoutes.js
+│   ├── services
+│   │   ├── personService.js
+│   │   └── statsService.js
 │   ├── src
 │   │   └── server.js
 │   ├── uploads
@@ -40,7 +46,8 @@
 │       ├── findHero.js
 │       ├── handProfitCalculator.js
 │       ├── parsePokerLog.js
-│       └── pokerNowParser.js
+│       ├── pokerNowParser.js
+│       └── statsEngine.js
 ├── poker-frontend
 │   ├── dist
 │   │   ├── assets
@@ -272,4 +279,4 @@
 │   └── vite.config.js
 └── tree.txt
 
-37 directories, 236 files
+38 directories, 242 files

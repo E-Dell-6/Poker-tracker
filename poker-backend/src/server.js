@@ -14,7 +14,9 @@ import authRouter from '../routes/authRoutes.js';
 import userRouter from '../routes/userRoutes.js';
 import liveSessionRouter from '../routes/liveSessionRoute.js';
 import shareRouter from '../routes/shareRoute.js';
+import statsRouter from '../routes/statsRoute.js'
 import { authLimiter } from '../middleware/rateLimiter.js';
+
 
 const app = express();
 
@@ -48,6 +50,7 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/live-sessions', liveSessionRouter);
 app.use('/api/share', shareRouter);
+app.use('/api/stats', statsRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server started on port: ${PORT}`);
