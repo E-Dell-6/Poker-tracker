@@ -1,9 +1,14 @@
-import Hand from '../model/PokerHands.js';
+import Session from '../model/Session.js';
 import PlayerStats from '../model/PlayerStats.js';
 import { computeStatsForHands, matchByPersonId, matchHero } from '../utils/statsEngine.js';
 
+function extractHands(sessions) {
+  return sessions.flatMap(s => s.hands || []);
+}
+
 export async function recomputeStatsForPerson(userId, personId) {
-  const hands = await Hand.find({ 'players.personId': personId }).lean();
+  const sessions = await Session.find({ userId, 'hands.players.personId': personId }).lean();
+  const hands = extractHands(sessions);
   const stats = computeStatsForHands(hands, matchByPersonId(personId));
 
   return PlayerStats.findOneAndUpdate(
@@ -13,11 +18,9 @@ export async function recomputeStatsForPerson(userId, personId) {
   );
 }
 
-export async function recomputeHeroStats(userId, sessionIds) {
-  const hands = await Hand.find({
-    sessionId: { $in: sessionIds },
-    'players.isHero': true
-  }).lean();
+export async function recomputeHeroStats(userId) {
+  const sessions = await Session.find({ userId, 'hands.players.isHero': true }).lean();
+  const hands = extractHands(sessions);
   const stats = computeStatsForHands(hands, matchHero());
 
   return PlayerStats.findOneAndUpdate(
@@ -27,10 +30,10 @@ export async function recomputeHeroStats(userId, sessionIds) {
   );
 }
 
-// Call this right after a hand (or batch of hands, e.g. a parsed session) is
-// saved. It figures out which linked persons + hero appear in the new hands
-// and recomputes just those — not every person the user has ever tracked.
-export async function recomputeStatsForNewHands(userId, hands, sessionIds) {
+// Call this right after a session (a batch of parsed hands) is saved. It
+// looks at just the newly-saved hands to figure out which linked persons +
+// hero are affected, then recomputes only those - not everyone ever tracked.
+export async function recomputeStatsForNewHands(userId, hands) {
   const personIds = new Set();
   let touchesHero = false;
 
@@ -43,7 +46,7 @@ export async function recomputeStatsForNewHands(userId, hands, sessionIds) {
   }
 
   const jobs = [...personIds].map(pid => recomputeStatsForPerson(userId, pid));
-  if (touchesHero) jobs.push(recomputeHeroStats(userId, sessionIds));
+  if (touchesHero) jobs.push(recomputeHeroStats(userId));
 
   return Promise.all(jobs);
 }

@@ -52,7 +52,7 @@ function StatBox({ label, rate }) {
   );
 }
 
-function Study() {
+export function Study() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

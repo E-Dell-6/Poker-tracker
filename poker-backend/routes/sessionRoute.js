@@ -6,6 +6,8 @@ import Session from '../model/Session.js';
 import LiveSession from '../model/LiveSession.js';
 import mongoose from 'mongoose';
 import userAuth from '../middleware/userAuth.js';
+import { attachPersonIdsToHands } from '../services/personService.js';
+import { recomputeStatsForNewHands } from '../services/statsService.js';
 
 const router = express.Router();
 
@@ -103,6 +105,12 @@ router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) =
                     continue;
                 }
                 parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
+
+                // Every named player gets a Person record (auto-created on first
+                // sight, reused after) so stats can be tracked without requiring
+                // a manual "map this player" step first.
+                await attachPersonIdsToHands(userId, parsedHands);
+
                 const session = new Session({
                     userId,
                     fileHash,
@@ -119,6 +127,13 @@ router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) =
                     hands: parsedHands
                 });
                 await session.save();
+
+                // Fire-and-forget: don't block the upload response on stats
+                // recomputation, but do log failures instead of swallowing them.
+                recomputeStatsForNewHands(userId, parsedHands).catch(err => {
+                    console.error(`Stats recompute failed for session ${session._id}:`, err);
+                });
+
                 results.push({ filename, success: true, sessionId: session._id, totalHands: parsedHands.length, source: format });
             } catch (fileError) {
                 results.push({ filename, success: false, error: fileError.message });
