@@ -44,6 +44,10 @@ const PlayerStatsSchema = new mongoose.Schema({
   totalProfitLoss: { type: Number, default: 0 },
   handsWithProfitData: { type: Number, default: 0 },
   bb100: { type: Number, default: null },
+  // Null when this player's tracked hands span more than one currency
+  // (mixing units would make totalProfitLoss/bb100 meaningless) - see
+  // statsEngine.js's `finalize()` for how this is derived.
+  currency: { type: String, enum: ['USD', 'CAD', 'CHIPS', null], default: null },
 
   lastComputedAt: { type: Date, default: Date.now }
 });

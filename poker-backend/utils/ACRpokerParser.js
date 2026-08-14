@@ -325,6 +325,15 @@ function parseACRAction(line, playerName, actionArr, street) {
         action.actionType = 'POST_BB';
         const m = line.match(/\$([\d,]+\.?\d*)/);
         amount = m ? parseMoney(m[1]) : 0;
+    } else if (/ posts /.test(line)) {
+        // Broader posts variant, e.g. "posts dead $0.07" or "posts missed $0.05" —
+        // the amount always follows a "$", regardless of what word sits between
+        // "posts" and the dollar sign, so this still just grabs the first $amount.
+        // Placed after the "posts the small/big blind" and bare "posts $" checks
+        // above so it only catches whatever those didn't.
+        action.actionType = 'POST_BB';
+        const m = line.match(/\$([\d,]+\.?\d*)/);
+        amount = m ? parseMoney(m[1]) : 0;
     } else if (/ calls /.test(line)) {
         action.actionType = 'CALL';
         const m = line.match(/calls \$([\d,]+\.?\d*)/);

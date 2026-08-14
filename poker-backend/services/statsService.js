@@ -2,8 +2,13 @@ import Session from '../model/Session.js';
 import PlayerStats from '../model/PlayerStats.js';
 import { computeStatsForHands, matchByPersonId, matchHero } from '../utils/statsEngine.js';
 
+// Each hand needs to know which currency its dollar amounts (profitLoss,
+// stakes, etc.) are logged in, but that lives on the parent Session, not
+// on the hand doc itself - so it's stamped on here before hands are
+// flattened out of their sessions and lose that context. statsEngine.js
+// relies on this to convert bb-size and profitLoss into matching units.
 function extractHands(sessions) {
-  return sessions.flatMap(s => s.hands || []);
+  return sessions.flatMap(s => (s.hands || []).map(h => ({ ...h, currency: s.currency })));
 }
 
 export async function recomputeStatsForPerson(userId, personId) {

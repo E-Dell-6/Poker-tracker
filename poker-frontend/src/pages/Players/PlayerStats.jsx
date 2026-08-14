@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './PlayerStats.css';
 import { API_URL } from '../../config';
+import { formatSignedAmount } from '../../utils/formatMoney';
 
 const STAT_GROUPS = [
   {
@@ -123,12 +124,19 @@ export function PlayerStats({ player }) {
             </div>
             <div className="stat-box">
               <div className="stat-label">Net Won</div>
-              <div className="stat-value">{stats.totalProfitLoss >= 0 ? '+' : ''}{stats.totalProfitLoss}</div>
+              <div className="stat-value">
+                {stats.currency
+                  ? formatSignedAmount(stats.totalProfitLoss, stats.currency)
+                  : `${stats.totalProfitLoss >= 0 ? '+' : ''}${stats.totalProfitLoss} (mixed currencies)`}
+              </div>
               <div className="stat-sample">{stats.handsWithProfitData} hands w/ data</div>
             </div>
             <div className="stat-box">
               <div className="stat-label">BB/100</div>
               <div className="stat-value">{stats.bb100 ?? '—'}</div>
+              {stats.bb100 === null && !stats.currency && (
+                <div className="stat-sample">mixed currencies</div>
+              )}
             </div>
             <div className="stat-box">
               <div className="stat-label">Aggression %</div>

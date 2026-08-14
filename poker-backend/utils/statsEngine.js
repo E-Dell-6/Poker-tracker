@@ -41,11 +41,19 @@ function getPositionMap(hand) {
   return map;
 }
 
-function parseBigBlind(stakes) {
+// Sessions logged in these currencies store profitLoss (and all other
+// dollar amounts) in integer CENTS (see ACRPokerParser.js). `stakes` is
+// always the raw display string (e.g. "$1/$2"), i.e. major units - so the
+// parsed bb figure has to be scaled up to match profitLoss's units before
+// the two are ever divided together, or bb100 comes out ~100x too large.
+const CENTS_CURRENCIES = new Set(['USD', 'CAD']);
+
+function parseBigBlind(stakes, currency) {
   if (!stakes) return null;
   const parts = String(stakes).split('/').map(s => parseFloat(s.replace(/[^0-9.]/g, '')));
   const bb = parts[parts.length - 1];
-  return Number.isFinite(bb) && bb > 0 ? bb : null;
+  if (!Number.isFinite(bb) || bb <= 0) return null;
+  return CENTS_CURRENCIES.has(currency) ? bb * 100 : bb;
 }
 
 function newRateStat() {
@@ -77,7 +85,8 @@ function newAccumulator() {
     totalProfitLoss: 0,
     handsWithProfitData: 0,
     bbUnitsWon: 0,
-    handsWithBbData: 0
+    handsWithBbData: 0,
+    currencies: new Set()
   };
 }
 
@@ -228,14 +237,20 @@ function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner,
   );
 
   if (sawFlop) {
-    if (isWinner) acc.wwsf.made++;
     acc.wwsf.opportunities++;
+    if (isWinner) acc.wwsf.made++;
 
-    if (hadShowdown && stillInAfterPostflop) {
+    // wtsd opportunity = every hand where the player saw the flop and
+    // was still in the hand postflop. wtsd made = the subset that
+    // actually reached showdown. These must NOT be incremented in the
+    // same branch, or the rate is trivially always 100%.
+    if (stillInAfterPostflop) {
       acc.wtsd.opportunities++;
-      acc.wtsd.made++;
-      acc.wsd.opportunities++;
-      if (isWinner) acc.wsd.made++;
+      if (hadShowdown) {
+        acc.wtsd.made++;
+        acc.wsd.opportunities++;
+        if (isWinner) acc.wsd.made++;
+      }
     }
   }
 }
@@ -248,6 +263,7 @@ export function computeStatsForHands(hands, matchPlayer) {
     if (!player || player.isSittingOut) continue;
 
     acc.hands++;
+    if (hand.currency) acc.currencies.add(hand.currency);
     const positionMap = getPositionMap(hand);
     const name = player.name;
 
@@ -268,7 +284,7 @@ export function computeStatsForHands(hands, matchPlayer) {
       acc.totalProfitLoss += player.profitLoss;
       acc.handsWithProfitData++;
 
-      const bb = parseBigBlind(hand.stakes);
+      const bb = parseBigBlind(hand.stakes, hand.currency);
       if (bb) {
         acc.bbUnitsWon += player.profitLoss / bb;
         acc.handsWithBbData++;
@@ -316,9 +332,17 @@ function finalize(acc) {
     aggFactor,
     totalProfitLoss: Math.round(acc.totalProfitLoss * 100) / 100,
     handsWithProfitData: acc.handsWithProfitData,
-    bb100: acc.handsWithBbData > 0
+    bb100: (acc.handsWithBbData > 0 && acc.currencies.size <= 1)
       ? Math.round((acc.bbUnitsWon / acc.handsWithBbData) * 100 * 100) / 100
-      : null
+      : null,
+    // Single currency string if every hand for this player was in the
+    // same currency, otherwise null. totalProfitLoss/bb100 mix units
+    // whenever a player's hands span multiple currencies (e.g. a real-
+    // money site + a play-chip home game) - there's no single scalar
+    // that's meaningful in that case, so callers get an explicit null
+    // instead of a silently-wrong number, and should decide how to
+    // handle/display that (e.g. split stats per currency).
+    currency: acc.currencies.size === 1 ? [...acc.currencies][0] : null
   };
 }
 
