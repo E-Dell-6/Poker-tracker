@@ -5,10 +5,18 @@ import { computeHandProfits } from './handProfitCalculator.js';
  * Parses an ACR (America's CardRoom) plain-text hand history export into
  * the same hand/action/player shape produced by parsePokerNowLog.
  *
+ * This is the CANONICAL parser shared by both the webapp backend and the
+ * desktop HUD. Do not fork this file again — if one app needs different
+ * behavior, gate it behind an argument (see `filePath` below) rather than
+ * diverging the logic, or the two apps will silently disagree on parsed
+ * data the way tableName/maxSeats did before this merge.
+ *
  * Note on units: ACR logs are real-money ($) hands, unlike PokerNow's play-
  * chip logs. All dollar amounts (stacks, bet sizes, pot sizes, winnings)
  * are converted to integer CENTS (e.g. "$2.07" -> 207) so pot/action math
- * stays exact and never drifts due to floating point rounding.
+ * stays exact and never drifts due to floating point rounding. Downstream
+ * consumers (statsEngine.js) rely on this and normalize back to major
+ * units for user-facing figures like totalProfitLoss.
  *
  * Note on multi-word names: ACR player names can contain spaces (e.g.
  * "Tony Champaroney"), so most lines can't be parsed with a naive \S+
@@ -22,8 +30,31 @@ import { computeHandProfits } from './handProfitCalculator.js';
  * resolved consistently everywhere instead of each call site guessing
  * independently and risking disagreeing with each other.
  */
-export function parseACRLog(fileContent) {
+/**
+ * @param {string} fileContent
+ * @param {string} [filePath] - optional; used to recover the table name for
+ *   cash-game files, whose hand text (unlike tournament/jackpot hands) does
+ *   NOT include a "Table 'X' N-max Seat #N is the button" line. ACR instead
+ *   encodes it in the filename itself as a "TN-<n>" token, e.g.:
+ *     HH20260814 CASHID-G35645592T450 TN-Spring Grove GAMETYPE-Hold'em ...
+ *   This is actually more reliable than the hand-text line even when that
+ *   line IS present, since it's guaranteed on every hand in the file rather
+ *   than being one specific optional line's format.
+ *   The webapp backend, which uploads hand-history slices without a
+ *   meaningful local filesystem path, can omit this argument entirely —
+ *   tableName then falls back to whatever the in-text "Table 'X' N-max"
+ *   line provides (or stays null if that line isn't present, same as
+ *   before this merge).
+ */
+export function parseACRLog(fileContent, filePath) {
     const text = String(fileContent || '').replace(/\r\n/g, '\n');
+
+    let tableNameFromFilename = null;
+    if (filePath) {
+        const base = filePath.split(/[\\/]/).pop() || '';
+        const m = base.match(/\bTN-(.+?) GAMETYPE-/);
+        if (m) tableNameFromFilename = m[1];
+    }
 
     // Hands are separated by a blank line and each one starts with "Hand #...".
     const blocks = text
@@ -73,7 +104,20 @@ export function parseACRLog(fileContent) {
         currentHand.players = [];
 
         let buttonSeat = null;
-        const buttonMatch = (lines[1] || '').match(/Seat #(\d+) is the button/);
+        const tableLine = lines[1] || '';
+
+        // Cash games: no table name in the hand text at all — use the
+        // filename-derived one. Tournament/jackpot hands DO sometimes
+        // include "Table 'X' N-max Seat #N is the button" in the text, which
+        // also gives us maxSeats (not available from the filename), so it's
+        // still worth checking even when we already have a filename-based name.
+        const tableMatch = tableLine.match(/Table '(.+?)' (\d+)-max/);
+        if (tableMatch) {
+          currentHand.maxSeats = parseInt(tableMatch[2], 10);
+        }
+        currentHand.tableName = tableNameFromFilename || (tableMatch ? tableMatch[1] : null);
+
+        const buttonMatch = tableLine.match(/Seat #(\d+) is the button/);
         if (buttonMatch) buttonSeat = parseInt(buttonMatch[1], 10);
 
         let currentStreet = 'PREFLOP';

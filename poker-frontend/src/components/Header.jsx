@@ -6,7 +6,7 @@ const menuItems = [
   { icon: "≡", label: "Hand History", to: "/history" },
   { icon: "◷", label: "Clock In", to: "/clock" },
   { icon: "◈", label: "Players", to: "/players" },
-  { icon: "◎", label: "Stats", to: "/study" },
+  { icon: "◎", label: "Stats", to: "/stats" },
 ];
 
 export function Header() {

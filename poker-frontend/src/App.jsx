@@ -5,7 +5,7 @@ import './App.css'
 import { HandReplayer, PublicHandViewer } from './pages/HandReplayer/HandReplayer';
 import { Clock } from './pages/Clock/Clock';
 import { Players } from './pages/Players/Players';
-import { Study } from './pages/Study/Study';
+import { Stats } from './pages/Stats/Stats';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
 import HandCreator from './pages/HandCreator/HandCreator';
@@ -24,7 +24,7 @@ function App() {
       <Route path="/clock" element={<Clock />}/>
       <Route path="hand-replay" element={<HandReplayRoute />}/>
       <Route path="/players" element={<Players />} />
-      <Route path="/study" element={<Study />} />
+      <Route path="/stats" element={<Stats />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path='/hand-creator' element={<HandCreator />}/>

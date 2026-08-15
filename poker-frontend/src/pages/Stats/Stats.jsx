@@ -2,7 +2,7 @@ import { Layout } from '../../components/Layout';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { PositionalStats } from '../../components/PositionalStats';
-import './Study.css';
+import './Stats.css';
 
 const STAT_GROUPS = [
   {
@@ -65,7 +65,7 @@ function StatBox({ label, rate }) {
   );
 }
 
-export function Study() {
+export function Stats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -211,4 +211,4 @@ export function Study() {
   );
 }
 
-export default Study;
+export default Stats;

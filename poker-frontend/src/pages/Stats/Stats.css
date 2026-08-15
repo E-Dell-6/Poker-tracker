@@ -1,9 +1,3 @@
-/* Study.css — "My Statistics" page.
-   Design language: dark felt-table surface, warm gold accent, a serif
-   display face for numbers/headline (card-room elegance) paired with a
-   quiet uppercase sans for labels. Section dividers use a single suit
-   glyph as an eyebrow — a nod to the subject rather than decoration. */
-
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
