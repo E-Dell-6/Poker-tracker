@@ -153,7 +153,12 @@ function newAccumulator() {
     handsWithBbData: 0,
     currencies: new Set(),
     // tableSize -> { positions, vsOpen, vs3Bet } - see ensurePositional above.
-    positional: {}
+    positional: {},
+    // Diagnostic: how many of this player's hands actually resolved to a
+    // position (needs a dealer/button flag + >=2 active players). If this
+    // stays near 0 while totalHands is high, positional stats will look
+    // empty even with plenty of data - see positionCoverage in finalize().
+    handsWithPosition: 0
   };
 }
 
@@ -403,6 +408,7 @@ export function computeStatsForHands(hands, matchPlayer) {
     // present on the hand) - global stats above are unaffected either way.
     const posBucket = position && tableSize >= 2 ? ensurePositional(acc, tableSize) : null;
     const posStats = posBucket ? ensurePositionStats(posBucket, position) : null;
+    if (posStats) acc.handsWithPosition++;
 
     const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats);
 
@@ -418,7 +424,17 @@ export function computeStatsForHands(hands, matchPlayer) {
     accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc, posStats);
 
     if (typeof player.profitLoss === 'number') {
-      acc.totalProfitLoss += player.profitLoss;
+      // player.profitLoss is stored in integer CENTS for USD/CAD hands (see
+      // CENTS_CURRENCIES above) but in major units for everything else.
+      // totalProfitLoss is a user-facing dollar figure, so it has to be
+      // normalized to major units per-hand before summing - otherwise a
+      // session's worth of hands in cents dwarfs everything else by ~100x.
+      // bbUnitsWon below intentionally keeps using the raw, unconverted
+      // profitLoss: parseBigBlind() already scales `bb` up by the same
+      // factor for cents currencies, so that ratio was correct as-is and
+      // must NOT also be divided here, or it'd be wrong the other way.
+      const displayProfit = CENTS_CURRENCIES.has(hand.currency) ? player.profitLoss / 100 : player.profitLoss;
+      acc.totalProfitLoss += displayProfit;
       acc.handsWithProfitData++;
 
       const bb = parseBigBlind(hand.stakes, hand.currency);
@@ -535,7 +551,12 @@ function finalize(acc) {
     // players). See ensurePositional/ensureVsOpen/ensureVs3Bet above for
     // the shape. Keys are stringified table sizes ("6", "9", ...) because
     // that's what plain-object/JSON round-tripping gives us.
-    positional: finalizePositional(acc.positional)
+    positional: finalizePositional(acc.positional),
+    // How many hands actually had a resolvable position (dealer flag +
+    // >=2 active players) vs. total hands seen. If hands is 0 while
+    // totalHands is high, the underlying hand data is missing isDealer -
+    // that's a parsing/import issue, not a UI issue.
+    positionCoverage: { hands: acc.handsWithPosition, totalHands: acc.hands }
   };
 }
 

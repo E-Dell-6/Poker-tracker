@@ -1,5 +1,31 @@
+/* PositionalStats.css — shared component (Study + Players pages), so
+   colors are hardcoded here rather than relying on host-page variables. */
+
 .positional-stats-section {
   margin-top: 2rem;
+}
+
+.pos-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pos-glyph {
+  font-size: 15px;
+  color: #d4af37;
+  line-height: 1;
+}
+
+.pos-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.09) 0%, transparent 100%);
+}
+
+.stats-header--pos {
+  margin-bottom: 0;
 }
 
 .pos-size-tabs {
@@ -11,22 +37,31 @@
 .pos-size-tab {
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
-  color: inherit;
+  color: #8a8a8f;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.pos-size-tab:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #f2f0ea;
 }
 
 .pos-size-tab.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
+  background: linear-gradient(145deg, #d4af37, #f4c430);
+  border-color: #d4af37;
+  color: #17130a;
 }
 
 .pos-table-wrap {
   overflow-x: auto;
   margin-top: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
 }
 
 .pos-table {
@@ -37,37 +72,55 @@
 
 .pos-table th,
 .pos-table td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.65rem 0.8rem;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   white-space: nowrap;
 }
 
+.pos-table tbody tr:last-child th,
+.pos-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pos-table tbody tr:hover td,
+.pos-table tbody tr:hover th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .pos-table thead th {
-  color: #9ca3af;
+  color: #8a8a8f;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .pos-table tbody th {
   text-align: left;
-  color: inherit;
+  color: #f2f0ea;
   font-weight: 600;
 }
 
 .pos-cell-pct {
-  font-weight: 600;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  color: #f4c430;
+  font-variant-numeric: tabular-nums;
 }
 
 .pos-cell-sample {
-  font-size: 0.7rem;
-  color: #9ca3af;
+  font-size: 0.68rem;
+  color: #55565c;
+  margin-top: 3px;
 }
 
 .pos-cell--empty {
-  color: #6b7280;
+  color: #45464c;
+  font-size: 1.15rem;
 }
 
 .pos-matrix {
@@ -84,12 +137,17 @@
 
 .pos-matrix-header h4 {
   margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #f2f0ea;
 }
 
 .pos-matrix-desc {
-  color: #9ca3af;
-  font-size: 0.8rem;
-  margin: 0.25rem 0 0;
+  color: #8a8a8f;
+  font-size: 0.78rem;
+  margin: 0.3rem 0 0;
+  max-width: 640px;
 }
 
 .pos-mode-toggle {
@@ -100,15 +158,21 @@
 .pos-mode-btn {
   padding: 0.3rem 0.7rem;
   border-radius: 6px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
-  color: inherit;
+  color: #8a8a8f;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.pos-mode-btn:hover {
+  color: #f2f0ea;
 }
 
 .pos-mode-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
+  background: rgba(212, 175, 55, 0.14);
+  border-color: #d4af37;
+  color: #f4c430;
 }

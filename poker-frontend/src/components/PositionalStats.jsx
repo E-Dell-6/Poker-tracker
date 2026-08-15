@@ -99,7 +99,9 @@ function Matrix({ title, description, matrix, positions, modes, activeMode, onMo
 
 // `positional` is the object produced by statsEngine.js's finalizePositional:
 // { "<tableSize>": { positions: {...}, vsOpen: {...}, vs3Bet: {...} } }
-export function PositionalStats({ positional }) {
+// `coverage` is stats.positionCoverage: { hands, totalHands } - how many
+// hands actually resolved a position, for the empty-state message.
+export function PositionalStats({ positional, coverage }) {
   const sizes = Object.keys(positional || {})
     .map(Number)
     .filter(n => !Number.isNaN(n))
@@ -119,9 +121,18 @@ export function PositionalStats({ positional }) {
   if (!positional || sizes.length === 0 || activeSize === null) {
     return (
       <div className="positional-stats-section">
-        <h3 className="section-title">Positional Breakdown</h3>
+        <div className="pos-section-header">
+          <span className="pos-glyph" aria-hidden="true">♦</span>
+          <h3 className="section-title">Positional Breakdown</h3>
+          <span className="pos-rule" />
+        </div>
         <div className="stats-placeholder">
-          Not enough hands with identifiable seating yet to break stats down by position.
+          {coverage && coverage.totalHands > 0
+            ? `${coverage.hands} of ${coverage.totalHands} hands had a resolvable position (a dealer/button seat marked). `
+              + (coverage.hands === 0
+                ? "None did — these hands are missing the button flag, so positions can't be assigned. That's a data/import issue, not something Recompute alone will fix."
+                : 'Hit Recompute to include any hands imported since this was last computed.')
+            : 'Not enough hands with identifiable seating yet to break stats down by position.'}
         </div>
       </div>
     );
@@ -132,8 +143,12 @@ export function PositionalStats({ positional }) {
 
   return (
     <div className="positional-stats-section">
-      <div className="stats-header">
+      <div className="pos-section-header">
+        <span className="pos-glyph" aria-hidden="true">♦</span>
         <h3 className="section-title">Positional Breakdown</h3>
+        <span className="pos-rule" />
+      </div>
+      <div className="stats-header stats-header--pos">
         <div className="pos-size-tabs">
           {sizes.map(size => (
             <button

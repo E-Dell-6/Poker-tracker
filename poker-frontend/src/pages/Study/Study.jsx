@@ -7,6 +7,7 @@ import './Study.css';
 const STAT_GROUPS = [
   {
     title: 'Preflop',
+    glyph: '♠',
     stats: [
       ['vpip', 'VPIP'],
       ['pfr', 'PFR'],
@@ -23,6 +24,7 @@ const STAT_GROUPS = [
   },
   {
     title: 'Postflop',
+    glyph: '♣',
     stats: [
       ['cbFlop', 'Flop C-Bet %'],
       ['foldToCbFlop', 'Fold to Flop C-Bet %'],
@@ -33,6 +35,16 @@ const STAT_GROUPS = [
     ]
   }
 ];
+
+function SectionHeader({ glyph, title }) {
+  return (
+    <div className="section-header">
+      <span className="section-glyph" aria-hidden="true">{glyph}</span>
+      <h3 className="section-title">{title}</h3>
+      <span className="section-rule" />
+    </div>
+  );
+}
 
 function StatBox({ label, rate }) {
   if (!rate || rate.opportunities === 0) {
@@ -103,7 +115,7 @@ export function Study() {
         <div className="study-page">
           <div className="study-status-container">
             <div className="study-spinner"></div>
-            <p>Loading your stats...</p>
+            <p>Loading your stats…</p>
           </div>
         </div>
       </Layout>
@@ -114,8 +126,8 @@ export function Study() {
     return (
       <Layout>
         <div className="study-page">
-          <div className="study-status-container">
-            <h2>Error Loading Stats</h2>
+          <div className="study-status-container study-status-container--error">
+            <h2>Couldn't load your stats</h2>
             <p>{error}</p>
             <button className="refresh-btn" onClick={fetchStats}>Retry</button>
           </div>
@@ -124,44 +136,52 @@ export function Study() {
     );
   }
 
+  const netPositive = stats && stats.totalProfitLoss >= 0;
+
   return (
     <Layout>
       <div className="study-page">
         <div className="study-header">
           <div className="study-title-row">
-            <h1>My Statistics</h1>
+            <div>
+              <div className="study-eyebrow">Player Report</div>
+              <h1 className="study-title">My Statistics</h1>
+            </div>
             <button className="refresh-btn" onClick={refreshStats} disabled={refreshing}>
               {refreshing ? 'Recomputing…' : '↺ Recompute Stats'}
             </button>
           </div>
+          <div className="study-divider" />
         </div>
 
         {!stats || stats.totalHands === 0 ? (
           <div className="study-status-container">
-            <h2>No Data Available</h2>
-            <p>No hands found yet. Import a session, then recompute stats.</p>
+            <h2>No data yet</h2>
+            <p>Import a session, then hit Recompute to generate your stats.</p>
           </div>
         ) : (
           <div className="stats-container">
-            <div className="stats-grid">
-              <div className="stat-box">
+            <div className="stats-grid stats-grid--hero">
+              <div className="stat-box stat-box--hero">
                 <div className="stat-label">Total Hands</div>
                 <div className="stat-value">{stats.totalHands}</div>
               </div>
-              <div className="stat-box">
+              <div className="stat-box stat-box--hero">
                 <div className="stat-label">Net Won</div>
-                <div className="stat-value">{stats.totalProfitLoss >= 0 ? '+' : ''}{stats.totalProfitLoss}</div>
+                <div className={`stat-value ${netPositive ? 'stat-value--positive' : 'stat-value--negative'}`}>
+                  {netPositive ? '+' : ''}{stats.totalProfitLoss}
+                </div>
                 <div className="stat-sample">{stats.handsWithProfitData} hands w/ data</div>
               </div>
-              <div className="stat-box">
+              <div className="stat-box stat-box--hero">
                 <div className="stat-label">BB/100</div>
                 <div className="stat-value">{stats.bb100 ?? '—'}</div>
               </div>
-              <div className="stat-box">
+              <div className="stat-box stat-box--hero">
                 <div className="stat-label">Aggression %</div>
                 <div className="stat-value">{stats.aggPct}%</div>
               </div>
-              <div className="stat-box">
+              <div className="stat-box stat-box--hero">
                 <div className="stat-label">Aggression Factor</div>
                 <div className="stat-value">{stats.aggFactor ?? '—'}</div>
               </div>
@@ -169,7 +189,7 @@ export function Study() {
 
             {STAT_GROUPS.map(group => (
               <div key={group.title}>
-                <h3 className="section-title">{group.title}</h3>
+                <SectionHeader glyph={group.glyph} title={group.title} />
                 <div className="stats-grid">
                   {group.stats.map(([key, label]) => (
                     <StatBox key={key} label={label} rate={stats[key]} />
@@ -178,7 +198,7 @@ export function Study() {
               </div>
             ))}
 
-            <PositionalStats positional={stats.positional} />
+            <PositionalStats positional={stats.positional} coverage={stats.positionCoverage} />
 
             <p className="study-note">
               Last computed {new Date(stats.lastComputedAt).toLocaleString()}. Stats are cached
