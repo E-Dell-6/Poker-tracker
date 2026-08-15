@@ -2,6 +2,7 @@ import { Layout } from "../../components/Layout";
 import { useState, useEffect, useMemo } from "react";
 import "./Profile.css";
 import { API_URL } from "../../config";
+import { formatSignedAmount, toMajorUnits } from "../../utils/formatMoney";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -14,6 +15,39 @@ const SOURCE_FILTERS = [
   { label: "All",    value: "all"    },
   { label: "Online", value: "online" },
   { label: "Live",   value: "live"   },
+];
+
+// Mirrors PlayerStats.jsx's grouping so the same stat set that shows up
+// for opponents is available here for hero (the /api/stats/me doc has the
+// exact same shape - both are produced by statsEngine.js's finalize()).
+const STAT_GROUPS = [
+  {
+    title: 'Preflop',
+    stats: [
+      ['vpip', 'VPIP'],
+      ['pfr', 'PFR'],
+      ['open', 'Open %'],
+      ['threeBet', '3-Bet %'],
+      ['foldTo3Bet', 'Fold to 3-Bet %'],
+      ['fourBet', '4-Bet %'],
+      ['foldTo4Bet', 'Fold to 4-Bet %'],
+      ['steal', 'Steal %'],
+      ['foldToSteal', 'Fold to Steal %'],
+      ['limp', 'Limp %'],
+      ['coldCall', 'Cold Call %']
+    ]
+  },
+  {
+    title: 'Postflop',
+    stats: [
+      ['cbFlop', 'Flop C-Bet %'],
+      ['foldToCbFlop', 'Fold to Flop C-Bet %'],
+      ['checkRaise', 'Check-Raise %'],
+      ['wtsd', 'Went to Showdown %'],
+      ['wsd', 'Won at Showdown %'],
+      ['wwsf', 'Won When Saw Flop %']
+    ]
+  }
 ];
 
 /* ─── helpers ──────────────────────────────────────────── */
@@ -41,6 +75,18 @@ function fmtDuration(ms) {
 
 function fmtDate(d) {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// An online Session's totalProfit is stored in whatever unit its currency
+// uses (integer cents for USD/CAD, plain units for CHIPS) - see
+// ACRPokerParser.js and formatMoney.js's CURRENCY_META. Live sessions have
+// no `currency` field and are entered by the user directly in dollars, so
+// they're already in major units and pass through toMajorUnits unchanged
+// (CHIPS-style fallback = identity). This does NOT convert USD<->CAD; it
+// only fixes cents-vs-major-unit scaling so real-money online sessions
+// stop being counted ~100x too large.
+function onlineSessionProfit(session) {
+  return toMajorUnits(session.totalProfit ?? 0, session.currency);
 }
 
 /* ─── pure-SVG line/area chart ──────────────────────────── */
@@ -189,6 +235,42 @@ const [hover, setHover] = useState(null);
   );
 }
 
+/* ─── detailed poker-stats box (mirrors PlayerStats.jsx's StatBox) ──── */
+function PkStatBox({ label, rate }) {
+  if (!rate || rate.opportunities === 0) {
+    return (
+      <div className="pk-stat-box pk-stat-box--empty">
+        <div className="pk-stat-label">{label}</div>
+        <div className="pk-stat-value">—</div>
+        <div className="pk-stat-sample">no data</div>
+      </div>
+    );
+  }
+  return (
+    <div className="pk-stat-box">
+      <div className="pk-stat-label">{label}</div>
+      <div className="pk-stat-value">{rate.pct}%</div>
+      <div className="pk-stat-sample">{rate.made}/{rate.opportunities}</div>
+    </div>
+  );
+}
+
+// statsEngine.js's finalize() returns three distinct states for currency:
+// a string (every hand agreed), null (hands genuinely spanned more than
+// one currency), or undefined (no currency data at all, e.g. legacy rows).
+// These need different copy - collapsing null/undefined together would
+// mislabel "we don't know" as "mixed", which is what caused the original
+// bug on the Players page.
+function NetWonDisplay({ stats }) {
+  const value = stats.totalProfitLoss ?? 0;
+  if (typeof stats.currency === 'string') {
+    return <>{formatSignedAmount(value, stats.currency)}</>;
+  }
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  const note = stats.currency === null ? '(mixed currencies)' : '(currency unknown)';
+  return <>{sign}{Math.abs(value)} <span className="pk-stat-note">{note}</span></>;
+}
+
 /* ─── main page ─────────────────────────────────────────── */
 export function Profile() {
   const [user, setUser]             = useState(null);
@@ -197,6 +279,11 @@ export function Profile() {
   const [loading, setLoading]       = useState(true);
   const [timeFilter,   setTime]     = useState(null);
   const [sourceFilter, setSource]   = useState("all");
+
+  const [heroStats, setHeroStats]           = useState(null);
+  const [heroStatsLoading, setHeroLoading]  = useState(true);
+  const [heroStatsError, setHeroError]      = useState(null);
+  const [recomputing, setRecomputing]       = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -220,6 +307,42 @@ export function Profile() {
     })();
   }, []);
 
+  const fetchHeroStats = async () => {
+    try {
+      setHeroLoading(true);
+      setHeroError(null);
+      const res = await fetch(`${API_URL}/api/stats/me`, { credentials: "include" });
+      if (res.status === 404) {
+        setHeroStats(null);
+        return;
+      }
+      if (!res.ok) throw new Error("Failed to load stats");
+      setHeroStats(await res.json());
+    } catch (e) {
+      setHeroError(e.message);
+    } finally {
+      setHeroLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchHeroStats(); }, []);
+
+  const handleRecomputeHeroStats = async () => {
+    try {
+      setRecomputing(true);
+      const res = await fetch(`${API_URL}/api/stats/me/recompute`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to recompute stats");
+      setHeroStats(await res.json());
+    } catch (e) {
+      setHeroError(e.message);
+    } finally {
+      setRecomputing(false);
+    }
+  };
+
   const cutoff = useMemo(() => {
     if (!timeFilter) return null;
     const d = new Date();
@@ -239,7 +362,7 @@ export function Profile() {
   const chartData = useMemo(() => {
     const pts = [];
     if (sourceFilter !== "live")
-      fOnline.forEach(s => pts.push({ date: new Date(s.date), profit: s.totalProfit ?? 0 }));
+      fOnline.forEach(s => pts.push({ date: new Date(s.date), profit: onlineSessionProfit(s) }));
     if (sourceFilter !== "online")
       fLive.forEach(s => pts.push({ date: new Date(s.clockOutTime ?? s.date), profit: s.totalProfit ?? 0 }));
     pts.sort((a, b) => a.date - b.date);
@@ -254,7 +377,7 @@ export function Profile() {
   const stats = useMemo(() => {
     const ol = sourceFilter !== "live"   ? fOnline : [];
     const lv = sourceFilter !== "online" ? fLive   : [];
-    const allProfits = [...ol.map(x => x.totalProfit ?? 0), ...lv.map(x => x.totalProfit ?? 0)];
+    const allProfits = [...ol.map(onlineSessionProfit), ...lv.map(x => x.totalProfit ?? 0)];
     const totalProfit = allProfits.reduce((s, v) => s + v, 0);
     const wins        = allProfits.filter(p => p > 0).length;
     const liveMs      = lv.reduce((s, x) =>
@@ -381,6 +504,66 @@ export function Profile() {
             </div>
           </div>
         )}
+
+        {/* ── DETAILED POKER STATS (from statsEngine, same shape as an opponent's PlayerStats doc) ── */}
+        <div className="profile-pk-card">
+          <div className="pk-header">
+            <div>
+              <div className="chart-title">Poker Stats</div>
+              <div className="chart-sub">All-time, computed from your tracked hands</div>
+            </div>
+            <button className="pk-recompute-btn" onClick={handleRecomputeHeroStats} disabled={recomputing}>
+              {recomputing ? "Recomputing…" : "↺ Recompute"}
+            </button>
+          </div>
+
+          {heroStatsLoading ? (
+            <div className="pk-placeholder">Loading stats…</div>
+          ) : heroStatsError ? (
+            <div className="pk-placeholder">{heroStatsError}</div>
+          ) : !heroStats || heroStats.totalHands === 0 ? (
+            <div className="pk-placeholder">
+              No stats yet. Upload some hand histories, then hit Recompute.
+            </div>
+          ) : (
+            <div className="pk-container">
+              <div className="pk-stats-grid">
+                <div className="pk-stat-box">
+                  <div className="pk-stat-label">Total Hands</div>
+                  <div className="pk-stat-value">{heroStats.totalHands}</div>
+                </div>
+                <div className="pk-stat-box">
+                  <div className="pk-stat-label">Net Won</div>
+                  <div className="pk-stat-value"><NetWonDisplay stats={heroStats} /></div>
+                  <div className="pk-stat-sample">{heroStats.handsWithProfitData} hands w/ data</div>
+                </div>
+                <div className="pk-stat-box">
+                  <div className="pk-stat-label">BB/100</div>
+                  <div className="pk-stat-value">{heroStats.bb100 ?? "—"}</div>
+                </div>
+                <div className="pk-stat-box">
+                  <div className="pk-stat-label">Aggression %</div>
+                  <div className="pk-stat-value">{heroStats.aggPct}%</div>
+                </div>
+                <div className="pk-stat-box">
+                  <div className="pk-stat-label">Aggression Factor</div>
+                  <div className="pk-stat-value">{heroStats.aggFactor ?? "—"}</div>
+                </div>
+              </div>
+
+              {STAT_GROUPS.map(group => (
+                <div key={group.title}>
+                  <h3 className="pk-group-title">{group.title}</h3>
+                  <div className="pk-stats-grid">
+                    {group.stats.map(([key, label]) => (
+                      <PkStatBox key={key} label={label} rate={heroStats[key]} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
       </div>
     </Layout>

@@ -272,6 +272,114 @@
   font-size: 1.3rem; font-weight: 700; color: var(--gold);
 }
 
+/* ── DETAILED POKER STATS (hero) ─────────────────────── */
+.profile-pk-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+.pk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pk-recompute-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 100px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.pk-recompute-btn:hover:not(:disabled) {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+.pk-recompute-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pk-placeholder {
+  text-align: center;
+  color: var(--muted);
+  padding: 48px 20px;
+  font-size: 14px;
+  font-style: italic;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.pk-container { display: flex; flex-direction: column; gap: 20px; }
+
+.pk-group-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.pk-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.pk-stat-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.pk-stat-box:hover { transform: translateY(-3px); border-color: var(--gold-border); }
+
+.pk-stat-box--empty { opacity: 0.65; }
+
+.pk-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.pk-stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.15;
+}
+
+.pk-stat-sample { font-size: 10px; color: var(--muted); margin-top: 5px; }
+
+.pk-stat-note {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 768px) {
   .profile-page  { padding: 20px 16px; gap: 16px; }
@@ -283,4 +391,6 @@
   .profile-filters { gap: 8px; }
   .profile-chart-card { padding: 18px 14px; }
   .chart-svg { height: 200px; }
+  .profile-pk-card { padding: 18px 14px; }
+  .pk-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }

@@ -36,3 +36,18 @@ export function formatSignedAmount(amount, currency) {
 export function isCentsCurrency(currency) {
   return getCurrencyMeta(currency).isCents;
 }
+
+// Unlike formatAmount/formatSignedAmount (which return display strings),
+// this returns a plain number in the currency's major unit (e.g. cents ->
+// dollars). Use this before doing arithmetic - summing across sessions,
+// building chart totals, comparing best/worst - on amounts pulled
+// straight from the DB. Session.totalProfit for USD/CAD sessions is
+// stored in integer cents (see ACRPokerParser.js), so summing it directly
+// against a CHIPS or already-major-unit value (e.g. LiveSession.totalProfit,
+// which is entered by the user as plain dollars) silently inflates real-
+// money totals ~100x. This does NOT do currency conversion (USD vs CAD are
+// still just added together) - it only normalizes cents vs major units.
+export function toMajorUnits(amount, currency) {
+  const value = Number(amount) || 0;
+  return isCentsCurrency(currency) ? value / 100 : value;
+}
