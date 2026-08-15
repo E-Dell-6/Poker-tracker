@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './PlayerStats.css';
 import { API_URL } from '../../config';
 import { formatSignedAmount } from '../../utils/formatMoney';
+import { PositionalStats } from '../../components/PositionalStats';
 
 const STAT_GROUPS = [
   {
@@ -154,6 +155,8 @@ export function PlayerStats({ player }) {
               </div>
             </div>
           ))}
+
+          <PositionalStats positional={stats.positional} />
         </div>
       )}
     </div>

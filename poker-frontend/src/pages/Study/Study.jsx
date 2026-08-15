@@ -1,6 +1,7 @@
 import { Layout } from '../../components/Layout';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
+import { PositionalStats } from '../../components/PositionalStats';
 import './Study.css';
 
 const STAT_GROUPS = [
@@ -176,6 +177,8 @@ export function Study() {
                 </div>
               </div>
             ))}
+
+            <PositionalStats positional={stats.positional} />
 
             <p className="study-note">
               Last computed {new Date(stats.lastComputedAt).toLocaleString()}. Stats are cached

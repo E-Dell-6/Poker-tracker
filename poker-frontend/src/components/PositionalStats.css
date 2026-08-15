@@ -1,0 +1,114 @@
+.positional-stats-section {
+  margin-top: 2rem;
+}
+
+.pos-size-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pos-size-tab {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #3a3a3a;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.pos-size-tab.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.pos-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.pos-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.pos-table th,
+.pos-table td {
+  padding: 0.4rem 0.6rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.pos-table thead th {
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pos-table tbody th {
+  text-align: left;
+  color: inherit;
+  font-weight: 600;
+}
+
+.pos-cell-pct {
+  font-weight: 600;
+}
+
+.pos-cell-sample {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.pos-cell--empty {
+  color: #6b7280;
+}
+
+.pos-matrix {
+  margin-top: 1.75rem;
+}
+
+.pos-matrix-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pos-matrix-header h4 {
+  margin: 0;
+}
+
+.pos-matrix-desc {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0;
+}
+
+.pos-mode-toggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pos-mode-btn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid #3a3a3a;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.pos-mode-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}

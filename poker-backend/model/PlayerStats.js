@@ -49,6 +49,16 @@ const PlayerStatsSchema = new mongoose.Schema({
   // statsEngine.js's `finalize()` for how this is derived.
   currency: { type: String, enum: ['USD', 'CAD', 'CHIPS', null], default: null },
 
+  // Position-vs-position breakdown, bucketed by table size (2-9 active
+  // players): { "<tableSize>": { positions: { "<pos>": {open, threeBet,
+  // foldTo3Bet, ...} }, vsOpen: { "<attackerPos>": { "<responderPos>":
+  // {faced, folded, called, raised, foldPct, raisePct, defendPct} } },
+  // vs3Bet: { same shape, one level deeper } } }.
+  // Mixed because the set of positions/table sizes present varies per
+  // player and doesn't map cleanly onto a fixed schema - see
+  // statsEngine.js's finalizePositional() for exactly what gets written.
+  positional: { type: mongoose.Schema.Types.Mixed, default: {} },
+
   lastComputedAt: { type: Date, default: Date.now }
 });
 

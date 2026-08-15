@@ -60,6 +60,71 @@ function newRateStat() {
   return { made: 0, opportunities: 0 };
 }
 
+// "faced/folded/called/raised" is the shared primitive for every
+// position-vs-position matchup (facing an open, facing a 3-bet, etc).
+// It's deliberately generic rather than a pile of named counters, since
+// the same shape answers "defend %", "3-bet %" and "fold %" for whichever
+// two positions are involved.
+function newVsStat() {
+  return { faced: 0, folded: 0, called: 0, raised: 0 };
+}
+
+function newPositionStats() {
+  return {
+    vpip: newRateStat(),
+    pfr: newRateStat(),
+    open: newRateStat(),
+    steal: newRateStat(),
+    threeBet: newRateStat(),
+    foldTo3Bet: newRateStat(),
+    fourBet: newRateStat(),
+    foldTo4Bet: newRateStat(),
+    cbFlop: newRateStat(),
+    foldToCbFlop: newRateStat(),
+    wtsd: newRateStat(),
+    wwsf: newRateStat()
+  };
+}
+
+// acc.positional is keyed by table size (number of active players in the
+// hand, matching POSITIONS_BY_SIZE) so 6-handed and 9-handed tendencies -
+// which differ structurally, not just by sample size - are never blended
+// into one number.
+function ensurePositional(acc, tableSize) {
+  if (!acc.positional[tableSize]) {
+    acc.positional[tableSize] = { positions: {}, vsOpen: {}, vs3Bet: {} };
+  }
+  return acc.positional[tableSize];
+}
+
+function ensurePositionStats(bucket, position) {
+  if (!position) return null;
+  if (!bucket.positions[position]) {
+    bucket.positions[position] = newPositionStats();
+  }
+  return bucket.positions[position];
+}
+
+// vsOpen[attackerPos][responderPos]: responder's fold/call/raise rate when
+// facing an open from attackerPos. Covers "BB defend vs BTN", "SB 3-bet vs
+// CO open", "fold to steal" broken out by exact attacker, etc.
+function ensureVsOpen(bucket, attackerPos, responderPos) {
+  if (!attackerPos || !responderPos) return null;
+  if (!bucket.vsOpen[attackerPos]) bucket.vsOpen[attackerPos] = {};
+  if (!bucket.vsOpen[attackerPos][responderPos]) bucket.vsOpen[attackerPos][responderPos] = newVsStat();
+  return bucket.vsOpen[attackerPos][responderPos];
+}
+
+// vs3Bet[threeBetterPos][openerPos]: opener's fold/call(4bet)/raise rate
+// when facing a 3-bet from threeBetterPos. Covers "BTN's fold to a blind
+// 3-bet", "CO 4-bets vs SB 3-bet", etc.
+function ensureVs3Bet(bucket, threeBetterPos, openerPos) {
+  if (!threeBetterPos || !openerPos) return null;
+  if (!bucket.vs3Bet[threeBetterPos]) bucket.vs3Bet[threeBetterPos] = {};
+  if (!bucket.vs3Bet[threeBetterPos][openerPos]) bucket.vs3Bet[threeBetterPos][openerPos] = newVsStat();
+  return bucket.vs3Bet[threeBetterPos][openerPos];
+}
+
 function newAccumulator() {
   return {
     hands: 0,
@@ -86,11 +151,18 @@ function newAccumulator() {
     handsWithProfitData: 0,
     bbUnitsWon: 0,
     handsWithBbData: 0,
-    currencies: new Set()
+    currencies: new Set(),
+    // tableSize -> { positions, vsOpen, vs3Bet } - see ensurePositional above.
+    positional: {}
   };
 }
 
-function accumulatePreflop(hand, positionMap, name, acc) {
+// posBucket = acc.positional[tableSize] (or null if position unknown) -
+// needed here (not just posStats) because vsOpen/vs3Bet are keyed by the
+// *attacker's* position, not the target player's own position.
+// posStats = posBucket.positions[position] (or null) - the target
+// player's own per-position stat line.
+function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
   const real = (hand.actions || []).filter(
     a => a.street === 'PREFLOP' && a.actionType !== 'POST_SB' && a.actionType !== 'POST_BB'
   );
@@ -111,42 +183,82 @@ function accumulatePreflop(hand, positionMap, name, acc) {
 
         if (level === 0) {
           acc.open.opportunities++;
+          if (posStats) posStats.open.opportunities++;
           if (a.actionType === 'RAISE' || a.actionType === 'BET') {
             acc.open.made++;
+            if (posStats) posStats.open.made++;
             if (onlyPassiveSoFar && STEAL_POSITIONS.includes(position)) {
               acc.steal.opportunities++;
               acc.steal.made++;
+              if (posStats) {
+                posStats.steal.opportunities++;
+                posStats.steal.made++;
+              }
             }
           } else if (a.actionType === 'CALL') {
             acc.limp.opportunities++;
             acc.limp.made++;
           }
         } else if (level === 1) {
+          // This is the "facing an open" moment: raiserPositionAtLevel[1]
+          // is whoever made it 2 bets to go.
           const openerPos = raiserPositionAtLevel[1];
           const openWasSteal = STEAL_POSITIONS.includes(openerPos);
           acc.threeBet.opportunities++;
+          if (posStats) posStats.threeBet.opportunities++;
           if (openWasSteal && BLIND_POSITIONS.includes(position)) acc.foldToSteal.opportunities++;
 
           if (a.actionType === 'RAISE') {
             acc.threeBet.made++;
+            if (posStats) posStats.threeBet.made++;
           } else if (a.actionType === 'FOLD') {
             if (openWasSteal && BLIND_POSITIONS.includes(position)) acc.foldToSteal.made++;
           } else if (a.actionType === 'CALL' && !playerHasVpipd) {
             acc.coldCall.opportunities++;
             acc.coldCall.made++;
           }
+
+          if (posBucket && openerPos && position) {
+            const vs = ensureVsOpen(posBucket, openerPos, position);
+            vs.faced++;
+            if (a.actionType === 'FOLD') vs.folded++;
+            else if (a.actionType === 'CALL') vs.called++;
+            else if (a.actionType === 'RAISE') vs.raised++;
+          }
         } else if (level === 2) {
+          // Facing a 3-bet: raiserPositionAtLevel[2] is the 3-bettor.
           acc.fourBet.opportunities++;
           acc.foldTo3Bet.opportunities++;
-          if (a.actionType === 'RAISE') acc.fourBet.made++;
-          else if (a.actionType === 'FOLD') acc.foldTo3Bet.made++;
-          else if (a.actionType === 'CALL' && !playerHasVpipd) {
+          if (posStats) {
+            posStats.fourBet.opportunities++;
+            posStats.foldTo3Bet.opportunities++;
+          }
+          if (a.actionType === 'RAISE') {
+            acc.fourBet.made++;
+            if (posStats) posStats.fourBet.made++;
+          } else if (a.actionType === 'FOLD') {
+            acc.foldTo3Bet.made++;
+            if (posStats) posStats.foldTo3Bet.made++;
+          } else if (a.actionType === 'CALL' && !playerHasVpipd) {
             acc.coldCall.opportunities++;
             acc.coldCall.made++;
           }
+
+          const threeBetterPos = raiserPositionAtLevel[2];
+          if (posBucket && threeBetterPos && position) {
+            const vs = ensureVs3Bet(posBucket, threeBetterPos, position);
+            vs.faced++;
+            if (a.actionType === 'FOLD') vs.folded++;
+            else if (a.actionType === 'CALL') vs.called++;
+            else if (a.actionType === 'RAISE') vs.raised++;
+          }
         } else if (level === 3) {
           acc.foldTo4Bet.opportunities++;
-          if (a.actionType === 'FOLD') acc.foldTo4Bet.made++;
+          if (posStats) posStats.foldTo4Bet.opportunities++;
+          if (a.actionType === 'FOLD') {
+            acc.foldTo4Bet.made++;
+            if (posStats) posStats.foldTo4Bet.made++;
+          }
         }
       }
 
@@ -166,14 +278,22 @@ function accumulatePreflop(hand, positionMap, name, acc) {
   }
 
   acc.vpip.opportunities++;
-  if (playerHasVpipd) acc.vpip.made++;
+  if (posStats) posStats.vpip.opportunities++;
+  if (playerHasVpipd) {
+    acc.vpip.made++;
+    if (posStats) posStats.vpip.made++;
+  }
   acc.pfr.opportunities++;
-  if (playerHasRaised) acc.pfr.made++;
+  if (posStats) posStats.pfr.opportunities++;
+  if (playerHasRaised) {
+    acc.pfr.made++;
+    if (posStats) posStats.pfr.made++;
+  }
 
   return { sawFlop: !real.some(a => a.player === name && a.actionType === 'FOLD') };
 }
 
-function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
+function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats) {
   const streets = ['FLOP', 'TURN', 'RIVER'];
   let cbTracked = false; // only count cbFlop/foldToCbFlop opportunity once
   let stillIn = true;
@@ -183,7 +303,6 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
     if (streetActions.length === 0) continue;
 
     let hasCheckedThisStreet = false;
-    let firstActorIsAggressor = wasPreflopAggressor && street === 'FLOP';
 
     for (let i = 0; i < streetActions.length; i++) {
       const a = streetActions[i];
@@ -192,9 +311,11 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
       if (street === 'FLOP' && !cbTracked && wasPreflopAggressor) {
         cbTracked = true;
         acc.cbFlop.opportunities++;
+        if (posStats) posStats.cbFlop.opportunities++;
         const firstAction = streetActions[0];
         if (firstAction.player === name && (firstAction.actionType === 'BET' || firstAction.actionType === 'RAISE')) {
           acc.cbFlop.made++;
+          if (posStats) posStats.cbFlop.made++;
         }
       }
 
@@ -206,6 +327,7 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
             const priorBet = streetActions.slice(0, i).find(x => x.actionType === 'BET' || x.actionType === 'RAISE');
             if (priorBet && streetActions[0].actionType === 'BET') {
               acc.foldToCbFlop.made++;
+              if (posStats) posStats.foldToCbFlop.made++;
             }
           }
         }
@@ -223,6 +345,7 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
         const ourFirstResponse = streetActions.find(a => a.player === name);
         if (ourFirstResponse) {
           acc.foldToCbFlop.opportunities++;
+          if (posStats) posStats.foldToCbFlop.opportunities++;
         }
       }
     }
@@ -231,14 +354,18 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc) {
   return stillIn;
 }
 
-function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner, acc) {
+function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner, acc, posStats) {
   const hadShowdown = (hand.actions || []).some(
     a => a.actionType === 'SHOW_HAND' || a.actionType === 'MUCK'
   );
 
   if (sawFlop) {
     acc.wwsf.opportunities++;
-    if (isWinner) acc.wwsf.made++;
+    if (posStats) posStats.wwsf.opportunities++;
+    if (isWinner) {
+      acc.wwsf.made++;
+      if (posStats) posStats.wwsf.made++;
+    }
 
     // wtsd opportunity = every hand where the player saw the flop and
     // was still in the hand postflop. wtsd made = the subset that
@@ -246,8 +373,10 @@ function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner,
     // same branch, or the rate is trivially always 100%.
     if (stillInAfterPostflop) {
       acc.wtsd.opportunities++;
+      if (posStats) posStats.wtsd.opportunities++;
       if (hadShowdown) {
         acc.wtsd.made++;
+        if (posStats) posStats.wtsd.made++;
         acc.wsd.opportunities++;
         if (isWinner) acc.wsd.made++;
       }
@@ -267,18 +396,26 @@ export function computeStatsForHands(hands, matchPlayer) {
     const positionMap = getPositionMap(hand);
     const name = player.name;
 
-    const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc);
+    const position = positionMap[name] || null;
+    const tableSize = Object.keys(positionMap).length;
+    // Only bucket by position when we actually resolved one for this
+    // player (getPositionMap can come back empty if no dealer flag was
+    // present on the hand) - global stats above are unaffected either way.
+    const posBucket = position && tableSize >= 2 ? ensurePositional(acc, tableSize) : null;
+    const posStats = posBucket ? ensurePositionStats(posBucket, position) : null;
+
+    const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats);
 
     let stillIn = true;
     if (sawFlop && hand.board?.flop?.length) {
       const wasPreflopAggressor = (hand.actions || [])
         .filter(a => a.street === 'PREFLOP' && (a.actionType === 'RAISE' || a.actionType === 'BET'))
         .slice(-1)[0]?.player === name;
-      stillIn = accumulatePostflop(hand, name, wasPreflopAggressor, acc);
+      stillIn = accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats);
     }
 
     const isWinner = (hand.winners || []).includes(name);
-    accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc);
+    accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc, posStats);
 
     if (typeof player.profitLoss === 'number') {
       acc.totalProfitLoss += player.profitLoss;
@@ -301,6 +438,57 @@ function pct(made, opportunities) {
 
 function finalizeRate(rate) {
   return { pct: pct(rate.made, rate.opportunities), made: rate.made, opportunities: rate.opportunities };
+}
+
+function finalizeVsStat(stat) {
+  const faced = stat.faced;
+  return {
+    faced,
+    folded: stat.folded,
+    called: stat.called,
+    raised: stat.raised,
+    foldPct: pct(stat.folded, faced),
+    callPct: pct(stat.called, faced),
+    raisePct: pct(stat.raised, faced),
+    // defend = anything that isn't folding (call or raise/re-raise)
+    defendPct: pct(stat.called + stat.raised, faced)
+  };
+}
+
+function finalizePositionStats(stats) {
+  const out = {};
+  for (const key of Object.keys(stats)) {
+    out[key] = finalizeRate(stats[key]);
+  }
+  return out;
+}
+
+function finalizeMatrix(matrix) {
+  const out = {};
+  for (const attacker of Object.keys(matrix)) {
+    out[attacker] = {};
+    for (const responder of Object.keys(matrix[attacker])) {
+      out[attacker][responder] = finalizeVsStat(matrix[attacker][responder]);
+    }
+  }
+  return out;
+}
+
+function finalizePositional(positional) {
+  const out = {};
+  for (const tableSize of Object.keys(positional)) {
+    const bucket = positional[tableSize];
+    const positions = {};
+    for (const pos of Object.keys(bucket.positions)) {
+      positions[pos] = finalizePositionStats(bucket.positions[pos]);
+    }
+    out[tableSize] = {
+      positions,
+      vsOpen: finalizeMatrix(bucket.vsOpen),
+      vs3Bet: finalizeMatrix(bucket.vs3Bet)
+    };
+  }
+  return out;
 }
 
 function finalize(acc) {
@@ -342,7 +530,12 @@ function finalize(acc) {
     // that's meaningful in that case, so callers get an explicit null
     // instead of a silently-wrong number, and should decide how to
     // handle/display that (e.g. split stats per currency).
-    currency: acc.currencies.size === 1 ? [...acc.currencies][0] : null
+    currency: acc.currencies.size === 1 ? [...acc.currencies][0] : null,
+    // Position-vs-position breakdown, bucketed by table size (2-9 active
+    // players). See ensurePositional/ensureVsOpen/ensureVs3Bet above for
+    // the shape. Keys are stringified table sizes ("6", "9", ...) because
+    // that's what plain-object/JSON round-tripping gives us.
+    positional: finalizePositional(acc.positional)
   };
 }
 
