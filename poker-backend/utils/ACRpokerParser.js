@@ -111,9 +111,15 @@ export function parseACRLog(fileContent, filePath) {
         // include "Table 'X' N-max Seat #N is the button" in the text, which
         // also gives us maxSeats (not available from the filename), so it's
         // still worth checking even when we already have a filename-based name.
+        // Cash games, though, use a THIRD format with no "Table" keyword and
+        // no quotes at all: "<TableName> N-max Seat #N is the button" (e.g.
+        // "Kite 9-max Seat #4 is the button") — so maxSeats has to be pulled
+        // from a bare "N-max" match too, or it silently stays null on every
+        // cash-game hand even though the number is right there in the text.
         const tableMatch = tableLine.match(/Table '(.+?)' (\d+)-max/);
-        if (tableMatch) {
-          currentHand.maxSeats = parseInt(tableMatch[2], 10);
+        const maxSeatsMatch = tableLine.match(/(\d+)-max/);
+        if (maxSeatsMatch) {
+          currentHand.maxSeats = parseInt(maxSeatsMatch[1], 10);
         }
         currentHand.tableName = tableNameFromFilename || (tableMatch ? tableMatch[1] : null);
 

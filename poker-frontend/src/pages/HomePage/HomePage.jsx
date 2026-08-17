@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../../components/Layout';
 import { API_URL } from '../../config';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import './HomePage.css';
 
 const STAT_CARDS = [
@@ -41,6 +42,39 @@ const computeTrendSlope = (values) => {
   if (denominator === 0) return 0;
 
   return (n * sumXY - sumX * sumY) / denominator;
+};
+
+// Recharts-powered replacement for the old hand-rolled SVG sparkline.
+// Same visual: gradient-filled area under a stroked line, no axes/tooltip.
+const Sparkline = ({ values, positive }) => {
+  if (!values.length) return null;
+
+  const color = positive ? '#22c55e' : '#ef4444';
+  const data = values.map((v, i) => ({ i, v }));
+
+  return (
+    <div className="sparkline">
+      <ResponsiveContainer width="100%" height={48}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+          <defs>
+            <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={2}
+            fill="url(#sg)"
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
 };
 
 export function HomePage() {
@@ -124,45 +158,6 @@ export function HomePage() {
     const m = Math.floor((diff % 3600) / 60);
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
-  };
-
-  const Sparkline = ({ values, positive }) => {
-    if (!values.length) return null;
-
-    const w = 200, h = 48, pad = 4;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = max - min || 1;
-    const color = positive ? '#22c55e' : '#ef4444';
-
-    const pts = values.map((v, i) => {
-      const x = pad + (i / Math.max(values.length - 1, 1)) * (w - pad * 2);
-      const y = h - pad - ((v - min) / range) * (h - pad * 2);
-      return `${x},${y}`;
-    });
-
-    const area = `M${pts[0]} L${pts.join(' L')} L${w - pad},${h} L${pad},${h} Z`;
-    const line = `M${pts.join(' L')}`;
-
-    return (
-      <svg viewBox={`0 0 ${w} ${h}`} className="sparkline">
-        <defs>
-          <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill="url(#sg)" />
-        <path
-          d={line}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
   };
 
   if (isLoggedIn === false && !isGuest) {

@@ -3,6 +3,15 @@ import { useState, useEffect, useMemo } from "react";
 import "./Profile.css";
 import { API_URL } from "../../config";
 import { toMajorUnits } from "../../utils/formatMoney";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+} from "recharts";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -56,13 +65,26 @@ function onlineSessionProfit(session) {
   return toMajorUnits(session.totalProfit ?? 0, session.currency);
 }
 
-/* ─── pure-SVG line/area chart ──────────────────────────── */
-function ProfitChart({ data }) {
-const [hover, setHover] = useState(null);
-  const W = 900, H = 260, PL = 56, PR = 16, PT = 16, PB = 32;
-  const cW = W - PL - PR;
-  const cH = H - PT - PB;
+/* ─── Recharts tooltip ─────────────────────────────────── */
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const { cumulative, profit } = payload[0].payload;
 
+  return (
+    <div className="chart-tooltip" style={{ position: "static" }}>
+      <div className="tt-date">{label}</div>
+      <div className={`tt-val ${cumulative >= 0 ? "pos" : "neg"}`}>
+        {cumulative >= 0 ? "+" : ""}{fmtFull$(cumulative)}
+      </div>
+      <div className="tt-session">
+        {profit >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(profit))} this session
+      </div>
+    </div>
+  );
+}
+
+/* ─── Recharts-powered cumulative profit chart ─────────── */
+function ProfitChart({ data }) {
   if (data.length < 2) {
     return (
       <div className="chart-empty">
@@ -71,133 +93,58 @@ const [hover, setHover] = useState(null);
     );
   }
 
-  const values = data.map(d => d.cumulative);
-  const minV = Math.min(0, ...values);
-  const maxV = Math.max(0, ...values);
-  const range = maxV - minV || 1;
-
-  const toX = i  => PL + (i / (data.length - 1)) * cW;
-  const toY = v  => PT + cH - ((v - minV) / range) * cH;
-  const zeroY    = toY(0);
-
-  const pts = data.map((d, i) => `${toX(i)},${toY(d.cumulative)}`);
-  const linePath  = `M ${pts.join(" L ")}`;
-  const areaPath  = `M ${toX(0)},${zeroY} L ${pts.join(" L ")} L ${toX(data.length - 1)},${zeroY} Z`;
-
-  const isUp = values[values.length - 1] >= 0;
+  const isUp = data[data.length - 1].cumulative >= 0;
   const stroke = isUp ? "#22c55e" : "#ef4444";
   const fillId = isUp ? "fillGreen" : "fillRed";
 
-  const tickCount = 5;
-  const yTicks = Array.from({ length: tickCount }, (_, i) => {
-    const v = minV + (range / (tickCount - 1)) * i;
-    return { v, y: toY(v) };
-  });
-
-  const step = Math.max(1, Math.floor(data.length / 5));
-  const xTicks = data
-    .map((d, i) => ({ i, label: d.label }))
-    .filter((_, i) => i === 0 || i === data.length - 1 || i % step === 0);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const rawX = (e.clientX - rect.left) / rect.width * W;
-    const idx = Math.round(((rawX - PL) / cW) * (data.length - 1));
-    const clamped = Math.max(0, Math.min(data.length - 1, idx));
-    setHover(clamped);
-  };
-
-  const hd = hover != null ? data[hover] : null;
-
   return (
     <div className="chart-svg-wrap">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="chart-svg"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHover(null)}
-      >
-        <defs>
-          <linearGradient id="fillGreen" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#22c55e" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#22c55e" stopOpacity="0"    />
-          </linearGradient>
-          <linearGradient id="fillRed" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#ef4444" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#ef4444" stopOpacity="0"    />
-          </linearGradient>
-        </defs>
+      <ResponsiveContainer width="100%" height={260}>
+        <AreaChart data={data} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="fillGreen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="fillRed" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.22} />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+            </linearGradient>
+          </defs>
 
-        {/* Grid lines */}
-        {yTicks.map(({ y }, i) => (
-          <line key={i} x1={PL} x2={W - PR} y1={y} y2={y}
-            stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-        ))}
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "#6b7280" }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={fmt$}
+            tick={{ fontSize: 10, fill: "#6b7280" }}
+            axisLine={false}
+            tickLine={false}
+            width={56}
+          />
 
-        {/* Zero line */}
-        {minV < 0 && maxV > 0 && (
-          <line x1={PL} x2={W - PR} y1={zeroY} y2={zeroY}
-            stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="5,4" />
-        )}
+          <ReferenceLine y={0} stroke="rgba(255,255,255,0.18)" strokeDasharray="5 4" />
 
-        {/* Area fill */}
-        <path d={areaPath} fill={`url(#${fillId})`} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: "rgba(255,255,255,0.18)", strokeDasharray: "4 3" }}
+          />
 
-        {/* Line */}
-        <path d={linePath} fill="none" stroke={stroke} strokeWidth="2.2"
-          strokeLinejoin="round" strokeLinecap="round" />
-
-        {/* Y-axis labels */}
-        {yTicks.map(({ v, y }, i) => (
-          <text key={i} x={PL - 6} y={y + 4} textAnchor="end"
-            fontSize="10" fill="#6b7280">
-            {fmt$(v)}
-          </text>
-        ))}
-
-        {/* X-axis labels */}
-        {xTicks.map(({ i, label }) => (
-          <text key={i} x={toX(i)} y={H - 4} textAnchor="middle"
-            fontSize="10" fill="#6b7280">
-            {label}
-          </text>
-        ))}
-
-        {/* Hover crosshair */}
-        {hover != null && (
-          <>
-            <line
-              x1={toX(hover)} x2={toX(hover)}
-              y1={PT} y2={H - PB}
-              stroke="rgba(255,255,255,0.18)" strokeWidth="1" strokeDasharray="4,3"
-            />
-            <circle
-              cx={toX(hover)} cy={toY(data[hover].cumulative)}
-              r="5" fill={stroke} stroke="#0d0f12" strokeWidth="2"
-            />
-          </>
-        )}
-      </svg>
-
-      {/* Tooltip */}
-      {hd && (
-        <div
-          className="chart-tooltip"
-          style={{
-            left: `${(hover / (data.length - 1)) * 100}%`,
-            transform: hover > data.length * 0.7 ? "translateX(-100%)" : "translateX(8px)",
-          }}
-        >
-          <div className="tt-date">{hd.label}</div>
-          <div className={`tt-val ${hd.cumulative >= 0 ? "pos" : "neg"}`}>
-            {hd.cumulative >= 0 ? "+" : ""}{fmtFull$(hd.cumulative)}
-          </div>
-          <div className="tt-session">
-            {hd.profit >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(hd.profit))} this session
-          </div>
-        </div>
-      )}
+          <Area
+            type="monotone"
+            dataKey="cumulative"
+            stroke={stroke}
+            strokeWidth={2.2}
+            fill={`url(#${fillId})`}
+            dot={false}
+            activeDot={{ r: 5, fill: stroke, stroke: "#0d0f12", strokeWidth: 2 }}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
