@@ -28,6 +28,13 @@ const GUEST_LIVE_SESSIONS = [
 const GUEST_STATS = { totalHands: 367, onlineSessions: 5, liveSessions: 2 };
 const GUEST_PULSE = [-55, 142, -60, 310, -88, 180, 220];
 
+// Feature and process copy for the logged-out marketing sections
+const HOW_STEPS = [
+  { n: '1', title: 'Upload your logs', desc: 'Drop in ACR (.txt), GGPoker, or PokerNow (.csv) hand history files — or clock in a live session by hand.' },
+  { n: '2', title: 'Auto-parsed into hands', desc: 'Every hand is structured into players, actions, board, pot size, and result — no manual entry.' },
+  { n: '3', title: 'Analyze & replay', desc: 'Step through any hand action-by-action and track VPIP, PFR, 3-Bet % and opponent tendencies over time.' },
+];
+
 const computeTrendSlope = (values) => {
   const n = values.length;
   if (n < 2) return 0;
@@ -163,6 +170,8 @@ export function HomePage() {
   };
 
   if (isLoggedIn === false && !isGuest) {
+    const previewTrendPositive = computeTrendSlope(GUEST_PULSE) >= 0;
+
     return (
       <div className="hp-root">
         <section className="hp-hero">
@@ -172,44 +181,114 @@ export function HomePage() {
             <div className="hp-pulse-ring r3" />
           </div>
 
-          <div className="hp-hero-content">
-            <div className="hp-hero-badge">Your poker edge, quantified</div>
+          <div className="hp-hero-grid">
+            <div className="hp-hero-content">
+              <div className="hp-hero-badge">Your poker edge, quantified</div>
 
-            <h1 className="hp-hero-title">
-              Track your game.<br />
-              <span className="hp-hero-accent">Improve your edge.</span>
-            </h1>
+              <h1 className="hp-hero-title">
+                Track your game.<br />
+                <span className="hp-hero-accent">Improve your edge.</span>
+              </h1>
 
-            <p className="hp-hero-sub">
-              Upload hand histories, analyse VPIP, PFR, 3-Bet % and more —
-              then replay every hand to see exactly where you win and lose.
-            </p>
+              <p className="hp-hero-sub">
+                Upload hand histories, analyse VPIP, PFR, 3-Bet % and more —
+                then replay every hand to see exactly where you win and lose.
+              </p>
 
-            <div className="hp-hero-ctas">
-              <button
-                className="hp-btn-primary"
-                onClick={() => navigate('/login')}
-              >
-                Get Started
+              <div className="hp-hero-ctas">
+                <button
+                  className="hp-btn-primary"
+                  onClick={() => navigate('/login')}
+                >
+                  Get Started
+                </button>
+
+                <button
+                  className="hp-btn-ghost"
+                  onClick={() => navigate('/login')}
+                >
+                  Sign In
+                </button>
+              </div>
+
+              <button className="hp-btn-guest" onClick={handleGuestMode}>
+                Explore with sample data →
               </button>
 
-              <button
-                className="hp-btn-ghost"
-                onClick={() => navigate('/login')}
-              >
-                Sign In
-              </button>
+              <div className="hp-hero-pills">
+                <span>Hand-by-hand replay</span>
+                <span>VPIP · PFR · 3-Bet %</span>
+                <span>Opponent profiling</span>
+              </div>
             </div>
 
-            <button className="hp-btn-guest" onClick={handleGuestMode}>
-              Continue as Guest
+            {/* Static preview of the real dashboard, built from the same
+                guest demo data as "Continue as Guest" - shows the product
+                itself instead of an abstract graphic. Clicking it drops
+                straight into the interactive guest dashboard. */}
+            <button
+              type="button"
+              className="hp-preview"
+              onClick={handleGuestMode}
+              aria-label="Preview the dashboard with sample data"
+            >
+              <div className="hp-preview-window">
+                <div className="hp-preview-topbar">
+                  <span className="hp-preview-dot" />
+                  <span className="hp-preview-dot" />
+                  <span className="hp-preview-dot" />
+                  <span className="hp-preview-topbar-label">Dashboard</span>
+                </div>
+
+                <div className="hp-preview-body">
+                  <div className="hp-preview-stats">
+                    {STAT_CARDS.map(card => (
+                      <div key={card.key} className="hp-preview-stat">
+                        <div className="hp-preview-stat-icon">{card.icon}</div>
+                        <div className="hp-preview-stat-value">{GUEST_STATS[card.key]}</div>
+                        <div className="hp-preview-stat-label">{card.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hp-preview-sparkline-card">
+                    <div className="hp-preview-sparkline-label">Session Profit Trend</div>
+                    <Sparkline values={GUEST_PULSE} positive={previewTrendPositive} />
+                  </div>
+
+                  <div className="hp-preview-feed">
+                    {GUEST_SESSIONS.slice(0, 3).map(s => (
+                      <div key={s._id} className="hp-preview-feed-item">
+                        <span className="hp-preview-feed-type">{s.gameType}</span>
+                        <span className="hp-preview-feed-hands">{s.hands.length} hands</span>
+                        <span className={`hp-preview-feed-profit ${s.totalProfit >= 0 ? 'pos' : 'neg'}`}>
+                          {s.totalProfit >= 0 ? '+' : ''}{s.totalProfit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="hp-preview-overlay">
+                  <span>Click to explore →</span>
+                </div>
+              </div>
             </button>
+          </div>
+        </section>
 
-            <div className="hp-hero-pills">
-              <span>Hand-by-hand replay</span>
-              <span>VPIP · PFR · 3-Bet %</span>
-              <span>Opponent profiling</span>
-            </div>
+        <section className="hp-how">
+          <h2 className="hp-section-title">How it works</h2>
+
+          <div className="hp-how-steps">
+            {HOW_STEPS.map((step, i) => (
+              <div key={step.n} className="hp-how-step">
+                <div className="hp-how-num">{step.n}</div>
+                <h3>{step.title}</h3>
+                <p>{step.desc}</p>
+                {i < HOW_STEPS.length - 1 && <div className="hp-how-connector" />}
+              </div>
+            ))}
           </div>
         </section>
 
@@ -227,7 +306,7 @@ export function HomePage() {
           </div>
 
           <p className="hp-footer-copy">
-            © {new Date().getFullYear()} Poker. All rights reserved.
+            © {new Date().getFullYear()} PokerFlow. All rights reserved.
           </p>
         </footer>
       </div>
