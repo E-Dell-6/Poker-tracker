@@ -2,18 +2,16 @@ import React, { useState, useEffect } from "react";
 import { API_URL } from "../config";
 import { HAND_FILTERS } from "../utils/handFilters";
 import { formatAmount } from "../utils/formatMoney";
+import CardSelector from "./CardSelector";
 import "./HandSearchMenu.css";
-
-const RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
-const SUITS = [
-  { key: "s", symbol: "♠" },
-  { key: "h", symbol: "♥" },
-  { key: "d", symbol: "♦" },
-  { key: "c", symbol: "♣" },
-];
 
 const GAME_TYPES = ["All", "NLH", "PLO", "Heads-Up"];
 const POSITIONS = ["BTN", "SB", "BB", "UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BTN/SB"];
+
+// For rendering the small "As" / "Kh" card codes as chips once picked.
+const SUIT_SYMBOLS = { s: "♠", h: "♥", d: "♦", c: "♣" };
+const cardLabel = (card) => `${card.slice(0, -1)}${SUIT_SYMBOLS[card.slice(-1)] || card.slice(-1)}`;
+const isRedCard = (card) => "hd".includes(card.slice(-1));
 
 // PLO deals 4 hole cards instead of NLH's 2. Rather than branching the
 // card picker's logic by game type, we just let the user pick up to 4
@@ -30,6 +28,7 @@ export function HandSearchMenu({ onHandClick }) {
   const [filterKey, setFilterKey] = useState("");
   const [position, setPosition] = useState("");
   const [selectedCards, setSelectedCards] = useState([]);
+  const [isCardPickerOpen, setIsCardPickerOpen] = useState(false);
   const [results, setResults] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState(null);
@@ -92,8 +91,9 @@ export function HandSearchMenu({ onHandClick }) {
         type="button"
         className="hand-search-toggle"
         onClick={() => setIsOpen(true)}
+        title="Search Hands"
       >
-        🔍 Search Hands
+        🔍
       </button>
 
       {isOpen && (
@@ -198,27 +198,40 @@ export function HandSearchMenu({ onHandClick }) {
                 Hole Cards
                 {selectedCards.length > 0 && ` (${selectedCards.length}/${MAX_SELECTABLE_CARDS})`}
               </label>
-              <div className="card-grid">
-                {RANKS.map((rank) => (
-                  <div key={rank} className="card-grid-row">
-                    {SUITS.map((suit) => {
-                      const card = `${rank}${suit.key}`;
-                      const isRed = suit.key === "h" || suit.key === "d";
-                      const isSelected = selectedCards.includes(card);
-                      return (
-                        <button
-                          key={card}
-                          type="button"
-                          className={`card-cell ${isRed ? "red" : "black"} ${isSelected ? "selected" : ""}`}
-                          onClick={() => toggleCard(card)}
-                        >
-                          {rank}{suit.symbol}
-                        </button>
-                      );
-                    })}
+              <div className="hole-cards-picker">
+                {selectedCards.length > 0 && (
+                  <div className="hole-cards-chips">
+                    {selectedCards.map((card) => (
+                      <button
+                        key={card}
+                        type="button"
+                        className={`hole-card-chip ${isRedCard(card) ? "red" : "black"}`}
+                        onClick={() => toggleCard(card)}
+                        title="Remove"
+                      >
+                        {cardLabel(card)} ✕
+                      </button>
+                    ))}
                   </div>
-                ))}
+                )}
+                <button
+                  type="button"
+                  className="hole-cards-pick-btn"
+                  onClick={() => setIsCardPickerOpen(true)}
+                  disabled={selectedCards.length >= MAX_SELECTABLE_CARDS}
+                >
+                  🂠 {selectedCards.length > 0 ? "Add Card" : "Pick Cards"}
+                </button>
               </div>
+
+              {isCardPickerOpen && (
+                <CardSelector
+                  title="Select Hole Cards"
+                  selectedCards={selectedCards}
+                  onSelect={toggleCard}
+                  onClose={() => setIsCardPickerOpen(false)}
+                />
+              )}
             </div>
 
             <div className="hand-search-actions">

@@ -29,15 +29,11 @@
 /* ── HEADER ─────────────────────────────────────────────── */
 .history-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 4px; /* was 32px, then 24px. The row's bottom edge is
-    set by the taller right column (icon + two stacked buttons), not by
-    the title, so this margin was stacking on top of that extra height
-    twice. Trimmed way down since the right column already provides
-    visual separation. */
+  margin-bottom: 20px;
 }
 
 .history-header h1 {
@@ -49,14 +45,14 @@
 }
 
 /* ── UPLOAD SECTION ─────────────────────────────────────── */
+/* Buttons sit side-by-side in a single row now (previously stacked in a
+   column with a mismatched-height info icon next to them, which needed
+   manual translateY offsets to line up - see the buttons themselves). */
 .button-container {
   display: flex;
-  flex-direction: column;
-  gap: 10px; /* was 20px. This column's total height sets the height of
-    the whole .history-header row (flexbox stretches to the tallest
-    child), so a smaller gap here directly shrinks the dead space
-    between the title and the filter tabs below. */
-  align-items: flex-end;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
 }
 
 .upload-section {
@@ -64,10 +60,9 @@
     against this box without joining its flex flow, so they can never
     change the size/position of the icon or the buttons next to them. */
   display: flex;
-  align-items: flex-start; /* was: center. flex-start keeps the info icon
-    pinned to the top of the row (next to the upload button) instead of
-    re-centering against the taller two-button .button-container column,
-    which was shoving the icon and header out of place. */
+  align-items: center; /* everything in this row (icon + both buttons) is
+    now the same height, so a plain center-align keeps them level with
+    no manual offsets needed. */
   gap: 12px;
 }
 
@@ -93,22 +88,24 @@
 }
 
 .create-button {
-  width: 120px;
   background: linear-gradient(135deg, #d4af37, #f4c430);
   color: #0d0f12;
   border: none;
-  padding: 12px;
+  padding: 10px 20px;
   border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
   white-space: nowrap;
-  font-weight: bold;
-  transform: translateY(15px);
 }
 
-
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+}
 
 .upload-button:hover {
   transform: translateY(-2px);
@@ -164,11 +161,6 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
-  margin-top: 9px; /* nudges the 22px icon to align with the upload
-    button's center. Replaces the old transform: translateY(-27px) hack,
-    which was calibrated for a single-button row and broke once
-    .button-container started stacking two buttons. */
 }
 
 .upload-info-btn {
@@ -268,12 +260,33 @@
   margin-top: 6px;
 }
 
+/* ── FILTER BAR ─────────────────────────────────────────── */
+/* Wraps the game-type filters and the favourites toggle in one row
+   instead of two stacked rows, so the page gets to session content
+   sooner and the star toggle doesn't read as an orphaned control. */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
 /* ── GAME FILTER ────────────────────────────────────────── */
 .game-filter {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+}
+
+/* Groups the search and favourites icon buttons together on the right
+   of the filter row. */
+.filter-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .game-filter button {
@@ -313,8 +326,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
-  margin-bottom: 16px;
 }
 
 .favourites-toggle:hover {

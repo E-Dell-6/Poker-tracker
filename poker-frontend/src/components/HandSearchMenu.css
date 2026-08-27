@@ -1,22 +1,33 @@
 .hand-search-menu {
-  margin: 16px 0;
   font-family: 'DM Sans', sans-serif;
   color: var(--text);
+  display: inline-flex;
 }
 
+/* Sized and styled to match .favourites-toggle so the two sit together
+   as a matching icon-button pair on the right of the filter row, rather
+   than this being a wide labeled button on its own line above it. */
 .hand-search-toggle {
-  background: var(--bg3);
-  border: 1px solid var(--gold-border);
-  color: var(--gold);
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 15px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
 }
 
 .hand-search-toggle:hover {
   background: var(--gold-dim);
+  border-color: var(--gold-border);
+  color: var(--gold);
+  transform: scale(1.1);
 }
 
 .hand-search-overlay {
@@ -107,41 +118,62 @@
   color: var(--gold);
 }
 
-.card-grid {
+.hole-cards-picker {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.card-grid-row {
+.hole-cards-chips {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.card-cell {
-  flex: 1;
-  min-width: 0;
+.hole-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 4px 0;
-  font-size: 0.7rem;
+  border: 1px solid var(--gold-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hole-card-chip.red {
+  color: var(--red);
+}
+
+.hole-card-chip.black {
+  color: var(--text);
+}
+
+.hole-card-chip:hover {
+  background: var(--gold-dim);
+}
+
+.hole-cards-pick-btn {
+  background: var(--bg3);
+  border: 1px dashed var(--gold-border);
+  color: var(--gold);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-.card-cell.red {
-  color: var(--red);
-}
-
-.card-cell.black {
-  color: var(--text);
-}
-
-.card-cell.selected {
+.hole-cards-pick-btn:hover:not(:disabled) {
   background: var(--gold-dim);
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+
+.hole-cards-pick-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .hand-search-actions {

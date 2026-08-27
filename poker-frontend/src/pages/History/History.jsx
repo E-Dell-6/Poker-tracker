@@ -424,30 +424,33 @@ export function History() {
           </div>
         </div>
 
-        <HandSearchMenu
-          onHandClick={(hand, session) =>
-            navigate("/hand-replay", { state: { hand, session } })
-          }
-        />
-
-        <div className="game-filter">
-          {gameFilters.map((game) => (
+        <div className="filter-bar">
+          <div className="game-filter">
+            {gameFilters.map((game) => (
+              <button
+                key={game}
+                className={selectedGame === game ? "active" : ""}
+                onClick={() => setSelectedGame(game)}
+              >
+                {game}
+              </button>
+            ))}
+          </div>
+          <div className="filter-bar-actions">
+            <HandSearchMenu
+              onHandClick={(hand, session) =>
+                navigate("/hand-replay", { state: { hand, session } })
+              }
+            />
             <button
-              key={game}
-              className={selectedGame === game ? "active" : ""}
-              onClick={() => setSelectedGame(game)}
+              className={`favourites-toggle ${isFavouritesShowing === "⭐" ? "active" : ""}`}
+              onClick={HandleFavouriteClick}
+              title={isFavouritesShowing === "⭐" ? "Show All Sessions" : "Show Favourites"}
             >
-              {game}
+              {isFavouritesShowing}
             </button>
-          ))}
+          </div>
         </div>
-        <button
-          className={`favourites-toggle ${isFavouritesShowing === "⭐" ? "active" : ""}`}
-          onClick={HandleFavouriteClick}
-          title={isFavouritesShowing === "⭐" ? "Show All Sessions" : "Show Favourites"}
-        >
-          {isFavouritesShowing}
-        </button>
         <hr />
         {isFavouritesShowing === "☆" ? (
           sessions.length === 0 ? (

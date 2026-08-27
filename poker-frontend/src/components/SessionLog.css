@@ -190,17 +190,19 @@
 }
 
 /* ── HAND ITEM ──────────────────────────────────────────── */
+/* Grid instead of a wrapping flex row: every hand gets the same column
+   widths (index / cards / winner / pot / profit / star), so the list
+   lines up instead of each row reflowing to its own content width. */
 .hand-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 30px auto 1fr auto auto 32px;
   align-items: center;
-  padding: 12px 10px;
+  gap: 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
   cursor: pointer;
   border-radius: 8px;
-  gap: 15px;
-  flex-wrap: wrap;
   transition: background 0.15s ease;
 }
 
@@ -213,29 +215,32 @@
 }
 
 .hand-info {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-grow: 1;
-  flex-wrap: wrap;
+  display: contents; /* children become direct grid items of .hand-item,
+    so hand-index / hand-cards / hand-winner each land in their own
+    column instead of being measured as one bundled flex child. */
+}
+
+/* Explicit grid-column assignments below (rather than relying on source
+   order) because .hand-profit only renders when a profit figure exists -
+   auto-placement would shift every column after it left on rows without
+   one, so pot/star would stop lining up between hands. */
+.hand-index {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 0.85em;
   font-family: 'DM Sans', sans-serif;
 }
 
-.hand-index {
-  color: var(--muted);
-  font-size: 0.85em;
-  min-width: 36px;
-}
-
 .hand-cards {
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .card-wrapper {
-  width: 40px;
-  height: 56px;
+  width: 34px;
+  height: 48px;
   background: #CCCCCC;
   border-radius: 3px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
@@ -256,49 +261,59 @@
 .no-cards {
   color: var(--muted);
   font-size: 0.85em;
+  font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
 }
 
 .hand-winner {
+  grid-column: 3;
   color: var(--muted);
   font-size: 0.88em;
+  font-family: 'DM Sans', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0; /* lets this column shrink/ellipsize instead of forcing
+    the row wider than its parent, since it's the only flexible (1fr)
+    column. */
 }
 
 /* ── HAND RIGHT GROUP ───────────────────────────────────── */
 .hand-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  flex-shrink: 0;
+  display: contents;
 }
 
 /* ── HAND POT ───────────────────────────────────────────── */
 .hand-pot {
+  grid-column: 4;
   font-family: 'Playfair Display', serif;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--gold);
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
   justify-content: flex-end;
+  white-space: nowrap;
 }
 
 .pot-label {
   font-family: 'DM Sans', sans-serif;
   color: var(--muted);
-  font-size: 0.75em;
+  font-size: 0.72em;
   font-weight: 500;
 }
 
 /* ── HAND PROFIT ────────────────────────────────────────── */
 .hand-profit {
+  grid-column: 5;
   font-family: 'Playfair Display', serif;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 6px;
   text-align: right;
+  white-space: nowrap;
 }
 
 .hand-profit.win {
@@ -309,6 +324,28 @@
 .hand-profit.loss {
   color: var(--red);
   background: rgba(239, 68, 68, 0.1);
+}
+
+/* ── STAR BUTTON ────────────────────────────────────────── */
+/* Was previously unstyled here - HandleStars renders this exact class,
+   but only FavouritesLog.css (not loaded on the History page) defined
+   it, so this rendered as a plain unstyled native button (grey box,
+   default border) sitting in the middle of an otherwise dark/gold row. */
+.star-btn {
+  grid-column: 6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px;
+  color: var(--gold);
+  justify-self: center;
+  transition: transform 0.15s ease;
+}
+
+.star-btn:hover {
+  transform: scale(1.15);
 }
 
 /* ── CONTEXT MENU ───────────────────────────────────────── */
@@ -604,6 +641,21 @@ select.modal-input option { background: var(--bg3); }
   .session-header { padding: 8px 12px; }
   .session-left { gap: 6px; }
   .session-profit { font-size: 0.95rem; }
-  .hand-info { gap: 10px; }
   .modal-content { padding: 24px 20px; }
+}
+
+@media (max-width: 560px) {
+  /* Drop the winner name and shrink gaps so index/cards/pot/profit/star
+     still fit on one line instead of squeezing six columns into a
+     phone-width row. */
+  .hand-item {
+    grid-template-columns: 22px auto auto auto 28px;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+  .hand-winner { display: none; }
+  .hand-pot { grid-column: 3; font-size: 0.85rem; }
+  .hand-profit { grid-column: 4; font-size: 0.85rem; padding: 2px 8px; }
+  .star-btn { grid-column: 5; }
+  .card-wrapper { width: 28px; height: 40px; }
 }

@@ -13,8 +13,9 @@ const SUITS = [
   { code: 'c', label: '♣', color: 'black' },
 ];
 
-export default function CardSelector({ title, usedCards, onSelect, onClose }) {
+export default function CardSelector({ title, usedCards, selectedCards, onSelect, onClose }) {
   const used = usedCards || new Set();
+  const selected = new Set(selectedCards || []);
 
   return (
     <div className="cs-backdrop" onClick={onClose}>
@@ -32,13 +33,14 @@ export default function CardSelector({ title, usedCards, onSelect, onClose }) {
               {RANKS.map((rank) => {
                 const card = `${rank}${suit.code}`;
                 const disabled = used.has(card);
+                const isSelected = selected.has(card);
                 return (
                   <button
                     type="button"
                     key={card}
                     className={`cs-card cs-card-${suit.color} ${
                       disabled ? 'cs-card-disabled' : ''
-                    }`}
+                    } ${isSelected ? 'cs-card-selected' : ''}`}
                     disabled={disabled}
                     onClick={() => onSelect(card)}
                   >

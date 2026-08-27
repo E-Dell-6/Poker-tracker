@@ -5,7 +5,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100; /* was 1000. HandSearchMenu can now open this on top of
+    its own modal (also z-index 1000), so this needs to stack above it -
+    harmless for HandCreator, where it's always the only modal open. */
   padding: 16px;
 }
 
@@ -88,6 +90,11 @@
 .cs-card-disabled {
   opacity: 0.25;
   cursor: not-allowed;
+}
+
+.cs-card-selected {
+  box-shadow: 0 0 0 2px #d4af37 inset;
+  background: #fff8e1;
 }
 
 .cs-rank {
