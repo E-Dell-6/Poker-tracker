@@ -20,7 +20,7 @@ const POSITIONS_BY_SIZE = {
 // Position labels are assigned by seat offset from the button among
 // non-sitting-out players. Approximate for weird seat gaps, but correct
 // for the standard case of a full/short-handed ring with one dealer flag.
-function getPositionMap(hand) {
+export function getPositionMap(hand) {
   const active = (hand.players || [])
     .filter(p => !p.isSittingOut)
     .slice()

@@ -1,0 +1,246 @@
+.hand-search-menu {
+  margin: 16px 0;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+}
+
+.hand-search-toggle {
+  background: var(--bg3);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hand-search-toggle:hover {
+  background: var(--gold-dim);
+}
+
+.hand-search-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.hand-search-modal {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.hand-search-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hand-search-modal-header h3 {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+.hand-search-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.hand-search-close:hover {
+  color: var(--text);
+}
+
+.hand-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hand-search-row label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.hand-search-pillgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hand-search-pillgroup button {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.hand-search-pillgroup button.active {
+  background: var(--gold-dim);
+  border-color: var(--gold-border);
+  color: var(--gold);
+}
+
+.card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-grid-row {
+  display: flex;
+  gap: 4px;
+}
+
+.card-cell {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card-cell.red {
+  color: var(--red);
+}
+
+.card-cell.black {
+  color: var(--text);
+}
+
+.card-cell.selected {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold) inset;
+}
+
+.hand-search-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hand-search-clear,
+.hand-search-run {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.hand-search-clear {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.hand-search-run {
+  background: var(--gold);
+  border: 1px solid var(--gold);
+  color: #0d0f12;
+  font-weight: 600;
+}
+
+.hand-search-run:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hand-search-error {
+  color: var(--red);
+  font-size: 0.85rem;
+}
+
+.hand-search-results-header {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.hand-search-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.hand-search-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.hand-search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.hand-search-result-item:hover {
+  border-color: var(--gold-border);
+}
+
+.result-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+  min-width: 80px;
+}
+
+.result-cards {
+  display: flex;
+  gap: 4px;
+}
+
+.result-card-img {
+  width: 28px;
+  height: auto;
+}
+
+.result-game {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.result-pot {
+  font-weight: 600;
+  color: var(--gold);
+}

@@ -8,6 +8,8 @@ import mongoose from 'mongoose';
 import userAuth from '../middleware/userAuth.js';
 import { attachPersonIdsToHands } from '../services/personService.js';
 import { recomputeStatsForNewHands } from '../services/statsService.js';
+import { handMatchesFilter } from '../utils/handFilters.js';
+import { getPositionMap } from '../utils/statsEngine.js';
 
 const router = express.Router();
 
@@ -69,6 +71,86 @@ router.get('/sessions/:id/hands', userAuth, async (req, res) => {
         res.json({ hands: session.hands ?? [] });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch hands", details: error.message });
+    }
+});
+
+// Cross-session hand search backing the History page's search menu.
+// Narrows candidates in Mongo first (userId, gameType, and - when hole
+// cards were picked - a $elemMatch requiring the hero's holeCards be a
+// superset of the selection), then finishes filtering in JS using the
+// same predicates as the per-session filter bar. Card matching is plain
+// containment ("hero held these cards"), which works unchanged for PLO's
+// 4-card hands: an NLH hand simply can't match once more than 2 cards are
+// selected, since its holeCards array only ever has 2 entries.
+router.get('/hands/search', userAuth, async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const { gameType, result, filter, position, holeCards, limit } = req.query;
+
+        const heroCards = (holeCards || '')
+            .split(',')
+            .map(c => c.trim())
+            .filter(Boolean)
+            .map(c => c[0]?.toUpperCase() + c[1]?.toLowerCase());
+
+        const cap = Math.min(Number(limit) || 100, 300);
+
+        const matchStage = { userId: new mongoose.Types.ObjectId(userId) };
+        if (gameType && gameType !== 'All') matchStage.gameType = gameType;
+
+        const pipeline = [
+            { $match: matchStage },
+            { $project: { gameType: 1, currency: 1, date: 1, hands: 1 } },
+            { $unwind: '$hands' },
+        ];
+
+        if (heroCards.length > 0) {
+            pipeline.push({
+                $match: {
+                    'hands.players': {
+                        $elemMatch: { isHero: true, holeCards: { $all: heroCards } },
+                    },
+                },
+            });
+        }
+
+        pipeline.push({ $sort: { 'hands.datePlayed': -1 } });
+        // Safety ceiling on candidates pulled into Node before the JS-only
+        // predicates (allIn/raise-count/position) below get applied.
+        pipeline.push({ $limit: 1000 });
+
+        const rows = await Session.aggregate(pipeline);
+
+        const matched = [];
+        for (const row of rows) {
+            const hand = row.hands;
+            const hero = hand.players?.find(p => p.isHero);
+            if (!hero) continue;
+
+            if (filter && !handMatchesFilter(hand, filter)) continue;
+
+            const won = (hand.winners || []).includes(hero.name);
+            if (result === 'won' && !won) continue;
+            if (result === 'lost' && won) continue;
+
+            if (position) {
+                const posMap = getPositionMap(hand);
+                if (posMap[hero.name] !== position) continue;
+            }
+
+            matched.push({
+                hand,
+                sessionId: row._id,
+                sessionDate: row.date,
+                sessionGameType: row.gameType,
+                sessionCurrency: row.currency,
+            });
+            if (matched.length >= cap) break;
+        }
+
+        res.json({ hands: matched, count: matched.length });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to search hands", details: error.message });
     }
 });
 

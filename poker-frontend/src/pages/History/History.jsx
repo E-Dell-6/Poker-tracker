@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Layout } from "../../components/Layout";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
+import { HandSearchMenu } from "../../components/HandSearchMenu";
 import { API_URL } from "../../config";
 import "./History.css";
 
@@ -422,6 +423,12 @@ export function History() {
             )}
           </div>
         </div>
+
+        <HandSearchMenu
+          onHandClick={(hand, session) =>
+            navigate("/hand-replay", { state: { hand, session } })
+          }
+        />
 
         <div className="game-filter">
           {gameFilters.map((game) => (
