@@ -34,10 +34,23 @@ const FORMAT_CURRENCY = {
 router.get('/sessions', userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
-        const sessions = await Session.find({ userId })
-            .select('-hands')
-            .sort({ uploadDate: -1 })
-            .lean();
+        // totalHands is only stamped onto sessions created via POST /upload
+        // after this field was introduced - older sessions in the DB never
+        // got it set. Rather than requiring a one-off backfill migration,
+        // fall back to computing it from hands.length server-side ($size),
+        // so it self-heals for any session regardless of when it was
+        // created. hands itself is still dropped before the doc leaves
+        // Mongo, so the payload to the client stays small either way.
+        const sessions = await Session.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+            { $addFields: {
+                totalHands: {
+                    $ifNull: ["$totalHands", { $size: { $ifNull: ["$hands", []] } }]
+                }
+            }},
+            { $project: { hands: 0 } },
+            { $sort: { uploadDate: -1 } },
+        ]);
         res.json(sessions);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch sessions" });
