@@ -79,6 +79,15 @@
   list-style: none;
 }
 
+/* ── HANDS LOADING STATE ────────────────────────────────── */
+.hands-loading {
+  padding: 24px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  font-style: italic;
+}
+
 /* ── SESSIONS LIST ──────────────────────────────────────── */
 .sessions-list {
   list-style: none;

@@ -27,7 +27,9 @@ export function SessionSelector({ sessions, disabledSessions, onToggle, onToggle
                 {sessions.map(session => {
                     const id = session._id ?? session.id;
                     const enabled = !disabledSessions.has(id);
-                    const handCount = session.hands?.length ?? 0;
+                    // Session list responses no longer include the full `hands`
+                    // array (see GET /api/sessions) - use the precomputed count.
+                    const handCount = session.totalHands ?? session.hands?.length ?? 0;
                     return (
                         <div
                             key={id}

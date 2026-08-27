@@ -20,5 +20,10 @@ const SessionSchema = new mongoose.Schema({
     fileHash: { type: String, index: true },
 });
 
+// The history list is always `find({ userId }).sort({ uploadDate: -1 })` -
+// this compound index lets Mongo satisfy that directly from the index
+// instead of scanning + in-memory sorting as session counts grow.
+SessionSchema.index({ userId: 1, uploadDate: -1 });
+
 const Session = mongoose.models.session || mongoose.model('Session', SessionSchema);
 export default Session;

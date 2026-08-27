@@ -224,7 +224,9 @@ export function Profile() {
     return {
       totalProfit,
       totalSessions: ol.length + lv.length,
-      onlineHands:   ol.reduce((s, x) => s + (x.hands?.length ?? 0), 0),
+      // Session list responses no longer include the full `hands` array
+      // (see GET /api/sessions) - use the precomputed per-session count.
+      onlineHands:   ol.reduce((s, x) => s + (x.totalHands ?? x.hands?.length ?? 0), 0),
       liveSessions:  lv.length,
       liveMs,
       liveProfit:    lv.reduce((s, x) => s + (x.totalProfit ?? 0), 0),

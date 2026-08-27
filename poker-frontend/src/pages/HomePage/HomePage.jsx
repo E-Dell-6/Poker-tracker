@@ -123,8 +123,10 @@ export function HomePage() {
 
       setPulse(recent.map(s => s.totalProfit ?? 0));
 
+      // Session list responses no longer include the full `hands` array
+      // (see GET /api/sessions) - use the precomputed per-session count.
       const totalHands = onlineSessions.reduce(
-        (sum, s) => sum + (s.hands?.length ?? 0),
+        (sum, s) => sum + (s.totalHands ?? s.hands?.length ?? 0),
         0
       );
 
@@ -334,7 +336,7 @@ export function HomePage() {
                     <span className="hp-feed-hands">
                       {s.isLive
                         ? formatSessionDuration(s.clockInTime, s.clockOutTime) ?? 'Live session'
-                        : `${s.hands?.length ?? 0} hands`}
+                        : `${s.totalHands ?? s.hands?.length ?? 0} hands`}
                     </span>
                   </div>
 

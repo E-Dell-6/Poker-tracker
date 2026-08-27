@@ -23,21 +23,39 @@ const FORMAT_CURRENCY = {
     POKERNOW: 'CHIPS',
 };
 
+// List view: deliberately excludes `hands` (each session can carry hundreds
+// of nested hand documents - players/actions/board/etc). The history page
+// only needs per-hand detail for whichever single session the user expands,
+// so that's fetched separately via GET /sessions/:id/hands. This keeps the
+// list fast regardless of how much hand history a user has accumulated.
+// gameType (including the 'Heads-Up' override) is now decided once at
+// upload time (see POST /upload below) instead of being recomputed from
+// `hands` on every read.
 router.get('/sessions', userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
-        const sessions = await Session.find({ userId }).sort({ uploadDate: -1 });
-        const processedSessions = sessions.map(session => {
-            const sessionObj = session.toObject();
-            if (sessionObj.hands?.length > 0) {
-                if (sessionObj.hands[0].players?.length === 2) sessionObj.gameType = 'Heads-Up';
-                sessionObj.hands = sessionObj.hands.map(hand => ({ ...hand, _id: hand._id }));
-            }
-            return sessionObj;
-        });
-        res.json(processedSessions);
+        const sessions = await Session.find({ userId })
+            .select('-hands')
+            .sort({ uploadDate: -1 })
+            .lean();
+        res.json(sessions);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch sessions" });
+    }
+});
+
+// Hand detail for a single session, fetched on demand when a session row is
+// expanded in the history view (or when it's opened for editing).
+router.get('/sessions/:id/hands', userAuth, async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const session = await Session.findOne({ _id: req.params.id, userId })
+            .select('hands')
+            .lean();
+        if (!session) return res.status(404).json({ error: "Session not found" });
+        res.json({ hands: session.hands ?? [] });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch hands", details: error.message });
     }
 });
 
@@ -118,7 +136,10 @@ router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) =
                     source: format,
                     currency: FORMAT_CURRENCY[format] ?? 'CHIPS',
                     date: parsedHands[0].datePlayed,
-                    gameType: parsedHands[0].gameType,
+                    // Same "2 players seated = Heads-Up" override the old list
+                    // route used to compute on every read; decided once here
+                    // instead so GET /sessions doesn't need `hands` at all.
+                    gameType: parsedHands[0].players?.length === 2 ? 'Heads-Up' : parsedHands[0].gameType,
                     totalHands: parsedHands.length,
                     totalProfit: parsedHands.reduce((sum, h) => {
                         const hero = h.players?.find(p => p.isHero);

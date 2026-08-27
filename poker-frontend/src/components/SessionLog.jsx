@@ -68,6 +68,35 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
   const [favouriteHandIds, setFavouriteHandIds] = useState(new Set());
   const [sessionFilters, setSessionFilters] = useState({});
 
+  // Session list no longer carries `hands` (see GET /api/sessions on the
+  // backend) - hand detail is fetched lazily per session, the first time
+  // it's expanded or opened for editing, and cached here so toggling the
+  // row open/closed again doesn't refetch.
+  const [handsBySession, setHandsBySession] = useState({});
+  const [loadingHandsFor, setLoadingHandsFor] = useState(() => new Set());
+
+  const fetchHandsForSession = async (sessionId) => {
+    if (handsBySession[sessionId]) return handsBySession[sessionId];
+    setLoadingHandsFor(prev => new Set(prev).add(sessionId));
+    try {
+      const res = await fetch(`${API_URL}/api/sessions/${sessionId}/hands`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load hands");
+      const data = await res.json();
+      const hands = Array.isArray(data.hands) ? data.hands : [];
+      setHandsBySession(prev => ({ ...prev, [sessionId]: hands }));
+      return hands;
+    } catch (err) {
+      console.error("Failed to fetch hands for session", sessionId, err);
+      return [];
+    } finally {
+      setLoadingHandsFor(prev => {
+        const next = new Set(prev);
+        next.delete(sessionId);
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchFavourites = async () => {
       try {
@@ -100,17 +129,21 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
     return () => window.removeEventListener("click", handleClick);
   }, []);
 
-  const getSessionOpponents = (session) => {
-    if (!session.hands?.length) return [];
+  const getSessionOpponents = (hands) => {
+    if (!hands?.length) return [];
     const unique = new Set();
-    session.hands.forEach(hand => {
+    hands.forEach(hand => {
       hand.players?.forEach(p => { if (!p.isHero) unique.add(p.name); });
     });
     return Array.from(unique);
   };
 
   const handleSessionClick = (id) => {
-    setSelectedSessionId(prev => prev === id ? null : id);
+    setSelectedSessionId(prev => {
+      const next = prev === id ? null : id;
+      if (next) fetchHandsForSession(next);
+      return next;
+    });
   };
 
   const handleContextMenu = (e, session) => {
@@ -137,13 +170,13 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
     }
   };
 
-  const openEditModal = () => {
+  const openEditModal = async () => {
     const s = contextMenu?.session;
-    if (s) {
-      setSessionToEdit({ ...s, opponents: getSessionOpponents(s) });
-      setIsEditModalOpen(true);
-      setContextMenu(null);
-    }
+    setContextMenu(null);
+    if (!s) return;
+    const hands = await fetchHandsForSession(s._id);
+    setSessionToEdit({ ...s, hands, opponents: getSessionOpponents(hands) });
+    setIsEditModalOpen(true);
   };
 
   const handleSaveEdit = (updated) => {
@@ -153,9 +186,12 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
     );
   };
 
-  const handleHandClickInternal = (e, hand, session) => {
+  const handleHandClickInternal = (e, hand, session, hands) => {
     e.stopPropagation();
-    onHandClick?.(hand, session);
+    // HandReplayer needs session.hands (for prev/next-hand navigation within
+    // the replay). The list-level `session` no longer carries it, so attach
+    // the hands we already fetched for this expanded row before navigating.
+    onHandClick?.(hand, { ...session, hands });
   };
 
   const getHandProfit = (hand) => {
@@ -180,7 +216,8 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
         {sessions.map((session) => {
           const isExpanded = selectedSessionId === session._id;
           const activeFilter = sessionFilters[session._id] ?? null;
-          const hands = session.hands ?? [];
+          const hands = handsBySession[session._id] ?? [];
+          const isLoadingHands = isExpanded && loadingHandsFor.has(session._id);
           const availableFilters = isExpanded ? getAvailableFilters(hands) : [];
           const visibleHands = activeFilter
             ? hands.filter(h => handMatchesFilter(h, activeFilter))
@@ -197,14 +234,18 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                 <div className="session-left">
                   <span className="session-date">{new Date(session.date).toLocaleDateString()}</span>
                   <span className="session-game-type">{session.gameType}</span>
-                  <span className="session-players">{hands.length} hands</span>
+                  <span className="session-players">{session.totalHands ?? hands.length} hands</span>
                 </div>
                 <div className={`session-profit ${session.totalProfit >= 0 ? "win" : "loss"}`}>
                   {formatSignedAmount(session.totalProfit, session.currency)}
                 </div>
               </div>
 
-              {isExpanded && (
+              {isExpanded && isLoadingHands && (
+                <div className="hands-loading">Loading hands...</div>
+              )}
+
+              {isExpanded && !isLoadingHands && (
                 <>
                   {availableFilters.length > 0 && (
                     <div
@@ -238,7 +279,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                         <li
                           key={i}
                           className="hand-item"
-                          onClick={(e) => handleHandClickInternal(e, hand, session)}
+                          onClick={(e) => handleHandClickInternal(e, hand, session, hands)}
                         >
                           <div className="hand-info">
                             <span className="hand-index">#{hand.handIndex || i + 1}</span>
