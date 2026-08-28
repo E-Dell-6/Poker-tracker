@@ -28,6 +28,88 @@
 .player-list::-webkit-scrollbar { width: 5px; }
 .player-list::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 3px; }
 
+/* ── SEARCH & STAR FILTER ───────────────────────────────── */
+.player-list-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.player-search {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.player-search::placeholder { color: var(--muted); }
+
+.player-search:focus {
+  border-color: var(--gold-border);
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+}
+
+.star-filter-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.star-filter-btn:hover { color: var(--text); border-color: var(--gold-border); }
+
+.star-filter-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+.no-info--inline {
+  margin-top: 24px;
+  font-size: 13px;
+}
+
+/* ── STAR TOGGLE (per player card) ─────────────────────── */
+.star-toggle-btn {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.star-toggle-btn:hover {
+  color: var(--gold);
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.1);
+}
+
+.star-toggle-btn.starred { color: var(--gold); }
+
 .player-info-container {
   flex: 1;
   min-width: 0;
@@ -94,5 +176,6 @@
 @media (max-width: 768px) {
   .players-container { flex-direction: column; padding: 20px 16px; }
   .player-list { width: 100%; flex-direction: row; flex-wrap: wrap; overflow-y: unset; }
+  .player-list-controls { width: 100%; order: -1; }
   .player-card { width: calc(50% - 4px); }
 }

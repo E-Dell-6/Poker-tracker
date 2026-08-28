@@ -57,6 +57,7 @@
 .controller-wrapper {
   position: relative;
   z-index: 100;
+  padding-left: 100px;
   padding-right: 120px;
   flex-shrink: 0;
 }
@@ -66,16 +67,16 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding: 12px 24px;
+  gap: 20px;
+  padding: 14px 24px;
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
   position: relative;
   z-index: 100;
 }
 
-.controls button {
-  padding: 8px 20px;
+.controls-nav-btn {
+  padding: 8px 18px;
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
@@ -86,14 +87,18 @@
   transition: transform 0.2s, box-shadow 0.2s;
   background: linear-gradient(135deg, #d4af37, #f4c430);
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.controls button:hover:not(:disabled) {
+.controls-nav-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
 }
 
-.controls button:disabled {
+.controls-nav-btn:disabled {
   background: var(--bg3);
   color: var(--muted);
   box-shadow: none;
@@ -101,33 +106,169 @@
   border: 1px solid var(--border);
 }
 
-/* Progress */
-.progress-container {
-  position: relative;
+/* Street-by-street progress — shows what's actually meaningful
+   (which street the replay is on) instead of a raw action count. */
+.street-track {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   flex: 1;
-  max-width: 360px;
-  height: 5px;
-  background: var(--bg3);
-  border-radius: 100px;
-  overflow: hidden;
+  max-width: 460px;
+  position: relative;
 }
 
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #d4af37, #f4c430);
-  border-radius: 100px;
-  transition: width 0.2s ease;
-}
-
-.progress-text {
+.street-track-done {
   position: absolute;
-  top: -18px;
+  top: -20px;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.street-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
+}
+
+.street-step:disabled {
+  cursor: default;
+}
+
+.street-step-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  background: var(--bg3);
+  color: #0d0f12;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.street-step-label {
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.street-step--active .street-step-dot {
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.15);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+}
+
+.street-step--active .street-step-label {
+  color: var(--gold);
+}
+
+.street-step--complete .street-step-dot {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, #d4af37, #f4c430);
+}
+
+.street-step--complete .street-step-label {
+  color: var(--text);
+}
+
+.street-step--upcoming .street-step-dot {
+  border-color: var(--border);
+}
+
+.street-step--unavailable {
+  opacity: 0.3;
+}
+
+.street-step:hover:not(:disabled) .street-step-dot {
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.street-connector {
+  width: 28px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin-top: 13px;
+  transition: background 0.2s;
+}
+
+.street-connector.filled {
+  background: var(--gold);
+}
+
+/* ── EXIT BUTTON ────────────────────────────────────────── */
+.exit-button {
+  position: fixed;
+  top: 14px;
+  left: 20px;
+  padding: 8px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exit-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.exit-button--static {
+  position: static;
+  margin-top: 24px;
+}
+
+/* ── PUBLIC LOADING / ERROR STATES ──────────────────────── */
+.public-loading {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  gap: 8px;
+}
+
+.public-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  max-width: 420px;
+}
+
+.public-status--error {
+  color: var(--text);
+}
+
+.public-status-icon {
+  color: var(--gold);
 }
 
 /* ── MENU BUTTON ────────────────────────────────────────── */

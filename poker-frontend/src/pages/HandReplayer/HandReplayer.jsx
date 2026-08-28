@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye, ArrowLeft } from "lucide-react";
 import "./HandReplayer.css";
 
 import PokerTable from "./PokerTable";
 import PlayerSeat from "./PlayerSeat";
-import Controller from "../../components/controller";
+import Controller from "../../components/Controller";
 
 import { API_URL } from "../../config";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
@@ -65,6 +65,7 @@ function getAvailableFilters(hands) {
 export function PublicHandViewer() {
   const [hand, setHand] = useState(null);
   const [status, setStatus] = useState("loading");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("hand");
@@ -99,11 +100,14 @@ export function PublicHandViewer() {
           <AlertTriangle className="public-status-icon" size={20} />
           <span>This hand replay is no longer available or the link is invalid.</span>
         </div>
+        <button className="exit-button exit-button--static" onClick={() => navigate('/')}>
+          <ArrowLeft size={16} /> Back to PokerFlow
+        </button>
       </div>
     );
   }
 
-  return <HandReplayerCore hand={hand} session={null} isPublic={true} />;
+  return <HandReplayerCore hand={hand} session={null} isPublic={true} navigate={navigate} />;
 }
 
 export function HandReplayer() {
@@ -298,6 +302,19 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     return idx === -1 ? 0 : idx;
   }, [actionsWithReveals]);
 
+  // Index within actionsWithReveals where each street begins, so the
+  // controller can show real street-by-street progress instead of a raw
+  // action count, and let people jump straight to a street.
+  const streetStartIndex = useMemo(() => {
+    const marks = { PREFLOP: initialIndex, FLOP: null, TURN: null, RIVER: null };
+    actionsWithReveals.forEach((a, i) => {
+      if (a.actionType === "reveal" && marks[a.revealStreet] == null) {
+        marks[a.revealStreet] = i + 1; // land on the first action of that street
+      }
+    });
+    return marks;
+  }, [actionsWithReveals, initialIndex]);
+
   const derivedState = useMemo(() => {
     const players = JSON.parse(JSON.stringify(hand.players));
     let currentBoard = [], currentSecondBoard = [];
@@ -407,11 +424,22 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
         <Controller
           onNext={() => setActionIndex(Math.min(actionIndex + 1, actionsWithReveals.length))}
           onPrev={() => setActionIndex(Math.max(actionIndex - 1, initialIndex))}
+          onSeek={(idx) => setActionIndex(Math.max(initialIndex, Math.min(idx, actionsWithReveals.length)))}
           actionIndex={actionIndex}
           totalActions={actionsWithReveals.length}
           initialIndex={initialIndex}
+          streetStartIndex={streetStartIndex}
         />
       </div>
+
+      {/* Exit — always available, private and public */}
+      <button
+        className="exit-button"
+        onClick={() => navigate(isPublic ? '/' : '/history')}
+        title="Exit replay"
+      >
+        <ArrowLeft size={16} /> Exit
+      </button>
 
       {!isPublic && (prevVisibleHand || nextVisibleHand) && (
         <div className="hand-nav-btns">

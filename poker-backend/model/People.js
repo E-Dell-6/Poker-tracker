@@ -23,6 +23,10 @@ const PersonSchema = new mongoose.Schema({
     ],
     notes: {
         type: String,
+    },
+    starred: {
+        type: Boolean,
+        default: false
     }
 });
 

@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(userAuth);
 
 // whitelist: blocks operator keys (e.g. $unset) from reaching Mongo
-const EDITABLE_FIELDS = ['name', 'image'];
+const EDITABLE_FIELDS = ['name', 'image', 'starred'];
 
 function pickEditableFields(body) {
     const updates = {};
