@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Star } from "lucide-react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
 import { API_URL } from "../config";
@@ -7,7 +7,7 @@ import { formatAmount, formatSignedAmount } from "../utils/formatMoney";
 import { handMatchesFilter, getAvailableFilters } from "../utils/handFilters";
 import "./SessionLog.css";
 
-export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
+export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleStar }) {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -157,6 +157,11 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
     }));
   };
 
+  const handleSessionStarClick = (e, session) => {
+    e.stopPropagation();
+    onToggleStar?.(session);
+  };
+
   return (
     <>
       <ul className="sessions-list">
@@ -183,8 +188,19 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
                   <span className="session-game-type">{session.gameType}</span>
                   <span className="session-players">{session.totalHands ?? hands.length} hands</span>
                 </div>
-                <div className={`session-profit ${session.totalProfit >= 0 ? "win" : "loss"}`}>
-                  {formatSignedAmount(session.totalProfit, session.currency)}
+                <div className="session-right">
+                  <div className={`session-profit ${session.totalProfit >= 0 ? "win" : "loss"}`}>
+                    {formatSignedAmount(session.totalProfit, session.currency)}
+                  </div>
+                  <button
+                    type="button"
+                    className={`session-star-btn ${session.starred ? "starred" : ""}`}
+                    onClick={(e) => handleSessionStarClick(e, session)}
+                    title={session.starred ? "Unstar session" : "Star session"}
+                    aria-pressed={!!session.starred}
+                  >
+                    <Star size={16} fill={session.starred ? "currentColor" : "none"} />
+                  </button>
                 </div>
               </div>
 

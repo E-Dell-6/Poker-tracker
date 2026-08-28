@@ -321,6 +321,26 @@
   border-color: var(--gold-border);
 }
 
+/* ── STARRED SESSIONS FILTER ────────────────────────────── */
+/* Sits with the game-type pills but set apart with a margin, since it
+   filters a different axis (starred vs game type) rather than being a
+   mutually-exclusive option among them. */
+.starred-sessions-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding-left: 18px;
+  border-left: 1px solid var(--border);
+}
+
+.starred-sessions-filter.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--gold-border);
+  border-left: 1px solid var(--gold-border);
+}
+
 /* ── FAVOURITES TOGGLE ──────────────────────────────────── */
 .favourites-toggle {
   background: rgba(255, 255, 255, 0.05);

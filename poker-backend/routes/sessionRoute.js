@@ -281,12 +281,13 @@ router.delete('/reset', userAuth, async (req, res) => {
 
 router.put('/sessions/:id', userAuth, async (req, res) => {
     try {
-        const { userId, date, gameType, opponentRenames, totalProfit } = req.body;
+        const { userId, date, gameType, opponentRenames, totalProfit, starred } = req.body;
         const session = await Session.findOne({ _id: req.params.id, userId });
         if (!session) return res.status(404).json({ error: "Session not found" });
         if (date) session.date = new Date(date);
         if (gameType) session.gameType = gameType;
         if (totalProfit !== undefined) session.totalProfit = Number(totalProfit);
+        if (starred !== undefined) session.starred = Boolean(starred);
         if (opponentRenames && Object.keys(opponentRenames).length > 0 && session.hands?.length > 0) {
             session.hands.forEach((hand) => {
                 hand.players?.forEach((p) => { if (opponentRenames[p.name]) p.name = opponentRenames[p.name]; });

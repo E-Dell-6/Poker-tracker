@@ -179,6 +179,38 @@
   color: var(--red);
 }
 
+/* ── SESSION RIGHT GROUP ────────────────────────────────── */
+.session-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── SESSION STAR BUTTON ────────────────────────────────── */
+.session-star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.session-star-btn:hover {
+  color: var(--gold);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.1);
+}
+
+.session-star-btn.starred {
+  color: var(--gold);
+}
+
 /* ── HANDS LIST (ACCORDION) ─────────────────────────────── */
 .hands-list {
   list-style: none;

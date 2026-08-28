@@ -189,6 +189,7 @@ export function History() {
 
   const [showFavourites, setShowFavourites] = useState(false);
   const [favourites, setFavourites] = useState([]);
+  const [showStarredSessions, setShowStarredSessions] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/sessions`, { credentials: "include" })
@@ -206,9 +207,11 @@ export function History() {
   }, [showFavourites]);
 
   const filteredSessions = useMemo(() => {
-    if (selectedGame === "All") return sessions;
-    return sessions.filter((s) => s.gameType === selectedGame);
-  }, [selectedGame, sessions]);
+    let result = sessions;
+    if (selectedGame !== "All") result = result.filter((s) => s.gameType === selectedGame);
+    if (showStarredSessions) result = result.filter((s) => s.starred);
+    return result;
+  }, [selectedGame, sessions, showStarredSessions]);
 
   const uploadFiles = async (fileList) => {
     const files = Array.from(fileList || []);
@@ -357,6 +360,25 @@ export function History() {
     setShowFavourites((prev) => !prev);
   }
 
+  const handleToggleSessionStar = async (session) => {
+    const nextStarred = !session.starred;
+    try {
+      const response = await fetch(`${API_URL}/api/sessions/${session._id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ starred: nextStarred }),
+      });
+      if (!response.ok) throw new Error("Failed to update session");
+      const updated = await response.json();
+      setSessions((prev) =>
+        prev.map((s) => (s._id === session._id ? { ...s, starred: updated.starred } : s))
+      );
+    } catch (err) {
+      console.error("Error toggling session star:", err);
+    }
+  };
+
   return (
     <Layout>
       <div className="history-container">
@@ -432,6 +454,13 @@ export function History() {
                 {game}
               </button>
             ))}
+            <button
+              className={`starred-sessions-filter ${showStarredSessions ? "active" : ""}`}
+              onClick={() => setShowStarredSessions((prev) => !prev)}
+              title={showStarredSessions ? "Show all sessions" : "Show starred sessions"}
+            >
+              <Star size={13} fill={showStarredSessions ? "currentColor" : "none"} /> Starred
+            </button>
           </div>
           <div className="filter-bar-actions">
             <HandSearchMenu
@@ -464,6 +493,7 @@ export function History() {
               onRenameRequest={(name, sid) =>
                 setRenamingState({ originalName: name, sessionId: sid })
               }
+              onToggleStar={handleToggleSessionStar}
             />
           )
         ) : (

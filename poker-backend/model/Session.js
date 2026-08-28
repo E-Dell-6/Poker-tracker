@@ -18,6 +18,8 @@ const SessionSchema = new mongoose.Schema({
     uploadDate: { type: Date, default: Date.now },
     
     fileHash: { type: String, index: true },
+
+    starred: { type: Boolean, default: false },
 });
 
 // The history list is always `find({ userId }).sort({ uploadDate: -1 })` -
