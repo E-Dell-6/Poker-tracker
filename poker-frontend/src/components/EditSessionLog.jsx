@@ -1,5 +1,6 @@
 import { API_URL } from "../config";
 import React, { useState, useEffect } from "react";
+import { Check, X, Camera } from "lucide-react";
 import './EditSessionLog.css';
 
 export function EditSessionLog({ 
@@ -180,11 +181,14 @@ export function EditSessionLog({
             marginBottom: '12px',
             fontSize: '14px',
             fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
             background: statusMessage.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
             color: statusMessage.type === 'success' ? '#22c55e' : '#ef4444',
             border: `1px solid ${statusMessage.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
           }}>
-            {statusMessage.type === 'success' ? '✓ ' : '✕ '}{statusMessage.text}
+            {statusMessage.type === 'success' ? <Check size={14} /> : <X size={14} />} {statusMessage.text}
           </div>
         )}
 
@@ -269,7 +273,7 @@ export function EditSessionLog({
                   onClick={() => document.getElementById('image-upload').click()}
                   disabled={isUploading}
                 >
-                  📷 Choose Image
+                  <Camera size={14} /> Choose Image
                 </button>
                 {imagePreview && (
                   <div className="image-preview">
@@ -285,7 +289,7 @@ export function EditSessionLog({
                       style={{ marginLeft: '10px' }}
                       disabled={isUploading}
                     >
-                      ✕ Remove
+                      <X size={14} /> Remove
                     </button>
                   </div>
                 )}

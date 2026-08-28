@@ -329,6 +329,10 @@
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .hc-btn:disabled {
@@ -364,6 +368,9 @@
   font-size: 14px;
   font-weight: 500;
   border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .hc-status-success {
@@ -462,6 +469,9 @@
   padding: 4px 10px;
   border-radius: 999px;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* -- review: revealed hand / showdown cards ------------------------------- */

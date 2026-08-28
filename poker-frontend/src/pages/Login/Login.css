@@ -336,6 +336,10 @@ body {
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s, background 0.2s;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .ghost-btn:hover {

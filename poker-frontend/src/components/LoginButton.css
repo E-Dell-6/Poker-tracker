@@ -136,7 +136,9 @@
   font-weight: 700;
   border-radius: 20px;
   padding: 2px 7px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-top: 3px;
 }
 
@@ -287,6 +289,9 @@
   color: #4ade80;
   font-size: 13px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ── Spinner ── */

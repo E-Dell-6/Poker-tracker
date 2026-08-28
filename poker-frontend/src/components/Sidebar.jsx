@@ -1,13 +1,14 @@
 import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { LayoutDashboard, List, Clock, Users, BarChart2, Spade, ChevronLeft, ChevronRight } from "lucide-react";
 
 const menuItems = [
-  { icon: "⊞", label: "Dashboard", to: "/" },
-  { icon: "≡", label: "History", to: "/history" },
-  { icon: "◷", label: "Clock In", to: "/clock" },
-  { icon: "◈", label: "Players", to: "/players" },
-  { icon: "◎", label: "Study", to: "/study" },
+  { icon: LayoutDashboard, label: "Dashboard", to: "/" },
+  { icon: List, label: "History", to: "/history" },
+  { icon: Clock, label: "Clock In", to: "/clock" },
+  { icon: Users, label: "Players", to: "/players" },
+  { icon: BarChart2, label: "Study", to: "/study" },
 ];
 
 export function Sidebar() {
@@ -19,7 +20,7 @@ export function Sidebar() {
 
       {/* Brand */}
       <div className="sidebar-brand">
-        <span className="sidebar-brand-icon">♠</span>
+        <Spade className="sidebar-brand-icon" size={20} fill="currentColor" />
         {!collapsed && <span className="sidebar-brand-name">PokerFlow</span>}
       </div>
 
@@ -32,7 +33,7 @@ export function Sidebar() {
             className={`sidebar-link ${location.pathname === item.to ? 'active' : ''}`}
             title={collapsed ? item.label : ''}
           >
-            <span className="sidebar-icon">{item.icon}</span>
+            <item.icon className="sidebar-icon" size={18} />
             {!collapsed && <span className="sidebar-label">{item.label}</span>}
           </Link>
         ))}
@@ -44,7 +45,7 @@ export function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label="Toggle sidebar"
       >
-        {collapsed ? '›' : '‹'}
+        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
     </aside>

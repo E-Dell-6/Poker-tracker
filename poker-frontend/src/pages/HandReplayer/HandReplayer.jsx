@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import "./HandReplayer.css";
 
 import PokerTable from "./PokerTable";
@@ -95,7 +96,7 @@ export function PublicHandViewer() {
     return (
       <div className="hand-replayer public-loading">
         <div className="public-status public-status--error">
-          <span className="public-status-icon">🃏</span>
+          <AlertTriangle className="public-status-icon" size={20} />
           <span>This hand replay is no longer available or the link is invalid.</span>
         </div>
       </div>
@@ -197,7 +198,7 @@ function ShareModal({ hand, session, onClose }) {
       <div className="share-modal">
         <div className="share-modal-header">
           <h3 className="share-modal-title">Share Hand Replay</h3>
-          <button className="share-modal-close" onClick={onClose}>✕</button>
+          <button className="share-modal-close" onClick={onClose}><X size={16} /></button>
         </div>
 
         <div className="share-modal-body">
@@ -211,7 +212,7 @@ function ShareModal({ hand, session, onClose }) {
                 onClick={handleShare}
                 disabled={loading}
               >
-                {loading ? "Creating link…" : "🔗 Create share link"}
+                {loading ? "Creating link…" : <><Link2 size={14} /> Create share link</>}
               </button>
             </>
           ) : (
@@ -231,7 +232,7 @@ function ShareModal({ hand, session, onClose }) {
                   {shareUrl}
                 </a>
                 <button className="share-modal-copy-btn" onClick={handleCopy}>
-                  {copied ? "✓ Copied!" : "Copy"}
+                  {copied ? <><Check size={14} /> Copied!</> : "Copy"}
                 </button>
               </div>
 
@@ -419,7 +420,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
             disabled={!prevVisibleHand}
             onClick={() => navigate('/hand-replay', { state: { hand: prevVisibleHand, session } })}
           >
-            ← Prev Hand
+<ChevronLeft size={16} /> Prev Hand
           </button>
           {activeFilter && (
             <span className="hand-nav-filter-label">
@@ -431,7 +432,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
             disabled={!nextVisibleHand}
             onClick={() => navigate('/hand-replay', { state: { hand: nextVisibleHand, session } })}
           >
-            Next Hand →
+            Next Hand <ChevronRight size={16} />
           </button>
         </div>
       )}
@@ -443,7 +444,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
           onClick={() => setShowShareModal(true)}
           title="Share this hand replay"
         >
-          {isHandShared ? "✓ Shared" : "🔗 Share"}
+          {isHandShared ? <><Check size={14} /> Shared</> : <><Link2 size={14} /> Share</>}
         </button>
       )}
 
@@ -460,7 +461,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
 
       {/* Public badge */}
       {isPublic && (
-        <div className="public-badge">👁 Public replay</div>
+        <div className="public-badge"><Eye size={14} /> Public replay</div>
       )}
 
       {/* Menu button — private only */}

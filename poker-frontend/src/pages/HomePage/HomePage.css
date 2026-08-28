@@ -190,6 +190,10 @@
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 24px rgba(212,175,55,0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .hp-btn-primary:hover {
@@ -208,6 +212,10 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .hp-btn-ghost:hover {
@@ -275,6 +283,9 @@
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .hp-guest-banner-cta:hover {
@@ -720,6 +731,9 @@
   font-size: 14px;
   padding: 10px 20px;
   border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .hp-preview:hover .hp-preview-overlay { opacity: 1; }

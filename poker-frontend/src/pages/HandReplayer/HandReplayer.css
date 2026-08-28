@@ -171,6 +171,9 @@
   transition: background 0.2s, border-color 0.2s, transform 0.2s;
   white-space: nowrap;
   z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .share-button:hover {
@@ -276,6 +279,10 @@
 
   cursor: pointer;
   pointer-events: auto;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.45),
@@ -468,6 +475,9 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ── RESPONSIVE ─────────────────────────────────────────── */

@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import './SessionSelector.css';
 
 function formatDate(dateStr) {
@@ -37,7 +38,7 @@ export function SessionSelector({ sessions, disabledSessions, onToggle, onToggle
                             onClick={() => onToggle(id)}
                         >
                             <div className={`session-checkbox ${enabled ? 'checked' : ''}`}>
-                                {enabled && '✓'}
+                                {enabled && <Check size={12} />}
                             </div>
                             <div className="session-row-info">
                                 <span className="session-row-date">{formatDate(session.date)}</span>

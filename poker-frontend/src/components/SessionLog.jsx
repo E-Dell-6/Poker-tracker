@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
 import { API_URL } from "../config";
@@ -271,8 +272,8 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick }) {
 
       {contextMenu && (
         <div className="context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
-          <div className="menu-item" onClick={openEditModal}>✏️ Edit Session</div>
-          <div className="menu-item delete" onClick={handleDeleteSession}>🗑️ Delete</div>
+          <div className="menu-item" onClick={openEditModal}><Pencil size={14} /> Edit Session</div>
+          <div className="menu-item delete" onClick={handleDeleteSession}><Trash2 size={14} /> Delete</div>
         </div>
       )}
 

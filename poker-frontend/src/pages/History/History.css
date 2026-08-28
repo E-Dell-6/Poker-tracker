@@ -85,6 +85,10 @@
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .create-button {
@@ -98,6 +102,10 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
   white-space: nowrap;
 }

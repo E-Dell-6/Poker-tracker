@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { List, Eye, ArrowRight } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { API_URL } from '../../config';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
@@ -7,7 +8,7 @@ import './HomePage.css';
 
 const STAT_CARDS = [
   { label: 'Total Hands', key: 'totalHands', icon: '♠', suffix: '' },
-  { label: 'Online Sessions', key: 'onlineSessions', icon: '≡', suffix: '' },
+  { label: 'Online Sessions', key: 'onlineSessions', icon: <List size={16} />, suffix: '' },
   { label: 'Live Sessions', key: 'liveSessions', icon: '♣', suffix: '' },
 ];
 
@@ -212,7 +213,7 @@ export function HomePage() {
               </div>
 
               <button className="hp-btn-guest" onClick={handleGuestMode}>
-                Explore with sample data →
+                Explore with sample data <ArrowRight size={14} />
               </button>
 
               <div className="hp-hero-pills">
@@ -270,7 +271,7 @@ export function HomePage() {
                 </div>
 
                 <div className="hp-preview-overlay">
-                  <span>Click to explore →</span>
+                  <span>Click to explore <ArrowRight size={14} /></span>
                 </div>
               </div>
             </button>
@@ -328,13 +329,13 @@ export function HomePage() {
       <div className="hp-dashboard">
         {isGuest && (
           <div className="hp-guest-banner">
-            <span className="hp-guest-banner-icon">👁</span>
+            <Eye size={16} className="hp-guest-banner-icon" />
             <span>You're browsing as a guest with sample data.</span>
             <button
               className="hp-guest-banner-cta"
               onClick={() => navigate('/login')}
             >
-              Sign up free →
+              Sign up free <ArrowRight size={14} />
             </button>
           </div>
         )}
@@ -435,7 +436,7 @@ export function HomePage() {
                   className="hp-btn-ghost hp-view-all"
                   onClick={() => navigate('/history')}
                 >
-                  View All Sessions →
+                  View All Sessions <ArrowRight size={14} />
                 </button>
               )}
 
@@ -444,7 +445,7 @@ export function HomePage() {
                   className="hp-btn-primary hp-view-all"
                   onClick={() => navigate('/login')}
                 >
-                  Sign up to track your own sessions →
+                  Sign up to track your own sessions <ArrowRight size={14} />
                 </button>
               )}
             </div>

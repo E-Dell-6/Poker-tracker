@@ -1,5 +1,6 @@
 import { Layout } from "../../components/Layout";
 import { useState, useEffect } from "react";
+import { Play, Square, X, TrendingUp, TrendingDown, Trash2, Plus } from "lucide-react";
 import "./Clock.css";
 
 const normalizeSession = (s) => ({
@@ -300,17 +301,17 @@ export function Clock() {
             <div className="clock-actions">
               {!isClocked ? (
                 <button className="btn btn-primary" onClick={handleClockIn} disabled={isRestoring}>
-                  <span className="btn-icon">▶</span>
+                  <Play size={16} className="btn-icon" fill="currentColor" />
                   Clock In
                 </button>
               ) : (
                 <>
                   <button className="btn btn-secondary" onClick={() => setShowBuyInForm(true)}>
-                    <span className="btn-icon">+</span>
+                    <Plus size={16} className="btn-icon" />
                     Add Buy-In
                   </button>
                   <button className="btn btn-danger" onClick={handleClockOutClick}>
-                    <span className="btn-icon">■</span>
+                    <Square size={16} className="btn-icon" fill="currentColor" />
                     Clock Out
                   </button>
                 </>
@@ -327,7 +328,7 @@ export function Clock() {
               <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>New Session</h2>
-                  <button className="modal-close" onClick={() => setShowSessionForm(false)}>×</button>
+                  <button className="modal-close" onClick={() => setShowSessionForm(false)}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
                   <div className="form-group">
@@ -375,7 +376,7 @@ export function Clock() {
               <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>Add Buy-In</h2>
-                  <button className="modal-close" onClick={() => setShowBuyInForm(false)}>×</button>
+                  <button className="modal-close" onClick={() => setShowBuyInForm(false)}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
                   <p className="modal-info">
@@ -406,7 +407,7 @@ export function Clock() {
               <div className="clock-modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>End Session</h2>
-                  <button className="modal-close" onClick={() => setShowClockOutForm(false)}>×</button>
+                  <button className="modal-close" onClick={() => setShowClockOutForm(false)}><X size={18} /></button>
                 </div>
                 <div className="modal-body">
                   <p className="modal-info">
@@ -425,7 +426,7 @@ export function Clock() {
                   </div>
                   {formData.cashOut !== "" && !isNaN(parseFloat(formData.cashOut)) && (
                     <div className={`profit-preview ${parseFloat(formData.cashOut) - totalActiveBuyIn >= 0 ? "profit-positive" : "profit-negative"}`}>
-                      {parseFloat(formData.cashOut) - totalActiveBuyIn >= 0 ? "▲" : "▼"}{" "}
+                      {parseFloat(formData.cashOut) - totalActiveBuyIn >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}{" "}
                       {formatCurrency(Math.abs(parseFloat(formData.cashOut) - totalActiveBuyIn))}
                       {" "}
                       {parseFloat(formData.cashOut) - totalActiveBuyIn >= 0 ? "profit" : "loss"}
@@ -509,7 +510,7 @@ export function Clock() {
                 className="context-menu-item delete"
                 onClick={() => handleDeleteClick(contextMenu.id)}
               >
-                🗑️ Delete
+                <Trash2 size={14} /> Delete
               </div>
             </div>
           )}

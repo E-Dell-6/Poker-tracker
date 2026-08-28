@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Camera, X } from "lucide-react";
 import "./PlayerSeat.css";
 import { API_URL } from "../../config";
 import { formatAmount } from "../../utils/formatMoney";
@@ -236,7 +237,7 @@ export default function PlayerSeat({
                     onClick={() => document.getElementById('player-image-upload').click()}
                     disabled={isUploading}
                   >
-                    📷 Choose Image
+                    <Camera size={14} /> Choose Image
                   </button>
                   {imagePreview && (
                     <div className="image-preview">
@@ -252,7 +253,7 @@ export default function PlayerSeat({
                         style={{ marginLeft: '10px' }}
                         disabled={isUploading}
                       >
-                        ✕ Remove
+                        <X size={14} /> Remove
                       </button>
                     </div>
                   )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Star } from "lucide-react";
 import './FavouritesLog.css';
 import { API_URL } from "../config";
 
@@ -128,7 +129,7 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
     return (
       <div className="favourites-container">
         <div className="empty-state">
-          <p>No favourite hands yet. Click the ⭐ button on hands to add them!</p>
+          <p>No favourite hands yet. Click the <Star size={14} style={{ verticalAlign: '-2px' }} fill="currentColor" /> button on hands to add them!</p>
         </div>
       </div>
     );
@@ -226,7 +227,7 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
                 }}
                 aria-label={isStarred ? "Remove from favourites" : "Add to favourites"}
               >
-                {isStarred ? '⭐' : '☆'}
+                <Star size={16} fill={isStarred ? "currentColor" : "none"} />
               </button>
             </li>
           );

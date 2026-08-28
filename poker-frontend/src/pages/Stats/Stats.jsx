@@ -1,5 +1,6 @@
 import { Layout } from '../../components/Layout';
 import { useState, useEffect } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { API_URL } from '../../config';
 import { PositionalStats } from '../../components/PositionalStats';
 import './Stats.css';
@@ -148,7 +149,7 @@ export function Stats() {
               <h1 className="study-title">My Statistics</h1>
             </div>
             <button className="refresh-btn" onClick={refreshStats} disabled={refreshing}>
-              {refreshing ? 'Recomputing…' : '↺ Recompute Stats'}
+              {refreshing ? 'Recomputing…' : <><RotateCcw size={14} /> Recompute Stats</>}
             </button>
           </div>
           <div className="study-divider" />

@@ -1,12 +1,13 @@
 import "./Header.css";
 import { Link, useLocation } from "react-router-dom";
+import { List, Clock, Users, BarChart2, Spade } from "lucide-react";
 import { LoginButton } from "./LoginButton"
 
 const menuItems = [
-  { icon: "≡", label: "Hand History", to: "/history" },
-  { icon: "◷", label: "Clock In", to: "/clock" },
-  { icon: "◈", label: "Players", to: "/players" },
-  { icon: "◎", label: "Stats", to: "/stats" },
+  { icon: List, label: "Hand History", to: "/history" },
+  { icon: Clock, label: "Clock In", to: "/clock" },
+  { icon: Users, label: "Players", to: "/players" },
+  { icon: BarChart2, label: "Stats", to: "/stats" },
 ];
 
 export function Header() {
@@ -16,7 +17,7 @@ export function Header() {
     <header className="header">
       {/* Brand */}
       <Link to="/" className="header-brand">
-        <span className="header-brand-icon">♠</span>
+        <Spade className="header-brand-icon" size={20} fill="currentColor" />
         <span className="header-brand-name">PokerFlow</span>
       </Link>
 
@@ -28,7 +29,7 @@ export function Header() {
             to={item.to}
             className={`header-link ${location.pathname === item.to ? "active" : ""}`}
           >
-            <span className="header-icon">{item.icon}</span>
+            <item.icon className="header-icon" size={18} />
             <span className="header-label">{item.label}</span>
           </Link>
         ))}

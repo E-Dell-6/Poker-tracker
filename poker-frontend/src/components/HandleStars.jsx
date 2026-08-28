@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Star } from "lucide-react";
 import { API_URL } from "../config";
 
 export function HandleStars({ hand, isStarred: initialIsStarred, onToggle }) {
@@ -37,7 +38,7 @@ export function HandleStars({ hand, isStarred: initialIsStarred, onToggle }) {
       onClick={handleStarClick}
       title={isStarred ? "Remove from favourites" : "Add to favourites"}
     >
-      {isStarred ? '⭐' : '☆'}
+      <Star size={16} fill={isStarred ? "currentColor" : "none"} />
     </button>
   );
 }

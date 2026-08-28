@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Search, X, Layers } from "lucide-react";
 import { API_URL } from "../config";
 import { HAND_FILTERS } from "../utils/handFilters";
 import { formatAmount } from "../utils/formatMoney";
@@ -93,7 +94,7 @@ export function HandSearchMenu({ onHandClick }) {
         onClick={() => setIsOpen(true)}
         title="Search Hands"
       >
-        🔍
+        <Search size={16} />
       </button>
 
       {isOpen && (
@@ -107,7 +108,7 @@ export function HandSearchMenu({ onHandClick }) {
                 onClick={() => setIsOpen(false)}
                 aria-label="Close"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -209,7 +210,7 @@ export function HandSearchMenu({ onHandClick }) {
                         onClick={() => toggleCard(card)}
                         title="Remove"
                       >
-                        {cardLabel(card)} ✕
+                        {cardLabel(card)} <X size={11} />
                       </button>
                     ))}
                   </div>
@@ -220,7 +221,7 @@ export function HandSearchMenu({ onHandClick }) {
                   onClick={() => setIsCardPickerOpen(true)}
                   disabled={selectedCards.length >= MAX_SELECTABLE_CARDS}
                 >
-                  🂠 {selectedCards.length > 0 ? "Add Card" : "Pick Cards"}
+                  <Layers size={14} /> {selectedCards.length > 0 ? "Add Card" : "Pick Cards"}
                 </button>
               </div>
 

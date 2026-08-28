@@ -1,5 +1,6 @@
 import { Link} from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { Check, AlertTriangle, User, Mail } from "lucide-react";
 import "./LoginButton.css";
 import { API_URL } from "../config";
 
@@ -148,7 +149,7 @@ export function LoginButton() {
             <div>
               <div className="lb-dropdown-name">{userData.name}</div>
               <div className={`lb-badge ${userData.isAccountVerified ? "lb-badge--verified" : "lb-badge--unverified"}`}>
-                {userData.isAccountVerified ? "✓ Verified" : "⚠ Unverified"}
+                {userData.isAccountVerified ? <><Check size={12} /> Verified</> : <><AlertTriangle size={12} /> Unverified</>}
               </div>
             </div>
           </div>
@@ -161,10 +162,7 @@ export function LoginButton() {
             to="/profile"
             onClick={closeDropdown}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
+            <User size={14} />
             Profile
           </Link>
 
@@ -175,9 +173,7 @@ export function LoginButton() {
             <>
               {verifyState === "idle" && (
                 <button className="lb-menu-item lb-menu-item--verify" onClick={handleSendOtp}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 5.18 2 2 0 0 1 3.58 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/>
-                  </svg>
+                  <Mail size={14} />
                   Verify Email
                 </button>
               )}
@@ -219,7 +215,7 @@ export function LoginButton() {
               )}
 
               {verifyState === "done" && (
-                <div className="lb-otp-done">✓ Email verified!</div>
+                <div className="lb-otp-done"><Check size={14} /> Email verified!</div>
               )}
 
               {otpError && verifyState === "idle" && (

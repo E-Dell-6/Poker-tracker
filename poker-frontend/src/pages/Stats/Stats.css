@@ -71,6 +71,9 @@
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .refresh-btn:hover:not(:disabled) {

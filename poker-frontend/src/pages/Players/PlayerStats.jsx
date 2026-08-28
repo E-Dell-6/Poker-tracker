@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { RotateCcw } from 'lucide-react';
 import './PlayerStats.css';
 import { API_URL } from '../../config';
 import { formatSignedAmount } from '../../utils/formatMoney';
@@ -104,7 +105,7 @@ export function PlayerStats({ player }) {
       <div className="stats-header">
         <h2>Statistics</h2>
         <button className="sessions-toggle-btn" onClick={refreshStats} disabled={refreshing}>
-          {refreshing ? 'Recomputing…' : '↺ Recompute'}
+          {refreshing ? 'Recomputing…' : <><RotateCcw size={14} /> Recompute</>}
         </button>
       </div>
 

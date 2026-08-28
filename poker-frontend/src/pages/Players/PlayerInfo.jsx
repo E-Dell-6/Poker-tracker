@@ -2,6 +2,7 @@ import './PlayerInfo.css';
 import { TagMenu } from './TagMenu';
 import { PlayerStats } from './PlayerStats';
 import { useState, useRef, useEffect } from 'react';
+import { Loader2, Camera, Pencil } from 'lucide-react';
 import { API_URL } from '../../config';
 
 export function PlayerInfo({ player, onPlayerUpdate }) {
@@ -122,7 +123,7 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
                     </div>
                 )}
                 <div className="avatar-upload-overlay">
-                    {isUploadingImage ? '⏳ Uploading...' : '📷 Change Photo'}
+                    {isUploadingImage ? <><Loader2 size={14} className="spin" /> Uploading...</> : <><Camera size={14} /> Change Photo</>}
                 </div>
             </div>
 
@@ -154,7 +155,7 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
                             className="edit-notes-btn"
                             onClick={() => setIsEditingNotes(true)}
                         >
-                            ✏️ Edit
+                            <Pencil size={14} /> Edit
                         </button>
                     )}
                 </div>

@@ -1,5 +1,6 @@
 import { Layout } from "../../components/Layout";
 import { useState, useEffect, useMemo } from "react";
+import { TrendingUp, TrendingDown, Clock } from "lucide-react";
 import "./Profile.css";
 import { API_URL } from "../../config";
 import { toMajorUnits } from "../../utils/formatMoney";
@@ -77,7 +78,7 @@ function CustomTooltip({ active, payload, label }) {
         {cumulative >= 0 ? "+" : ""}{fmtFull$(cumulative)}
       </div>
       <div className="tt-session">
-        {profit >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(profit))} this session
+        {profit >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {fmtFull$(Math.abs(profit))} this session
       </div>
     </div>
   );
@@ -262,7 +263,7 @@ export function Profile() {
             <div className="profile-badges">
               <span className="badge">{stats.totalSessions} sessions</span>
               {stats.onlineHands > 0 && <span className="badge">{stats.onlineHands.toLocaleString()} online hands</span>}
-              {stats.liveMs > 0      && <span className="badge">⏱ {fmtDuration(stats.liveMs)} live</span>}
+              {stats.liveMs > 0      && <span className="badge"><Clock size={12} /> {fmtDuration(stats.liveMs)} live</span>}
             </div>
           </div>
           <div className={`hero-pnl ${isUp ? "pos" : "neg"}`}>
@@ -327,7 +328,7 @@ export function Profile() {
         {/* ── LIVE BREAKDOWN ── */}
         {sourceFilter !== "online" && stats.liveSessions > 0 && (
           <div className="profile-live-card">
-            <div className="live-title">⏱ Live Session Breakdown</div>
+            <div className="live-title"><Clock size={16} /> Live Session Breakdown</div>
             <div className="live-grid">
               {[
                 { label: "Sessions",      val: stats.liveSessions },

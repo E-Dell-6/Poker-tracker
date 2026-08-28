@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Check, X, Camera, Trash2, Star } from 'lucide-react';
 import './HandCreator.css';
 import CardSelector from '../../components/CardSelector';
 import { API_URL } from '../../config';
@@ -866,10 +867,10 @@ function TableDetailsStep({ tableSetup, seatPositions, updateTableField, updateS
 
       <div className="hc-actions-row">
         <button className="hc-btn hc-btn-ghost" type="button" onClick={onExit}>
-          ‹ Back
+          <ChevronLeft size={16} /> Back
         </button>
         <button className="hc-btn hc-btn-primary" type="button" onClick={onNext}>
-          Next ›
+          Next <ChevronRight size={16} />
         </button>
       </div>
     </div>
@@ -922,7 +923,7 @@ function ReviewStep({
             statusMessage.type === 'success' ? 'hc-status-success' : 'hc-status-error'
           }`}
         >
-          {statusMessage.type === 'success' ? '✓ ' : '✕ '}
+          {statusMessage.type === 'success' ? <Check size={14} /> : <X size={14} />}
           {statusMessage.text}
         </div>
       )}
@@ -991,7 +992,7 @@ function ReviewStep({
                   </select>
                 )}
 
-                {linkedPerson && <span className="hc-review-linked-badge">✓ Linked</span>}
+                {linkedPerson && <span className="hc-review-linked-badge"><Check size={12} /> Linked</span>}
               </div>
 
               <div className="hc-review-reveal-row">
@@ -1056,7 +1057,7 @@ function ReviewStep({
 
       <div className="hc-actions-row">
         <button className="hc-btn hc-btn-ghost" type="button" onClick={onBack} disabled={isSaving}>
-          ‹ Back
+          <ChevronLeft size={16} /> Back
         </button>
         <button
           className="hc-btn hc-btn-primary"
@@ -1129,7 +1130,7 @@ function InlineCreatePerson({ seat, defaultName, onCancel, onCreate }) {
           onClick={() => document.getElementById(`hc-image-upload-${seat}`).click()}
           disabled={isUploading}
         >
-          📷 Choose Image
+          <Camera size={14} /> Choose Image
         </button>
         {imagePreview && (
           <div className="image-preview">
@@ -1145,7 +1146,7 @@ function InlineCreatePerson({ seat, defaultName, onCancel, onCreate }) {
               style={{ marginLeft: '10px' }}
               disabled={isUploading}
             >
-              ✕ Remove
+              <X size={14} /> Remove
             </button>
           </div>
         )}
@@ -1288,7 +1289,7 @@ function HandActionStep({
                   onClick={() => removeAction(action.id)}
                   aria-label="Delete action"
                 >
-                  🗑
+                  <Trash2 size={14} />
                 </button>
               </div>
 
@@ -1312,11 +1313,11 @@ function HandActionStep({
 
       <div className="hc-actions-row">
         <button className="hc-btn hc-btn-ghost" type="button" onClick={onBack}>
-          ‹ Back
+          <ChevronLeft size={16} /> Back
         </button>
         {activeStreet === 'RIVER' ? (
           <button className="hc-btn hc-btn-primary" type="button" onClick={onFinish}>
-            Review &amp; Create Hand ›
+            Review &amp; Create Hand <ChevronRight size={16} />
           </button>
         ) : (
           <button
@@ -1324,7 +1325,7 @@ function HandActionStep({
             type="button"
             onClick={() => setActiveStreet(STREETS[STREETS.indexOf(activeStreet) + 1])}
           >
-            Next street ›
+            Next street <ChevronRight size={16} />
           </button>
         )}
       </div>
@@ -1479,10 +1480,11 @@ function CardSlot({ card, onClick, onRemove }) {
             border: 'none',
             background: '#333',
             color: '#fff',
-            fontSize: 11,
-            lineHeight: '16px',
             padding: 0,
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -1490,7 +1492,7 @@ function CardSlot({ card, onClick, onRemove }) {
           }}
           aria-label="Remove card"
         >
-          ×
+          <X size={10} />
         </button>
       )}
     </div>
@@ -1570,7 +1572,7 @@ function PokerTable({
                     }
                   />
                 </label>
-                {player.isHero && <div className="hc-hero-badge">★ Hero</div>}
+                {player.isHero && <div className="hc-hero-badge"><Star size={12} fill="currentColor" /> Hero</div>}
 
                 {openCardSelector && (
                   <div className="hc-holecards-row" style={{ marginTop: 8 }}>

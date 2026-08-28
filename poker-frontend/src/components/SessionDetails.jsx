@@ -1,4 +1,5 @@
 import API_URL from "../config";
+import { Camera, X } from "lucide-react";
 /*/import React, { useState, useEffect } from "react";
 
 export function EditSessionLog({ 
@@ -322,7 +323,7 @@ export function EditSessionLog({
                   onClick={() => document.getElementById('image-upload').click()}
                   disabled={isUploading}
                 >
-                  📷 Choose Image
+                  <Camera size={14} /> Choose Image
                 </button>
                 {imagePreview && (
                   <div className="image-preview">
@@ -348,7 +349,7 @@ export function EditSessionLog({
                       style={{ marginLeft: '10px' }}
                       disabled={isUploading}
                     >
-                      ✕ Remove
+                      <X size={14} /> Remove
                     </button>
                   </div>
                 )}

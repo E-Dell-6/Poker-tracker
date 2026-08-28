@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Camera, X, Star, FolderOpen, Plus } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
@@ -135,7 +136,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
               onClick={() => document.getElementById("edit-session-img").click()}
               disabled={isUploading}
             >
-              📷 {imagePreview ? "Change Image" : "Choose Image"}
+              <Camera size={14} /> {imagePreview ? "Change Image" : "Choose Image"}
             </button>
             {imagePreview && (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -151,7 +152,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
                   onClick={() => { setSelectedFile(null); setImagePreview(null); }}
                   disabled={isUploading}
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             )}
@@ -186,7 +187,7 @@ export function History() {
   const [renamingState, setRenamingState] = useState(null);
   const [usedPersonIds, setUsedPersonIds] = useState([]);
 
-  const [isFavouritesShowing, setIsFavouritesShowing] = useState("☆");
+  const [showFavourites, setShowFavourites] = useState(false);
   const [favourites, setFavourites] = useState([]);
 
   useEffect(() => {
@@ -197,12 +198,12 @@ export function History() {
   }, [uploadStatus]);
 
   useEffect(() => {
-    if (isFavouritesShowing !== "⭐") return;
+    if (!showFavourites) return;
     fetch(`${API_URL}/api/favourites`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => setFavourites(Array.isArray(data) ? data : []))
       .catch((err) => console.error("Failed to load favourites", err));
-  }, [isFavouritesShowing]);
+  }, [showFavourites]);
 
   const filteredSessions = useMemo(() => {
     if (selectedGame === "All") return sessions;
@@ -353,11 +354,7 @@ export function History() {
   };
 
   function HandleFavouriteClick() {
-    if (isFavouritesShowing === "☆") {
-      setIsFavouritesShowing("⭐");
-    } else {
-      setIsFavouritesShowing("☆");
-    }
+    setShowFavourites((prev) => !prev);
   }
 
   return (
@@ -410,12 +407,12 @@ export function History() {
                 onClick={() => fileInputRef.current.click()}
                 disabled={uploadStatus === "uploading"}
               >
-                {uploadStatus === "uploading" ? "Processing..." : "📂 Upload Logs"}
+                {uploadStatus === "uploading" ? "Processing..." : <><FolderOpen size={15} /> Upload Logs</>}
               </button>
               <button
                 className="create-button"
                 onClick={() => navigate("/hand-creator")}
-              >➕ Create Hand </button>
+              ><Plus size={15} /> Create Hand </button>
             </div>
 
             {isDraggingFile && (
@@ -443,16 +440,16 @@ export function History() {
               }
             />
             <button
-              className={`favourites-toggle ${isFavouritesShowing === "⭐" ? "active" : ""}`}
+              className={`favourites-toggle ${showFavourites ? "active" : ""}`}
               onClick={HandleFavouriteClick}
-              title={isFavouritesShowing === "⭐" ? "Show All Sessions" : "Show Favourites"}
+              title={showFavourites ? "Show All Sessions" : "Show Favourites"}
             >
-              {isFavouritesShowing}
+              <Star size={16} fill={showFavourites ? "currentColor" : "none"} />
             </button>
           </div>
         </div>
         <hr />
-        {isFavouritesShowing === "☆" ? (
+        {!showFavourites ? (
           sessions.length === 0 ? (
             <div className="no-sessions">
               <p>No sessions found.</p>

@@ -91,6 +91,7 @@
   font-size: 12px; font-weight: 600; color: var(--muted);
   background: var(--bg2); border: 1px solid var(--border);
   padding: 4px 12px; border-radius: 100px;
+  display: inline-flex; align-items: center; gap: 5px;
 }
 
 .hero-pnl { text-align: right; flex-shrink: 0; }
@@ -233,7 +234,7 @@
   font-size: 1.05rem; font-weight: 700; margin-bottom: 2px;
 }
 
-.tt-session { font-size: 11px; color: var(--muted); }
+.tt-session { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
 
 /* ── LIVE CARD ────────────────────────────────────────── */
 .profile-live-card {
@@ -246,6 +247,7 @@
 .live-title {
   font-family: 'Playfair Display', serif;
   font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
 }
 
 .live-grid {

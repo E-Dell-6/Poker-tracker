@@ -18,6 +18,21 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
+/* Lucide icons: align inline with surrounding text/labels by default.
+   Containers that use flex + gap for icon/text layout are unaffected. */
+svg.lucide {
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+/* Utility for spinning loading icons (e.g. <Loader2 className="spin" />) */
+.spin {
+  animation: app-spin 1s linear infinite;
+}
+@keyframes app-spin {
+  to { transform: rotate(360deg); }
+}
 a:hover {
   color: #535bf2;
 }

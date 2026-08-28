@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import './CardSelector.css';
 
 // Ranks/suits match the string format stored on the Hand model
@@ -23,7 +24,7 @@ export default function CardSelector({ title, usedCards, selectedCards, onSelect
         <div className="cs-header">
           <span className="cs-title">{title || 'Select a card'}</span>
           <button type="button" className="cs-close" onClick={onClose} aria-label="Close">
-            ×
+            <X size={16} />
           </button>
         </div>
 
