@@ -123,6 +123,20 @@
   font-size: 1.15rem;
 }
 
+/* Confidence gating - see stat-box--low/medium-confidence in the host
+   pages' CSS for the same treatment on the flat stat grids. */
+.pos-cell--low-confidence {
+  opacity: 0.5;
+}
+
+.pos-cell--low-confidence .pos-cell-pct {
+  color: #6b6c72;
+}
+
+.pos-cell--medium-confidence {
+  opacity: 0.8;
+}
+
 .pos-matrix {
   margin-top: 1.75rem;
 }

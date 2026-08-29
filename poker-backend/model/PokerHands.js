@@ -61,7 +61,12 @@ const PlayerSetupSchema = new mongoose.Schema({
   // so SessionLog.jsx's `typeof hero.profitLoss === "number"` check falls
   // through to its old estimate instead of every historical hand reading
   // as a false $0.00 break-even.
-  profitLoss: { type: Number }
+  profitLoss: { type: Number },
+  // min(this player's stack, largest active opponent's stack) / bb-size,
+  // at hand start. Computed by effectiveStackCalculator.js at parse time.
+  // `null` (not 0) when it can't be derived - stack missing, no bb-size
+  // (stakes unset, e.g. PokerNow imports), or no other active player.
+  effectiveStackBB: { type: Number, default: null }
 });
 
 export const HandSchema = new mongoose.Schema({
@@ -84,9 +89,24 @@ export const HandSchema = new mongoose.Schema({
     river: [{ type: String }]
   },
 
-  winners: { type: [String], default: [], required: true}, 
+  winners: { type: [String], default: [], required: true},
   finalPotSize: { type: Number },
   isStarred: { type: Boolean, default: false },
+  // Whether any player committed their full remaining stack this hand
+  // (action still possibly pending elsewhere), computed by
+  // allInDetector.js at parse time. `null` (not `false`) when it can't be
+  // determined - e.g. a player's starting stack wasn't recorded - so a
+  // real all-in never silently reads as "no all-in happened".
+  isAllIn: { type: Boolean, default: null },
+  // Hero's equity-weighted expected profit at the moment of the all-in,
+  // computed by evCalculator.js at parse time. Only ever set when isAllIn
+  // is true, hero was a participant, and every other still-live
+  // participant's hole cards were revealed - null otherwise (nullable by
+  // design: only all-in hands have a value, everything else - including
+  // all-in hands where the computation isn't possible from known cards -
+  // stays null rather than a fabricated number). Same raw unit as
+  // profitLoss for this hand (see evCalculator.js).
+  allInEV: { type: Number, default: null },
 }, { _id: true });
 
 function cardLimit(val) {

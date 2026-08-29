@@ -1,6 +1,8 @@
 import { parse } from 'csv-parse/sync';
 import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas.js';
 import { computeHandProfits } from './handProfitCalculator.js';
+import { detectAllIn } from './allInDetector.js';
+import { computeAllInEV } from './evCalculator.js';
 
 export function parsePokerNowLog(csvContent) {
     const records = parse(csvContent, {
@@ -67,6 +69,8 @@ export function parsePokerNowLog(csvContent) {
         if (line.startsWith("-- starting hand")) {
             if (currentHand) {
                 computeHandProfits(currentHand);
+                detectAllIn(currentHand);
+                currentHand.allInEV = computeAllInEV(currentHand);
                 hands.push(currentHand);
             }
             currentHand = createEmptyHand();
@@ -214,6 +218,8 @@ export function parsePokerNowLog(csvContent) {
 
         if (line.toLowerCase().startsWith("-- ending hand")) {
             computeHandProfits(currentHand);
+            detectAllIn(currentHand);
+            currentHand.allInEV = computeAllInEV(currentHand);
             hands.push(currentHand);
             currentHand = null;
             continue;
@@ -222,6 +228,8 @@ export function parsePokerNowLog(csvContent) {
 
     if (currentHand) {
         computeHandProfits(currentHand);
+        detectAllIn(currentHand);
+        currentHand.allInEV = computeAllInEV(currentHand);
         hands.push(currentHand);
     }
     return hands;

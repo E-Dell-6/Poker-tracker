@@ -52,7 +52,7 @@ router.post('/:id', async (req, res) => {
         }
         if (!foundHand) return res.status(404).json({ error: "Hand not found" });
 
-        faves.hands.push({ ...foundHand, sessionDate: foundSession.date, sessionGameType: foundSession.gameType, sessionId: foundSession._id });
+        faves.hands.push({ ...foundHand, sessionDate: foundSession.date, sessionGameType: foundSession.gameType, sessionCurrency: foundSession.currency, sessionId: foundSession._id });
         await faves.save();
         return res.json({ hands: faves.hands, isFavorited: true });
     } catch (error) {

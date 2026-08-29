@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import './PlayerStats.css';
 import { API_URL } from '../../config';
-import { formatSignedAmount } from '../../utils/formatMoney';
+import { formatSignedMajorUnits } from '../../utils/formatMoney';
+import { confidenceModifier } from '../../utils/confidence';
 import { PositionalStats } from '../../components/PositionalStats';
+import { GroupedStats } from '../../components/GroupedStats';
 
 const STAT_GROUPS = [
   {
@@ -45,8 +47,9 @@ function StatBox({ label, rate }) {
       </div>
     );
   }
+  const modifier = confidenceModifier(rate);
   return (
-    <div className="stat-box">
+    <div className={`stat-box ${modifier ? `stat-box--${modifier}` : ''}`}>
       <div className="stat-label">{label}</div>
       <div className="stat-value">{rate.pct}%</div>
       <div className="stat-sample">{rate.made}/{rate.opportunities}</div>
@@ -128,7 +131,7 @@ export function PlayerStats({ player }) {
               <div className="stat-label">Net Won</div>
               <div className="stat-value">
                 {stats.currency
-                  ? formatSignedAmount(stats.totalProfitLoss, stats.currency)
+                  ? formatSignedMajorUnits(stats.totalProfitLoss, stats.currency)
                   : `${stats.totalProfitLoss >= 0 ? '+' : ''}${stats.totalProfitLoss} (mixed currencies)`}
               </div>
               <div className="stat-sample">{stats.handsWithProfitData} hands w/ data</div>
@@ -158,6 +161,7 @@ export function PlayerStats({ player }) {
           ))}
 
           <PositionalStats positional={stats.positional} />
+          <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} byFlopTexture={stats.byFlopTexture} />
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './PositionalStats.css';
+import { confidenceModifier } from '../utils/confidence';
 
 const POSITION_ORDER = ['BTN', 'BTN/SB', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO'];
 
@@ -30,8 +31,9 @@ function RateCell({ rate }) {
   if (!rate || rate.opportunities === 0) {
     return <td className="pos-cell pos-cell--empty">—</td>;
   }
+  const modifier = confidenceModifier(rate);
   return (
-    <td className="pos-cell">
+    <td className={`pos-cell ${modifier ? `pos-cell--${modifier}` : ''}`}>
       <div className="pos-cell-pct">{rate.pct}%</div>
       <div className="pos-cell-sample">{rate.made}/{rate.opportunities}</div>
     </td>
@@ -43,8 +45,9 @@ function MatrixCell({ stat, mode }) {
     return <td className="pos-cell pos-cell--empty">—</td>;
   }
   const value = mode === 'defend' ? stat.defendPct : mode === 'raise' ? stat.raisePct : stat.foldPct;
+  const modifier = confidenceModifier(stat);
   return (
-    <td className="pos-cell">
+    <td className={`pos-cell ${modifier ? `pos-cell--${modifier}` : ''}`}>
       <div className="pos-cell-pct">{value}%</div>
       <div className="pos-cell-sample">n={stat.faced}</div>
     </td>

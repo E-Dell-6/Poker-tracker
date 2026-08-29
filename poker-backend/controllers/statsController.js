@@ -1,5 +1,5 @@
 import PlayerStats from '../model/PlayerStats.js';
-import { recomputeStatsForPerson, recomputeHeroStats } from '../services/statsService.js';
+import { recomputeStatsForPerson, recomputeHeroStats, getHeroEvGraph } from '../services/statsService.js';
 
 // GET /api/stats/me
 export async function getHeroStats(req, res) {
@@ -34,4 +34,10 @@ export async function refreshPersonStats(req, res) {
 export async function listPlayerStats(req, res) {
   const stats = await PlayerStats.find({ userId: req.userId, isHero: false }).lean();
   res.json(stats);
+}
+
+// GET /api/stats/me/ev-graph
+export async function getHeroEvGraphRoute(req, res) {
+  const rows = await getHeroEvGraph(req.userId);
+  res.json(rows);
 }

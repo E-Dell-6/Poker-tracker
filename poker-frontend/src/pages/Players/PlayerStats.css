@@ -166,6 +166,21 @@
   margin-top: 5px;
 }
 
+/* Confidence gating (sample-size tagging): a low-sample stat should never
+   compete visually with a high-sample one at the same pct value - muted
+   opacity + a dimmer value color, not just a small badge next to it. */
+.stat-box--low-confidence {
+  opacity: 0.5;
+}
+
+.stat-box--low-confidence .stat-value {
+  color: var(--muted);
+}
+
+.stat-box--medium-confidence {
+  opacity: 0.8;
+}
+
 .position-stats {
   background: var(--bg2);
   border: 1px solid var(--border);

@@ -1,5 +1,7 @@
 import { createEmptyAction, createEmptyHand, createEmptyPlayer } from './DefaultSchemas.js';
 import { computeHandProfits } from './handProfitCalculator.js';
+import { detectAllIn } from './allInDetector.js';
+import { computeAllInEV } from './evCalculator.js';
 
 /**
  * Parses an ACR (America's CardRoom) plain-text hand history export into
@@ -320,6 +322,8 @@ export function parseACRLog(fileContent, filePath) {
         }
 
         computeHandProfits(currentHand);
+        detectAllIn(currentHand);
+        currentHand.allInEV = computeAllInEV(currentHand);
         hands.push(currentHand);
     }
 

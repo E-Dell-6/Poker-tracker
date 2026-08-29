@@ -2,7 +2,10 @@ import { Layout } from '../../components/Layout';
 import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { API_URL } from '../../config';
+import { confidenceModifier } from '../../utils/confidence';
 import { PositionalStats } from '../../components/PositionalStats';
+import { GroupedStats } from '../../components/GroupedStats';
+import { EVGraph } from '../../components/EVGraph';
 import './Stats.css';
 
 const STAT_GROUPS = [
@@ -57,8 +60,9 @@ function StatBox({ label, rate }) {
       </div>
     );
   }
+  const modifier = confidenceModifier(rate);
   return (
-    <div className="stat-box">
+    <div className={`stat-box ${modifier ? `stat-box--${modifier}` : ''}`}>
       <div className="stat-label">{label}</div>
       <div className="stat-value">{rate.pct}%</div>
       <div className="stat-sample">{rate.made}/{rate.opportunities}</div>
@@ -200,6 +204,9 @@ export function Stats() {
             ))}
 
             <PositionalStats positional={stats.positional} coverage={stats.positionCoverage} />
+            <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} byFlopTexture={stats.byFlopTexture} />
+
+            <EVGraph />
 
             <p className="study-note">
               Last computed {new Date(stats.lastComputedAt).toLocaleString()}. Stats are cached

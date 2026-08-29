@@ -37,6 +37,18 @@ export function isCentsCurrency(currency) {
   return getCurrencyMeta(currency).isCents;
 }
 
+// For amounts that are ALREADY in major units (e.g. statsEngine.js's
+// totalProfitLoss/bb100 - it normalizes cents currencies internally before
+// returning, see its finalizeProfitLoss()) - formatSignedAmount would
+// divide by 100 a second time for USD/CAD and silently shrink real money
+// figures ~100x. This only adds the sign + currency symbol, no division.
+export function formatSignedMajorUnits(amount, currency) {
+  const value = Number(amount) || 0;
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  const { symbol } = getCurrencyMeta(currency);
+  return `${sign}${symbol}${Math.abs(value).toFixed(2)}`;
+}
+
 // Unlike formatAmount/formatSignedAmount (which return display strings),
 // this returns a plain number in the currency's major unit (e.g. cents ->
 // dollars). Use this before doing arithmetic - summing across sessions,

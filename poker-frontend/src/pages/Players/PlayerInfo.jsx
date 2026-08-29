@@ -1,6 +1,7 @@
 import './PlayerInfo.css';
 import { TagMenu } from './TagMenu';
 import { PlayerStats } from './PlayerStats';
+import { PlayerStarred } from './PlayerStarred';
 import { useState, useRef, useEffect } from 'react';
 import { Loader2, Camera, Pencil } from 'lucide-react';
 import { API_URL } from '../../config';
@@ -199,6 +200,8 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
             </div>
 
             <PlayerStats player={currentPlayer} />
+
+            <PlayerStarred player={currentPlayer} />
 
             {isTagMenuOpen && (
                 <TagMenu

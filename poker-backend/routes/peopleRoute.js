@@ -1,5 +1,8 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Person from '../model/People.js';
+import Session from '../model/Session.js';
+import Favorite from '../model/favourites.js';
 import userAuth from '../middleware/userAuth.js';
 
 const router = express.Router();
@@ -67,6 +70,43 @@ router.post('/:personId/notes', async (req, res) => {
         res.status(200).json(person);
     } catch (err) {
         res.status(500).json({ error: "Failed to update notes" });
+    }
+});
+
+// Returns hands and sessions this player is part of that the user has
+// starred - hands via the Favorite doc (players[].personId), sessions via
+// Session.starred plus a hands.players.personId match. Sessions are
+// projected without `hands` (same as GET /sessions) since only the
+// summary fields are needed here; the match against hands.players is
+// still possible pre-projection because Mongo evaluates $match first.
+router.get('/:personId/starred', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const { personId } = req.params;
+        if (!mongoose.isValidObjectId(personId)) {
+            return res.status(400).json({ error: "Invalid person id" });
+        }
+
+        const faves = await Favorite.findOne({ userId });
+        const starredHands = (faves?.hands || []).filter(hand =>
+            hand.players?.some(p => p.personId && p.personId.toString() === personId)
+        );
+
+        const starredSessions = await Session.aggregate([
+            {
+                $match: {
+                    userId: new mongoose.Types.ObjectId(userId),
+                    starred: true,
+                    'hands.players.personId': new mongoose.Types.ObjectId(personId),
+                },
+            },
+            { $project: { hands: 0 } },
+            { $sort: { uploadDate: -1 } },
+        ]);
+
+        res.json({ starredHands, starredSessions });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch starred items", details: err.message });
     }
 });
 

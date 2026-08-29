@@ -10,6 +10,7 @@ import { attachPersonIdsToHands } from '../services/personService.js';
 import { recomputeStatsForNewHands } from '../services/statsService.js';
 import { handMatchesFilter } from '../utils/handFilters.js';
 import { getPositionMap } from '../utils/statsEngine.js';
+import { computeEffectiveStacks } from '../utils/effectiveStackCalculator.js';
 
 const router = express.Router();
 
@@ -219,6 +220,18 @@ router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) =
                 }
                 parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
 
+                // Currency isn't known to the parser itself (ACR/GGPoker log
+                // dollar amounts in cents, PokerNow in play chips - see
+                // FORMAT_CURRENCY above) - it's only resolved here, from the
+                // upload format. computeEffectiveStacks needs it to convert
+                // stack sizes into bb units correctly, so it has to run here
+                // rather than inside the parser, using a shallow copy that
+                // carries `currency` without persisting it on the hand doc
+                // itself (HandSchema has no `currency` field - see
+                // statsService.js's extractHands for why that's per-Session).
+                const currency = FORMAT_CURRENCY[format] ?? 'CHIPS';
+                parsedHands.forEach(hand => computeEffectiveStacks({ ...hand, currency }));
+
                 // Every named player gets a Person record (auto-created on first
                 // sight, reused after) so stats can be tracked without requiring
                 // a manual "map this player" step first.
@@ -229,7 +242,7 @@ router.post('/upload', userAuth, upload.array('csvFile', 20), async (req, res) =
                     fileHash,
                     sessionType: 'upload',
                     source: format,
-                    currency: FORMAT_CURRENCY[format] ?? 'CHIPS',
+                    currency,
                     date: parsedHands[0].datePlayed,
                     // Same "2 players seated = Heads-Up" override the old list
                     // route used to compute on every read; decided once here

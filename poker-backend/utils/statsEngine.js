@@ -3,6 +3,12 @@
 // target player's entry out of hand.players, and returns one stats object.
 // Used both for opponents (match by personId) and hero (match by isHero).
 
+import { parseBigBlind, CENTS_CURRENCIES } from './blinds.js';
+import { getStackDepthBucket } from './stackDepth.js';
+import { parseBoard } from './cardParser.js';
+import { classifyFlopTexture } from './flopTexture.js';
+import { getConfidence, getConfidenceForStat, CONFIDENCE_PROFILES } from './confidence.js';
+
 const STEAL_POSITIONS = ['CO', 'BTN', 'SB'];
 const BLIND_POSITIONS = ['SB', 'BB'];
 
@@ -41,21 +47,6 @@ export function getPositionMap(hand) {
   return map;
 }
 
-// Sessions logged in these currencies store profitLoss (and all other
-// dollar amounts) in integer CENTS (see ACRPokerParser.js). `stakes` is
-// always the raw display string (e.g. "$1/$2"), i.e. major units - so the
-// parsed bb figure has to be scaled up to match profitLoss's units before
-// the two are ever divided together, or bb100 comes out ~100x too large.
-const CENTS_CURRENCIES = new Set(['USD', 'CAD']);
-
-function parseBigBlind(stakes, currency) {
-  if (!stakes) return null;
-  const parts = String(stakes).split('/').map(s => parseFloat(s.replace(/[^0-9.]/g, '')));
-  const bb = parts[parts.length - 1];
-  if (!Number.isFinite(bb) || bb <= 0) return null;
-  return CENTS_CURRENCIES.has(currency) ? bb * 100 : bb;
-}
-
 function newRateStat() {
   return { made: 0, opportunities: 0 };
 }
@@ -86,6 +77,57 @@ function newPositionStats() {
   };
 }
 
+// The full rate-stat set, used by every "group by X" bucket (byStakes,
+// byStackDepth, byStakesAndStackDepth). Unlike newPositionStats() above
+// (a curated subset), group buckets track everything the top-level
+// accumulator does, since there's no a priori reason to leave a stat out
+// of an arbitrary stakes/stack-depth slice the way there is for the
+// position-matrix UI.
+function newGroupStats() {
+  return {
+    hands: 0,
+    vpip: newRateStat(),
+    pfr: newRateStat(),
+    open: newRateStat(),
+    threeBet: newRateStat(),
+    foldTo3Bet: newRateStat(),
+    fourBet: newRateStat(),
+    foldTo4Bet: newRateStat(),
+    steal: newRateStat(),
+    foldToSteal: newRateStat(),
+    limp: newRateStat(),
+    coldCall: newRateStat(),
+    cbFlop: newRateStat(),
+    foldToCbFlop: newRateStat(),
+    checkRaise: newRateStat(),
+    wtsd: newRateStat(),
+    wsd: newRateStat(),
+    wwsf: newRateStat(),
+    // Per-hand profit/loss, tracked the same way the top-level accumulator
+    // does (see the profitLoss block in computeStatsForHands and
+    // finalizeProfitLoss below) - a stack-depth or stakes slice without a
+    // profitability figure attached is much less useful: "I 3-bet more
+    // short-stacked" doesn't tell you whether that's actually winning.
+    totalProfitLoss: 0,
+    handsWithProfitData: 0,
+    bbUnitsWon: 0,
+    handsWithBbData: 0,
+    currencies: new Set()
+  };
+}
+
+// Flop-texture bucket ('dry'|'semi-wet'|'wet' - see flopTexture.js): only
+// the flop-street stats that actually depend on board texture, not the
+// full rate-stat set newGroupStats() tracks for stakes/stack-depth.
+function newTextureStats() {
+  return {
+    hands: 0,
+    cbFlop: newRateStat(),
+    foldToCbFlop: newRateStat(),
+    checkRaise: newRateStat()
+  };
+}
+
 // acc.positional is keyed by table size (number of active players in the
 // hand, matching POSITIONS_BY_SIZE) so 6-handed and 9-handed tendencies -
 // which differ structurally, not just by sample size - are never blended
@@ -103,6 +145,17 @@ function ensurePositionStats(bucket, position) {
     bucket.positions[position] = newPositionStats();
   }
   return bucket.positions[position];
+}
+
+// Generic lazy-bucket lookup, generalizing ensurePositional above to an
+// arbitrary grouping dimension: `container` is a plain object keyed by
+// whatever `key` resolves to for this hand (a stakes string, a stack-depth
+// bucket, a combined key, ...). Returns null (and creates nothing) when key
+// is null/undefined, e.g. a hand with no stakes recorded.
+function ensureGroup(container, key, factory) {
+  if (key == null) return null;
+  if (!container[key]) container[key] = factory();
+  return container[key];
 }
 
 // vsOpen[attackerPos][responderPos]: responder's fold/call/raise rate when
@@ -123,6 +176,48 @@ function ensureVs3Bet(bucket, threeBetterPos, openerPos) {
   if (!bucket.vs3Bet[threeBetterPos]) bucket.vs3Bet[threeBetterPos] = {};
   if (!bucket.vs3Bet[threeBetterPos][openerPos]) bucket.vs3Bet[threeBetterPos][openerPos] = newVsStat();
   return bucket.vs3Bet[threeBetterPos][openerPos];
+}
+
+// Mirrors an increment into every sink that actually has that stat (a sink
+// may be null - no resolvable position/group for this hand - or may use a
+// trimmed shape like newPositionStats() that doesn't track every stat, e.g.
+// posStats has no `.limp`). This is the "key-selector, not hardcoded
+// per-dimension duplication" mechanism every grouping dimension shares:
+// callers just extend the `sinks` array with whatever buckets apply to
+// this hand instead of hand-rolling `if (posStats) posStats.X++` per stat.
+function bump(sinks, statKey, field) {
+  for (const sink of sinks) {
+    if (sink && sink[statKey]) sink[statKey][field]++;
+  }
+}
+
+// Mirrors a single hand's profit/loss (and bb-denominated result) into any
+// sink that tracks it - the top-level accumulator and every grouping
+// bucket (byStakes/byStackDepth/byStakesAndStackDepth) share this exact
+// logic, so a stakes or stack-depth slice's profitability can never drift
+// from how the headline totalProfitLoss/bb100 figures are computed.
+function bumpProfit(sink, hand, player) {
+  if (hand.currency) sink.currencies.add(hand.currency);
+  if (typeof player.profitLoss !== 'number') return;
+
+  // player.profitLoss is stored in integer CENTS for USD/CAD hands (see
+  // CENTS_CURRENCIES above) but in major units for everything else.
+  // totalProfitLoss is a user-facing dollar figure, so it has to be
+  // normalized to major units per-hand before summing - otherwise a
+  // session's worth of hands in cents dwarfs everything else by ~100x.
+  // bbUnitsWon below intentionally keeps using the raw, unconverted
+  // profitLoss: parseBigBlind() already scales `bb` up by the same
+  // factor for cents currencies, so that ratio was correct as-is and
+  // must NOT also be divided here, or it'd be wrong the other way.
+  const displayProfit = CENTS_CURRENCIES.has(hand.currency) ? player.profitLoss / 100 : player.profitLoss;
+  sink.totalProfitLoss += displayProfit;
+  sink.handsWithProfitData++;
+
+  const bb = parseBigBlind(hand.stakes, hand.currency);
+  if (bb) {
+    sink.bbUnitsWon += player.profitLoss / bb;
+    sink.handsWithBbData++;
+  }
 }
 
 function newAccumulator() {
@@ -154,6 +249,15 @@ function newAccumulator() {
     currencies: new Set(),
     // tableSize -> { positions, vsOpen, vs3Bet } - see ensurePositional above.
     positional: {},
+    // stakes string -> newGroupStats(); effective-stack bucket ('short'|
+    // 'mid'|'deep') -> newGroupStats(); `${stakes}__${bucket}` -> newGroupStats().
+    // See ensureGroup() above - lazily created per hand, same pattern as
+    // `positional` generalized to whatever key each dimension resolves to.
+    byStakes: {},
+    byStackDepth: {},
+    byStakesAndStackDepth: {},
+    // 'dry'|'semi-wet'|'wet' -> newTextureStats() - see flopTexture.js.
+    byFlopTexture: {},
     // Diagnostic: how many of this player's hands actually resolved to a
     // position (needs a dealer/button flag + >=2 active players). If this
     // stays near 0 while totalHands is high, positional stats will look
@@ -167,7 +271,10 @@ function newAccumulator() {
 // *attacker's* position, not the target player's own position.
 // posStats = posBucket.positions[position] (or null) - the target
 // player's own per-position stat line.
-function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
+// groupBuckets = extra newGroupStats() sinks for this hand (byStakes,
+// byStackDepth, byStakesAndStackDepth), already filtered to non-null.
+function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats, groupBuckets) {
+  const sinks = [acc, posStats, ...groupBuckets];
   const real = (hand.actions || []).filter(
     a => a.street === 'PREFLOP' && a.actionType !== 'POST_SB' && a.actionType !== 'POST_BB'
   );
@@ -187,40 +294,32 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
         facedAtLevel.add(key);
 
         if (level === 0) {
-          acc.open.opportunities++;
-          if (posStats) posStats.open.opportunities++;
+          bump(sinks, 'open', 'opportunities');
           if (a.actionType === 'RAISE' || a.actionType === 'BET') {
-            acc.open.made++;
-            if (posStats) posStats.open.made++;
+            bump(sinks, 'open', 'made');
             if (onlyPassiveSoFar && STEAL_POSITIONS.includes(position)) {
-              acc.steal.opportunities++;
-              acc.steal.made++;
-              if (posStats) {
-                posStats.steal.opportunities++;
-                posStats.steal.made++;
-              }
+              bump(sinks, 'steal', 'opportunities');
+              bump(sinks, 'steal', 'made');
             }
           } else if (a.actionType === 'CALL') {
-            acc.limp.opportunities++;
-            acc.limp.made++;
+            bump(sinks, 'limp', 'opportunities');
+            bump(sinks, 'limp', 'made');
           }
         } else if (level === 1) {
           // This is the "facing an open" moment: raiserPositionAtLevel[1]
           // is whoever made it 2 bets to go.
           const openerPos = raiserPositionAtLevel[1];
           const openWasSteal = STEAL_POSITIONS.includes(openerPos);
-          acc.threeBet.opportunities++;
-          if (posStats) posStats.threeBet.opportunities++;
-          if (openWasSteal && BLIND_POSITIONS.includes(position)) acc.foldToSteal.opportunities++;
+          bump(sinks, 'threeBet', 'opportunities');
+          if (openWasSteal && BLIND_POSITIONS.includes(position)) bump(sinks, 'foldToSteal', 'opportunities');
 
           if (a.actionType === 'RAISE') {
-            acc.threeBet.made++;
-            if (posStats) posStats.threeBet.made++;
+            bump(sinks, 'threeBet', 'made');
           } else if (a.actionType === 'FOLD') {
-            if (openWasSteal && BLIND_POSITIONS.includes(position)) acc.foldToSteal.made++;
+            if (openWasSteal && BLIND_POSITIONS.includes(position)) bump(sinks, 'foldToSteal', 'made');
           } else if (a.actionType === 'CALL' && !playerHasVpipd) {
-            acc.coldCall.opportunities++;
-            acc.coldCall.made++;
+            bump(sinks, 'coldCall', 'opportunities');
+            bump(sinks, 'coldCall', 'made');
           }
 
           if (posBucket && openerPos && position) {
@@ -232,21 +331,15 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
           }
         } else if (level === 2) {
           // Facing a 3-bet: raiserPositionAtLevel[2] is the 3-bettor.
-          acc.fourBet.opportunities++;
-          acc.foldTo3Bet.opportunities++;
-          if (posStats) {
-            posStats.fourBet.opportunities++;
-            posStats.foldTo3Bet.opportunities++;
-          }
+          bump(sinks, 'fourBet', 'opportunities');
+          bump(sinks, 'foldTo3Bet', 'opportunities');
           if (a.actionType === 'RAISE') {
-            acc.fourBet.made++;
-            if (posStats) posStats.fourBet.made++;
+            bump(sinks, 'fourBet', 'made');
           } else if (a.actionType === 'FOLD') {
-            acc.foldTo3Bet.made++;
-            if (posStats) posStats.foldTo3Bet.made++;
+            bump(sinks, 'foldTo3Bet', 'made');
           } else if (a.actionType === 'CALL' && !playerHasVpipd) {
-            acc.coldCall.opportunities++;
-            acc.coldCall.made++;
+            bump(sinks, 'coldCall', 'opportunities');
+            bump(sinks, 'coldCall', 'made');
           }
 
           const threeBetterPos = raiserPositionAtLevel[2];
@@ -258,11 +351,9 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
             else if (a.actionType === 'RAISE') vs.raised++;
           }
         } else if (level === 3) {
-          acc.foldTo4Bet.opportunities++;
-          if (posStats) posStats.foldTo4Bet.opportunities++;
+          bump(sinks, 'foldTo4Bet', 'opportunities');
           if (a.actionType === 'FOLD') {
-            acc.foldTo4Bet.made++;
-            if (posStats) posStats.foldTo4Bet.made++;
+            bump(sinks, 'foldTo4Bet', 'made');
           }
         }
       }
@@ -282,23 +373,21 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats) {
     }
   }
 
-  acc.vpip.opportunities++;
-  if (posStats) posStats.vpip.opportunities++;
-  if (playerHasVpipd) {
-    acc.vpip.made++;
-    if (posStats) posStats.vpip.made++;
-  }
-  acc.pfr.opportunities++;
-  if (posStats) posStats.pfr.opportunities++;
-  if (playerHasRaised) {
-    acc.pfr.made++;
-    if (posStats) posStats.pfr.made++;
-  }
+  bump(sinks, 'vpip', 'opportunities');
+  if (playerHasVpipd) bump(sinks, 'vpip', 'made');
+  bump(sinks, 'pfr', 'opportunities');
+  if (playerHasRaised) bump(sinks, 'pfr', 'made');
 
   return { sawFlop: !real.some(a => a.player === name && a.actionType === 'FOLD') };
 }
 
-function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats) {
+// textureBucket = a { cbFlop, foldToCbFlop, checkRaise } bucket for this
+// hand's flop wetness (or null) - only ever touched for flop-street action,
+// since texture is a flop-only concept. Kept separate from groupBuckets
+// (which apply across every street) rather than folded into `sinks`,
+// since it only has 3 of newGroupStats()'s fields.
+function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, groupBuckets, textureBucket) {
+  const sinks = [acc, posStats, ...groupBuckets];
   const streets = ['FLOP', 'TURN', 'RIVER'];
   let cbTracked = false; // only count cbFlop/foldToCbFlop opportunity once
   let stillIn = true;
@@ -307,20 +396,21 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats) {
     const streetActions = (hand.actions || []).filter(a => a.street === street);
     if (streetActions.length === 0) continue;
 
+    const isFlop = street === 'FLOP';
     let hasCheckedThisStreet = false;
 
     for (let i = 0; i < streetActions.length; i++) {
       const a = streetActions[i];
       const isPlayer = a.player === name;
 
-      if (street === 'FLOP' && !cbTracked && wasPreflopAggressor) {
+      if (isFlop && !cbTracked && wasPreflopAggressor) {
         cbTracked = true;
-        acc.cbFlop.opportunities++;
-        if (posStats) posStats.cbFlop.opportunities++;
+        bump(sinks, 'cbFlop', 'opportunities');
+        if (textureBucket) textureBucket.cbFlop.opportunities++;
         const firstAction = streetActions[0];
         if (firstAction.player === name && (firstAction.actionType === 'BET' || firstAction.actionType === 'RAISE')) {
-          acc.cbFlop.made++;
-          if (posStats) posStats.cbFlop.made++;
+          bump(sinks, 'cbFlop', 'made');
+          if (textureBucket) textureBucket.cbFlop.made++;
         }
       }
 
@@ -328,29 +418,36 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats) {
         if (a.actionType === 'FOLD') {
           stillIn = false;
           // folding to a cbet: the first action this street was a bet, not by us, and this is our first response
-          if (street === 'FLOP' && wasPreflopAggressor === false && i > 0) {
+          if (isFlop && wasPreflopAggressor === false && i > 0) {
             const priorBet = streetActions.slice(0, i).find(x => x.actionType === 'BET' || x.actionType === 'RAISE');
             if (priorBet && streetActions[0].actionType === 'BET') {
-              acc.foldToCbFlop.made++;
-              if (posStats) posStats.foldToCbFlop.made++;
+              bump(sinks, 'foldToCbFlop', 'made');
+              if (textureBucket) textureBucket.foldToCbFlop.made++;
             }
           }
         }
         if (a.actionType === 'CHECK') hasCheckedThisStreet = true;
-        if (a.actionType === 'RAISE' && hasCheckedThisStreet) acc.checkRaise.opportunities++, acc.checkRaise.made++;
+        if (a.actionType === 'RAISE' && hasCheckedThisStreet) {
+          bump(sinks, 'checkRaise', 'opportunities');
+          bump(sinks, 'checkRaise', 'made');
+          if (isFlop && textureBucket) {
+            textureBucket.checkRaise.opportunities++;
+            textureBucket.checkRaise.made++;
+          }
+        }
         if (a.actionType === 'BET' || a.actionType === 'RAISE') acc.aggBets++;
         if (a.actionType === 'CALL') acc.aggCalls++;
       }
     }
 
     // foldToCbFlop opportunity: we faced a flop bet from the preflop aggressor as our first action
-    if (street === 'FLOP' && !wasPreflopAggressor) {
+    if (isFlop && !wasPreflopAggressor) {
       const firstAction = streetActions[0];
       if (firstAction && (firstAction.actionType === 'BET')) {
         const ourFirstResponse = streetActions.find(a => a.player === name);
         if (ourFirstResponse) {
-          acc.foldToCbFlop.opportunities++;
-          if (posStats) posStats.foldToCbFlop.opportunities++;
+          bump(sinks, 'foldToCbFlop', 'opportunities');
+          if (textureBucket) textureBucket.foldToCbFlop.opportunities++;
         }
       }
     }
@@ -359,31 +456,26 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats) {
   return stillIn;
 }
 
-function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner, acc, posStats) {
+function accumulateShowdown(hand, name, sawFlop, stillInAfterPostflop, isWinner, acc, posStats, groupBuckets) {
+  const sinks = [acc, posStats, ...groupBuckets];
   const hadShowdown = (hand.actions || []).some(
     a => a.actionType === 'SHOW_HAND' || a.actionType === 'MUCK'
   );
 
   if (sawFlop) {
-    acc.wwsf.opportunities++;
-    if (posStats) posStats.wwsf.opportunities++;
-    if (isWinner) {
-      acc.wwsf.made++;
-      if (posStats) posStats.wwsf.made++;
-    }
+    bump(sinks, 'wwsf', 'opportunities');
+    if (isWinner) bump(sinks, 'wwsf', 'made');
 
     // wtsd opportunity = every hand where the player saw the flop and
     // was still in the hand postflop. wtsd made = the subset that
     // actually reached showdown. These must NOT be incremented in the
     // same branch, or the rate is trivially always 100%.
     if (stillInAfterPostflop) {
-      acc.wtsd.opportunities++;
-      if (posStats) posStats.wtsd.opportunities++;
+      bump(sinks, 'wtsd', 'opportunities');
       if (hadShowdown) {
-        acc.wtsd.made++;
-        if (posStats) posStats.wtsd.made++;
-        acc.wsd.opportunities++;
-        if (isWinner) acc.wsd.made++;
+        bump(sinks, 'wtsd', 'made');
+        bump(sinks, 'wsd', 'opportunities');
+        if (isWinner) bump(sinks, 'wsd', 'made');
       }
     }
   }
@@ -397,7 +489,6 @@ export function computeStatsForHands(hands, matchPlayer) {
     if (!player || player.isSittingOut) continue;
 
     acc.hands++;
-    if (hand.currency) acc.currencies.add(hand.currency);
     const positionMap = getPositionMap(hand);
     const name = player.name;
 
@@ -410,39 +501,46 @@ export function computeStatsForHands(hands, matchPlayer) {
     const posStats = posBucket ? ensurePositionStats(posBucket, position) : null;
     if (posStats) acc.handsWithPosition++;
 
-    const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats);
+    // Grouping dimensions that don't exist for this hand (no stakes
+    // recorded, no effective-stack figure) simply resolve to a null key,
+    // which ensureGroup turns into "no bucket" rather than a bad one.
+    const stakesKey = hand.stakes || null;
+    const stackDepthKey = player.effectiveStackBB != null ? getStackDepthBucket(player.effectiveStackBB) : null;
+    const combinedKey = (stakesKey != null && stackDepthKey != null) ? `${stakesKey}__${stackDepthKey}` : null;
+
+    const stakesBucket = ensureGroup(acc.byStakes, stakesKey, newGroupStats);
+    const stackDepthBucket = ensureGroup(acc.byStackDepth, stackDepthKey, newGroupStats);
+    const combinedBucket = ensureGroup(acc.byStakesAndStackDepth, combinedKey, newGroupStats);
+    if (stakesBucket) stakesBucket.hands++;
+    if (stackDepthBucket) stackDepthBucket.hands++;
+    if (combinedBucket) combinedBucket.hands++;
+    const groupBuckets = [stakesBucket, stackDepthBucket, combinedBucket].filter(Boolean);
+
+    const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats, groupBuckets);
 
     let stillIn = true;
     if (sawFlop && hand.board?.flop?.length) {
       const wasPreflopAggressor = (hand.actions || [])
         .filter(a => a.street === 'PREFLOP' && (a.actionType === 'RAISE' || a.actionType === 'BET'))
         .slice(-1)[0]?.player === name;
-      stillIn = accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats);
+
+      // Texture is only resolvable for a well-formed 3-card flop; a
+      // malformed board (parsing gap on old data) just means no texture
+      // bucket for this hand, not a thrown error.
+      let textureBucket = null;
+      if (hand.board.flop.length === 3) {
+        const wetness = classifyFlopTexture(parseBoard(hand.board.flop)).wetness;
+        textureBucket = ensureGroup(acc.byFlopTexture, wetness, newTextureStats);
+        if (textureBucket) textureBucket.hands++;
+      }
+
+      stillIn = accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, groupBuckets, textureBucket);
     }
 
     const isWinner = (hand.winners || []).includes(name);
-    accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc, posStats);
+    accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc, posStats, groupBuckets);
 
-    if (typeof player.profitLoss === 'number') {
-      // player.profitLoss is stored in integer CENTS for USD/CAD hands (see
-      // CENTS_CURRENCIES above) but in major units for everything else.
-      // totalProfitLoss is a user-facing dollar figure, so it has to be
-      // normalized to major units per-hand before summing - otherwise a
-      // session's worth of hands in cents dwarfs everything else by ~100x.
-      // bbUnitsWon below intentionally keeps using the raw, unconverted
-      // profitLoss: parseBigBlind() already scales `bb` up by the same
-      // factor for cents currencies, so that ratio was correct as-is and
-      // must NOT also be divided here, or it'd be wrong the other way.
-      const displayProfit = CENTS_CURRENCIES.has(hand.currency) ? player.profitLoss / 100 : player.profitLoss;
-      acc.totalProfitLoss += displayProfit;
-      acc.handsWithProfitData++;
-
-      const bb = parseBigBlind(hand.stakes, hand.currency);
-      if (bb) {
-        acc.bbUnitsWon += player.profitLoss / bb;
-        acc.handsWithBbData++;
-      }
-    }
+    for (const sink of [acc, ...groupBuckets]) bumpProfit(sink, hand, player);
   }
 
   return finalize(acc);
@@ -452,8 +550,21 @@ function pct(made, opportunities) {
   return opportunities > 0 ? Math.round((made / opportunities) * 1000) / 10 : 0;
 }
 
-function finalizeRate(rate) {
-  return { pct: pct(rate.made, rate.opportunities), made: rate.made, opportunities: rate.opportunities };
+// `confidence` is computed here - once, where the stat is assembled - and
+// stored alongside pct/made/opportunities, rather than left for the
+// frontend to derive ad hoc from `opportunities`. That's what keeps it
+// from drifting out of sync with the underlying sample: every consumer
+// (API, UI, a future export) reads the same precomputed label. `statKey`
+// picks the confidence profile (see confidence.js's RARE_STAT_KEYS) -
+// omit it only for stats with no natural key (there are none left after
+// this refactor, but the parameter defaults safely regardless).
+function finalizeRate(rate, statKey) {
+  return {
+    pct: pct(rate.made, rate.opportunities),
+    made: rate.made,
+    opportunities: rate.opportunities,
+    confidence: getConfidenceForStat(statKey, rate.opportunities)
+  };
 }
 
 function finalizeVsStat(stat) {
@@ -467,14 +578,19 @@ function finalizeVsStat(stat) {
     callPct: pct(stat.called, faced),
     raisePct: pct(stat.raised, faced),
     // defend = anything that isn't folding (call or raise/re-raise)
-    defendPct: pct(stat.called + stat.raised, faced)
+    defendPct: pct(stat.called + stat.raised, faced),
+    // Every position-matrix cell (a single attacker/responder pairing) is
+    // inherently a small slice of the data, regardless of which matrix or
+    // positions it is - always the stricter 'rare' profile, not looked up
+    // per-key the way finalizeRate's stats are.
+    confidence: getConfidence(faced, CONFIDENCE_PROFILES.rare)
   };
 }
 
 function finalizePositionStats(stats) {
   const out = {};
   for (const key of Object.keys(stats)) {
-    out[key] = finalizeRate(stats[key]);
+    out[key] = finalizeRate(stats[key], key);
   }
   return out;
 }
@@ -507,51 +623,98 @@ function finalizePositional(positional) {
   return out;
 }
 
+// Non-rate-stat fields on newGroupStats()/newAccumulator() - handled by
+// finalizeProfitLoss below instead of the generic finalizeRate loop.
+const PROFIT_FIELD_KEYS = new Set(['totalProfitLoss', 'handsWithProfitData', 'bbUnitsWon', 'handsWithBbData', 'currencies']);
+
+// Shared by the top-level accumulator and every grouping bucket: same
+// currency-safety rule either way - totalProfitLoss/bb100 only mean
+// anything as a single scalar when every hand in the slice shares one
+// currency, otherwise the caller gets an explicit null instead of a
+// silently-wrong mixed-unit number.
+function finalizeProfitLoss(sink) {
+  return {
+    totalProfitLoss: Math.round(sink.totalProfitLoss * 100) / 100,
+    handsWithProfitData: sink.handsWithProfitData,
+    bb100: (sink.handsWithBbData > 0 && sink.currencies.size <= 1)
+      ? Math.round((sink.bbUnitsWon / sink.handsWithBbData) * 100 * 100) / 100
+      : null,
+    currency: sink.currencies.size === 1 ? [...sink.currencies][0] : null
+  };
+}
+
+// Shared finalizer for every "group by X" bucket (byStakes, byStackDepth,
+// byStakesAndStackDepth, byFlopTexture): converts each bucket's raw made/
+// opportunities counters to {pct, made, opportunities} in one generic pass
+// instead of one hand-written finalizer per dimension. Profitability (see
+// finalizeProfitLoss above) is only attached for buckets that actually
+// track it - newTextureStats() deliberately doesn't, since attributing a
+// whole hand's profit to one flop-texture bucket isn't a meaningful figure
+// the way it is for a stakes/stack-depth slice.
+function finalizeGroupStats(bucket) {
+  const out = { hands: bucket.hands };
+  for (const key of Object.keys(bucket)) {
+    if (key === 'hands' || PROFIT_FIELD_KEYS.has(key)) continue;
+    out[key] = finalizeRate(bucket[key], key);
+  }
+  const hasProfitFields = bucket.currencies instanceof Set;
+  return hasProfitFields ? { ...out, ...finalizeProfitLoss(bucket) } : out;
+}
+
+function finalizeGroupMap(map) {
+  const out = {};
+  for (const key of Object.keys(map)) {
+    out[key] = finalizeGroupStats(map[key]);
+  }
+  return out;
+}
+
+// Every top-level rate-stat key, in display order. Looping over this
+// (rather than repeating each key twice as `key: finalizeRate(acc.key)`)
+// is what makes finalizeRate's statKey argument (-> confidence profile)
+// impossible to forget for a newly-added stat - and matches how
+// finalizeGroupStats/finalizePositionStats already derive it from the
+// object's own keys instead of a hand-written list.
+const TOP_LEVEL_RATE_KEYS = [
+  'vpip', 'pfr', 'open', 'threeBet', 'foldTo3Bet', 'fourBet', 'foldTo4Bet',
+  'steal', 'foldToSteal', 'limp', 'coldCall', 'cbFlop', 'foldToCbFlop',
+  'checkRaise', 'wtsd', 'wsd', 'wwsf'
+];
+
 function finalize(acc) {
   const aggPct = (acc.aggBets + acc.aggCalls) > 0
     ? Math.round((acc.aggBets / (acc.aggBets + acc.aggCalls)) * 1000) / 10
     : 0;
   const aggFactor = acc.aggCalls > 0 ? Math.round((acc.aggBets / acc.aggCalls) * 100) / 100 : acc.aggBets > 0 ? null : 0;
 
+  const rateStats = {};
+  for (const key of TOP_LEVEL_RATE_KEYS) rateStats[key] = finalizeRate(acc[key], key);
+
   return {
     totalHands: acc.hands,
-    vpip: finalizeRate(acc.vpip),
-    pfr: finalizeRate(acc.pfr),
-    open: finalizeRate(acc.open),
-    threeBet: finalizeRate(acc.threeBet),
-    foldTo3Bet: finalizeRate(acc.foldTo3Bet),
-    fourBet: finalizeRate(acc.fourBet),
-    foldTo4Bet: finalizeRate(acc.foldTo4Bet),
-    steal: finalizeRate(acc.steal),
-    foldToSteal: finalizeRate(acc.foldToSteal),
-    limp: finalizeRate(acc.limp),
-    coldCall: finalizeRate(acc.coldCall),
-    cbFlop: finalizeRate(acc.cbFlop),
-    foldToCbFlop: finalizeRate(acc.foldToCbFlop),
-    checkRaise: finalizeRate(acc.checkRaise),
-    wtsd: finalizeRate(acc.wtsd),
-    wsd: finalizeRate(acc.wsd),
-    wwsf: finalizeRate(acc.wwsf),
+    ...rateStats,
     aggPct,
     aggFactor,
-    totalProfitLoss: Math.round(acc.totalProfitLoss * 100) / 100,
-    handsWithProfitData: acc.handsWithProfitData,
-    bb100: (acc.handsWithBbData > 0 && acc.currencies.size <= 1)
-      ? Math.round((acc.bbUnitsWon / acc.handsWithBbData) * 100 * 100) / 100
-      : null,
-    // Single currency string if every hand for this player was in the
-    // same currency, otherwise null. totalProfitLoss/bb100 mix units
-    // whenever a player's hands span multiple currencies (e.g. a real-
-    // money site + a play-chip home game) - there's no single scalar
-    // that's meaningful in that case, so callers get an explicit null
-    // instead of a silently-wrong number, and should decide how to
-    // handle/display that (e.g. split stats per currency).
-    currency: acc.currencies.size === 1 ? [...acc.currencies][0] : null,
+    // totalProfitLoss/bb100/currency: see finalizeProfitLoss above - same
+    // "null if mixed currencies" rule this used to compute inline (e.g. a
+    // real-money site + a play-chip home game mixed together).
+    ...finalizeProfitLoss(acc),
     // Position-vs-position breakdown, bucketed by table size (2-9 active
     // players). See ensurePositional/ensureVsOpen/ensureVs3Bet above for
     // the shape. Keys are stringified table sizes ("6", "9", ...) because
     // that's what plain-object/JSON round-tripping gives us.
     positional: finalizePositional(acc.positional),
+    // Same stat set as the top level, sliced by grouping dimension. Keys
+    // are raw stakes strings ("$1/$2"), stack-depth buckets ('short'|
+    // 'mid'|'deep'), or a `${stakes}__${bucket}` combination - see
+    // ensureGroup()/newGroupStats() above.
+    byStakes: finalizeGroupMap(acc.byStakes),
+    byStackDepth: finalizeGroupMap(acc.byStackDepth),
+    byStakesAndStackDepth: finalizeGroupMap(acc.byStakesAndStackDepth),
+    // 'dry'|'semi-wet'|'wet' -> { hands, cbFlop, foldToCbFlop, checkRaise }
+    // - only the flop-street stats that depend on board texture. See
+    // flopTexture.js for the wetness heuristic.
+    byFlopTexture: finalizeGroupMap(acc.byFlopTexture),
     // How many hands actually had a resolvable position (dealer flag +
     // >=2 active players) vs. total hands seen. If hands is 0 while
     // totalHands is high, the underlying hand data is missing isDealer -

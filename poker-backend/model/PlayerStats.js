@@ -1,10 +1,14 @@
 import mongoose from 'mongoose';
 
-// Shared shape for any "made X out of Y opportunities" stat.
+// Shared shape for any "made X out of Y opportunities" stat. `confidence`
+// is computed once in statsEngine.js's finalizeRate() (see confidence.js)
+// and stored alongside the counters it was derived from, so it can't drift
+// out of sync with them - never recomputed ad hoc by a consumer.
 const RateStatSchema = new mongoose.Schema({
   pct: { type: Number, default: 0 },
   made: { type: Number, default: 0 },
-  opportunities: { type: Number, default: 0 }
+  opportunities: { type: Number, default: 0 },
+  confidence: { type: String, enum: ['low', 'medium', 'high'], default: 'low' }
 }, { _id: false });
 
 const PlayerStatsSchema = new mongoose.Schema({
@@ -58,6 +62,18 @@ const PlayerStatsSchema = new mongoose.Schema({
   // player and doesn't map cleanly onto a fixed schema - see
   // statsEngine.js's finalizePositional() for exactly what gets written.
   positional: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // Same rate-stat set as the top level, sliced by grouping dimension - see
+  // statsEngine.js's newGroupStats()/finalizeGroupMap(). Keys are raw
+  // stakes strings, stack-depth buckets ('short'|'mid'|'deep'), or a
+  // `${stakes}__${bucket}` combination. Mixed for the same reason as
+  // `positional`: the set of keys present varies per player.
+  byStakes: { type: mongoose.Schema.Types.Mixed, default: {} },
+  byStackDepth: { type: mongoose.Schema.Types.Mixed, default: {} },
+  byStakesAndStackDepth: { type: mongoose.Schema.Types.Mixed, default: {} },
+  // 'dry'|'semi-wet'|'wet' -> { hands, cbFlop, foldToCbFlop, checkRaise } -
+  // see flopTexture.js/statsEngine.js's newTextureStats().
+  byFlopTexture: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   lastComputedAt: { type: Date, default: Date.now }
 });
