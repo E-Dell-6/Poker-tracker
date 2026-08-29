@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simulateEquity, simulateEquityWithRng } from '../equityEngine.js';
+import { simulateEquity, simulateEquityWithRng } from '../utils/equityEngine.js';
 
 function mulberry32(seed) {
   return function () {

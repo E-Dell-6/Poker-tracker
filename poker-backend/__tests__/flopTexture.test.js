@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseBoard } from '../cardParser.js';
-import { classifyFlopTexture } from '../flopTexture.js';
+import { parseBoard } from '../utils/cardParser.js';
+import { classifyFlopTexture } from '../utils/flopTexture.js';
 
 function texture(cards) {
   return classifyFlopTexture(parseBoard(cards));

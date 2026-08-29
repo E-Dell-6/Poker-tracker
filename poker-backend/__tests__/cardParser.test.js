@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCard, parseBoard } from '../cardParser.js';
+import { parseCard, parseBoard } from '../utils/cardParser.js';
 
 describe('parseCard', () => {
   it('parses number ranks', () => {

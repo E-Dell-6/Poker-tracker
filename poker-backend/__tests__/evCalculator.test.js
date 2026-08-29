@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeAllInEV } from '../evCalculator.js';
-import { simulateEquity } from '../equityEngine.js';
+import { computeAllInEV } from '../utils/evCalculator.js';
+import { simulateEquity } from '../utils/equityEngine.js';
 
 function baseHand(overrides) {
   return {

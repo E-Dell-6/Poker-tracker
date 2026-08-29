@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectAllIn } from '../allInDetector.js';
+import { detectAllIn } from '../utils/allInDetector.js';
 
 function baseHand(overrides) {
   return {

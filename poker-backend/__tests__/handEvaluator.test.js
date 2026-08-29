@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateHand, getEvaluatorTableStats, HandRank } from '../handEvaluator.js';
+import { evaluateHand, getEvaluatorTableStats, HandRank } from '../utils/handEvaluator.js';
 
 describe('table generation', () => {
   it('produces exactly 7462 distinct 5-card hand strengths', () => {

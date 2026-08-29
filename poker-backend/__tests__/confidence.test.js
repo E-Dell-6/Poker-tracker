@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getConfidence, getConfidenceForStat, CONFIDENCE_PROFILES } from '../confidence.js';
+import { getConfidence, getConfidenceForStat, CONFIDENCE_PROFILES } from '../utils/confidence.js';
 
 describe('getConfidence', () => {
   it('defaults to the default profile', () => {

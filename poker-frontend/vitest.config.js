@@ -1,14 +1,14 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
-    // 'node' is enough for the pure-function util tests this project has
-    // today. Switch to 'jsdom' (and add it as a devDependency) if/when
-    // component tests are added.
-    environment: 'node',
-    include: ['src/**/__tests__/**/*.test.js', 'src/**/__tests__/**/*.test.jsx'],
-    // No frontend test files exist yet (backend-heavy work so far) - don't
-    // fail `npm test` on that until the first one is added.
-    passWithNoTests: true
+    // jsdom for component rendering (React Testing Library) - pure-
+    // function util tests run fine under it too, so one environment
+    // covers both instead of splitting config per test type.
+    environment: 'jsdom',
+    setupFiles: ['./__tests__/setup.js'],
+    include: ['__tests__/**/*.test.js', '__tests__/**/*.test.jsx']
   }
 });

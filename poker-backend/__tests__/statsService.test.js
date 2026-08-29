@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEvGraphRows } from '../statsService.js';
+import { buildEvGraphRows } from '../services/statsService.js';
 
 function heroHand({ handIndex, profitLoss, allInEV = null }) {
   return {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseACRLog } from '../ACRPokerParser.js';
-import { simulateEquity } from '../equityEngine.js';
+import { parseACRLog } from '../utils/ACRPokerParser.js';
+import { simulateEquity } from '../utils/equityEngine.js';
 
 // Full-pipeline regression test: raw ACR hand-history TEXT -> parseACRLog
 // (which wires in computeHandProfits/detectAllIn/computeAllInEV exactly

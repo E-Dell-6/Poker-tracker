@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getStackDepthBucket, STACK_DEPTH_THRESHOLDS } from '../stackDepth.js';
+import { getStackDepthBucket, STACK_DEPTH_THRESHOLDS } from '../utils/stackDepth.js';
 
 describe('getStackDepthBucket', () => {
   it('buckets below the short threshold as short', () => {
