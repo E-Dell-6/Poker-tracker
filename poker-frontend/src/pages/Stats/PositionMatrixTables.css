@@ -1,0 +1,52 @@
+.position-matrix-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.matrix-table-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.matrix-table-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.matrix-table-header .section-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  margin: 0;
+}
+
+.matrix-table-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.matrix-cell-pct {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.matrix-cell-pct--low-confidence {
+  opacity: 0.5;
+}
+
+.matrix-cell-pct--medium-confidence {
+  opacity: 0.8;
+}
+
+.matrix-cell-empty {
+  color: var(--color-text-faint);
+}

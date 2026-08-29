@@ -8,6 +8,7 @@ import { GroupedStats } from '../../components/GroupedStats';
 import { EVGraph } from '../../components/EVGraph';
 import { StatTile } from '../../components/ui/StatTile';
 import { StudyCharts } from './StudyCharts';
+import { PositionMatrixTables } from './PositionMatrixTables';
 import './Stats.css';
 
 const STAT_GROUPS = [
@@ -178,6 +179,7 @@ export function Stats() {
             </div>
 
             <StudyCharts positional={stats.positional} showdownBreakdown={stats.showdownBreakdown} />
+            <PositionMatrixTables positional={stats.positional} />
 
             <div className="stats-grid stats-grid--hero">
               <div className="stat-box stat-box--hero">

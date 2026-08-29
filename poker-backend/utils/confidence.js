@@ -17,7 +17,7 @@ export const CONFIDENCE_PROFILES = {
 // regardless of key, since any single attacker/responder position pairing
 // is inherently a small slice of the data - handled separately by callers,
 // not through this map.
-export const RARE_STAT_KEYS = new Set(['fourBet', 'foldTo4Bet']);
+export const RARE_STAT_KEYS = new Set(['fourBet', 'foldTo4Bet', 'cbTurn', 'cbRiver', 'donk', 'probe']);
 
 export function getConfidence(opportunities, profile = CONFIDENCE_PROFILES.default) {
   if (opportunities < profile.low) return 'low';

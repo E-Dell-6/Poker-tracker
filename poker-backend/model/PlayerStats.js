@@ -36,6 +36,10 @@ const PlayerStatsSchema = new mongoose.Schema({
 
   cbFlop: RateStatSchema,
   foldToCbFlop: RateStatSchema,
+  cbTurn: RateStatSchema,
+  cbRiver: RateStatSchema,
+  donk: RateStatSchema,
+  probe: RateStatSchema,
   checkRaise: RateStatSchema,
 
   wtsd: RateStatSchema,

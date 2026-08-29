@@ -73,6 +73,7 @@ function newShowdownBreakdown() {
 
 function newPositionStats() {
   return {
+    hands: 0,
     vpip: newRateStat(),
     pfr: newRateStat(),
     open: newRateStat(),
@@ -83,8 +84,31 @@ function newPositionStats() {
     foldTo4Bet: newRateStat(),
     cbFlop: newRateStat(),
     foldToCbFlop: newRateStat(),
+    // Barrel-chain continuation bets - see accumulatePostflop's
+    // barrelAlive tracking: opportunity requires having bet the
+    // immediately preceding street, not just having been the preflop
+    // aggressor at some point.
+    cbTurn: newRateStat(),
+    cbRiver: newRateStat(),
+    // Betting out of turn relative to whoever actually holds the lead -
+    // see accumulatePostflop's globalAggressor tracking.
+    donk: newRateStat(),
+    probe: newRateStat(),
+    // checkRaise/wsd were already being mirrored into posStats by the
+    // generic bump() sinks mechanism (accumulatePostflop/accumulateShowdown
+    // already pass posStats as a sink for both) - they just silently
+    // no-op'd because bump() skips a sink that doesn't have the target key.
+    // Adding the fields here is the only change needed to start populating
+    // them per-position, for the Study page's "Postflop matrix by
+    // position" (checkRaise) and "W$SD" column (wsd).
+    checkRaise: newRateStat(),
     wtsd: newRateStat(),
+    wsd: newRateStat(),
     wwsf: newRateStat(),
+    // Per-position aggression factor ("AF" column, postflop matrix) - bets
+    // and raises vs calls, same definition as the top-level aggFactor.
+    aggBets: 0,
+    aggCalls: 0,
     // Per-position profitability (bb100 "Win rate by position" on Study) -
     // same fields/semantics as newAccumulator()'s top-level ones, tracked
     // via the same bumpProfit()/finalizeProfitLoss() used everywhere else.
@@ -255,6 +279,10 @@ function newAccumulator() {
     coldCall: newRateStat(),
     cbFlop: newRateStat(),
     foldToCbFlop: newRateStat(),
+    cbTurn: newRateStat(),
+    cbRiver: newRateStat(),
+    donk: newRateStat(),
+    probe: newRateStat(),
     checkRaise: newRateStat(),
     wtsd: newRateStat(),
     wsd: newRateStat(),
@@ -415,25 +443,74 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, grou
   let cbTracked = false; // only count cbFlop/foldToCbFlop opportunity once
   let stillIn = true;
 
+  // Barrel-chain c-bet (flop -> turn -> river, the "Postflop matrix"
+  // C-Bet Turn/River columns): each street's c-bet opportunity is gated on
+  // having MADE the c-bet on the street immediately before it ("did you
+  // fire again"), not just on ever having been the preflop aggressor.
+  // FLOP's own gate stays exactly the existing wasPreflopAggressor check;
+  // this only extends the SAME idea forward one street at a time.
+  let barrelAlive = wasPreflopAggressor;
+
+  // Whoever bet/raised last, on any street so far (including preflop) -
+  // carries forward unchanged through a fully-checked street (real
+  // betting initiative doesn't reset just because everyone checked).
+  // Needed for donk/probe, which are about `name` acting *out of turn*
+  // relative to whoever genuinely holds the lead, not about `name`'s own
+  // c-bet status - a different question from the barrel chain above, so
+  // tracked separately rather than reusing barrelAlive.
+  let globalAggressor = (hand.actions || [])
+    .filter(a => a.street === 'PREFLOP' && (a.actionType === 'RAISE' || a.actionType === 'BET'))
+    .slice(-1)[0]?.player ?? null;
+  // Did the immediately preceding postflop street see any bet/raise at
+  // all, from anyone? Only meaningful starting TURN (probe is a TURN/
+  // RIVER concept - preflop essentially never goes bet-free once blinds
+  // are posted, so a "flop probe" isn't a coherent spot).
+  let previousStreetHadBet = null;
+
   for (const street of streets) {
     const streetActions = (hand.actions || []).filter(a => a.street === street);
     if (streetActions.length === 0) continue;
 
     const isFlop = street === 'FLOP';
+    const cbetKey = isFlop ? 'cbFlop' : (street === 'TURN' ? 'cbTurn' : 'cbRiver');
+    const enteringAggressor = globalAggressor;
+    const priorStreetHadBet = previousStreetHadBet;
+    const firstAction = streetActions[0];
+    const firstActorIsName = firstAction.player === name;
     let hasCheckedThisStreet = false;
+
+    // Donk bet: `name` is live, is NOT the player who actually holds the
+    // betting lead coming into this street (a specific someone else
+    // does), and `name` bets as the very first action of the street -
+    // leading out before the real aggressor gets a chance to continue
+    // betting. A RAISE here isn't a donk (that's just a raise/check-raise
+    // once someone else has already acted).
+    if (enteringAggressor && enteringAggressor !== name && firstActorIsName) {
+      bump(sinks, 'donk', 'opportunities');
+      if (firstAction.actionType === 'BET') bump(sinks, 'donk', 'made');
+    }
+
+    // Probe bet: the street before this one was fully checked through (no
+    // bets from anyone, including whoever's presumed to hold the lead -
+    // if THEY bet after checking back a street, that's a delayed c-bet,
+    // not a probe, so they're excluded here), and `name` - not the
+    // presumed aggressor - takes the initiative by betting first now.
+    if (!isFlop && priorStreetHadBet === false && enteringAggressor !== name && firstActorIsName) {
+      bump(sinks, 'probe', 'opportunities');
+      if (firstAction.actionType === 'BET') bump(sinks, 'probe', 'made');
+    }
 
     for (let i = 0; i < streetActions.length; i++) {
       const a = streetActions[i];
       const isPlayer = a.player === name;
 
-      if (isFlop && !cbTracked && wasPreflopAggressor) {
+      if (!cbTracked && barrelAlive) {
         cbTracked = true;
-        bump(sinks, 'cbFlop', 'opportunities');
-        if (textureBucket) textureBucket.cbFlop.opportunities++;
-        const firstAction = streetActions[0];
+        bump(sinks, cbetKey, 'opportunities');
+        if (isFlop && textureBucket) textureBucket.cbFlop.opportunities++;
         if (firstAction.player === name && (firstAction.actionType === 'BET' || firstAction.actionType === 'RAISE')) {
-          bump(sinks, 'cbFlop', 'made');
-          if (textureBucket) textureBucket.cbFlop.made++;
+          bump(sinks, cbetKey, 'made');
+          if (isFlop && textureBucket) textureBucket.cbFlop.made++;
         }
       }
 
@@ -458,14 +535,19 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, grou
             textureBucket.checkRaise.made++;
           }
         }
-        if (a.actionType === 'BET' || a.actionType === 'RAISE') acc.aggBets++;
-        if (a.actionType === 'CALL') acc.aggCalls++;
+        if (a.actionType === 'BET' || a.actionType === 'RAISE') {
+          acc.aggBets++;
+          if (posStats) posStats.aggBets++;
+        }
+        if (a.actionType === 'CALL') {
+          acc.aggCalls++;
+          if (posStats) posStats.aggCalls++;
+        }
       }
     }
 
     // foldToCbFlop opportunity: we faced a flop bet from the preflop aggressor as our first action
     if (isFlop && !wasPreflopAggressor) {
-      const firstAction = streetActions[0];
       if (firstAction && (firstAction.actionType === 'BET')) {
         const ourFirstResponse = streetActions.find(a => a.player === name);
         if (ourFirstResponse) {
@@ -474,6 +556,21 @@ function accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, grou
         }
       }
     }
+
+    // Chain state forward for the next street: the barrel stays alive
+    // only if `name` actually fired this street's c-bet (not merely had
+    // the opportunity); the global aggressor/bet-seen flags update from
+    // this street's real action log, independent of `name`.
+    barrelAlive = cbTracked && firstAction.player === name && (firstAction.actionType === 'BET' || firstAction.actionType === 'RAISE');
+    cbTracked = false; // reset per street - it's a "counted once THIS street" guard, not hand-wide
+    let streetHadBet = false;
+    for (const a of streetActions) {
+      if (a.actionType === 'BET' || a.actionType === 'RAISE') {
+        globalAggressor = a.player;
+        streetHadBet = true;
+      }
+    }
+    previousStreetHadBet = streetHadBet;
   }
 
   return stillIn;
@@ -522,7 +619,7 @@ export function computeStatsForHands(hands, matchPlayer) {
     // present on the hand) - global stats above are unaffected either way.
     const posBucket = position && tableSize >= 2 ? ensurePositional(acc, tableSize) : null;
     const posStats = posBucket ? ensurePositionStats(posBucket, position) : null;
-    if (posStats) acc.handsWithPosition++;
+    if (posStats) { acc.handsWithPosition++; posStats.hands++; }
 
     // Grouping dimensions that don't exist for this hand (no stakes
     // recorded, no effective-stack figure) simply resolve to a null key,
@@ -619,12 +716,23 @@ function finalizeVsStat(stat) {
   };
 }
 
+// Non-rate-stat fields on newPositionStats() that the generic finalizeRate
+// loop below has to skip - same idea as PROFIT_FIELD_KEYS, just this
+// object's own extra fields (hands count, raw aggression counters).
+const POSITION_NON_RATE_KEYS = new Set(['hands', 'aggBets', 'aggCalls']);
+
 function finalizePositionStats(stats) {
-  const out = {};
+  const out = { hands: stats.hands };
   for (const key of Object.keys(stats)) {
-    if (PROFIT_FIELD_KEYS.has(key)) continue;
+    if (PROFIT_FIELD_KEYS.has(key) || POSITION_NON_RATE_KEYS.has(key)) continue;
     out[key] = finalizeRate(stats[key], key);
   }
+  // Same aggression-factor definition as the top-level aggFactor
+  // (finalize()) - bets+raises per call, null when there's no call data
+  // to divide by but bets did happen (an undefined ratio, not a zero one).
+  out.aggFactor = stats.aggCalls > 0
+    ? Math.round((stats.aggBets / stats.aggCalls) * 100) / 100
+    : (stats.aggBets > 0 ? null : 0);
   // Per-position profitability (bb100) - see finalizeProfitLoss above,
   // same currency-safety rule as everywhere else it's used.
   return { ...out, ...finalizeProfitLoss(stats) };
@@ -713,6 +821,7 @@ function finalizeGroupMap(map) {
 const TOP_LEVEL_RATE_KEYS = [
   'vpip', 'pfr', 'open', 'threeBet', 'foldTo3Bet', 'fourBet', 'foldTo4Bet',
   'steal', 'foldToSteal', 'limp', 'coldCall', 'cbFlop', 'foldToCbFlop',
+  'cbTurn', 'cbRiver', 'donk', 'probe',
   'checkRaise', 'wtsd', 'wsd', 'wwsf'
 ];
 
