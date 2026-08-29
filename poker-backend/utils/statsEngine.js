@@ -60,6 +60,17 @@ function newVsStat() {
   return { faced: 0, folded: 0, called: 0, raised: 0 };
 }
 
+// wonNoShowdown/wonAtShowdown/lostNoShowdown/lostAtShowdown - the "Showdown
+// breakdown" donut on the Study page. A hand-wide classification (unlike
+// the rate stats above, not gated on having seen a flop), computed
+// directly from hand.actions in computeStatsForHands rather than threaded
+// through accumulatePreflop/Postflop, since "did this player fold at any
+// point" and "did the hand reach a showdown at all" are both simplest to
+// answer from the raw action list once per hand.
+function newShowdownBreakdown() {
+  return { wonNoShowdown: 0, wonAtShowdown: 0, lostNoShowdown: 0, lostAtShowdown: 0 };
+}
+
 function newPositionStats() {
   return {
     vpip: newRateStat(),
@@ -73,7 +84,15 @@ function newPositionStats() {
     cbFlop: newRateStat(),
     foldToCbFlop: newRateStat(),
     wtsd: newRateStat(),
-    wwsf: newRateStat()
+    wwsf: newRateStat(),
+    // Per-position profitability (bb100 "Win rate by position" on Study) -
+    // same fields/semantics as newAccumulator()'s top-level ones, tracked
+    // via the same bumpProfit()/finalizeProfitLoss() used everywhere else.
+    totalProfitLoss: 0,
+    handsWithProfitData: 0,
+    bbUnitsWon: 0,
+    handsWithBbData: 0,
+    currencies: new Set()
   };
 }
 
@@ -258,6 +277,10 @@ function newAccumulator() {
     byStakesAndStackDepth: {},
     // 'dry'|'semi-wet'|'wet' -> newTextureStats() - see flopTexture.js.
     byFlopTexture: {},
+    // Won/lost x with/without showdown, hand-wide (not per-position) - the
+    // "Showdown breakdown" donut on the Study page. See
+    // newShowdownBreakdown() above for the classification.
+    showdownBreakdown: newShowdownBreakdown(),
     // Diagnostic: how many of this player's hands actually resolved to a
     // position (needs a dealer/button flag + >=2 active players). If this
     // stays near 0 while totalHands is high, positional stats will look
@@ -540,7 +563,16 @@ export function computeStatsForHands(hands, matchPlayer) {
     const isWinner = (hand.winners || []).includes(name);
     accumulateShowdown(hand, name, sawFlop && hand.board?.flop?.length > 0, stillIn, isWinner, acc, posStats, groupBuckets);
 
-    for (const sink of [acc, ...groupBuckets]) bumpProfit(sink, hand, player);
+    // Showdown breakdown: hand-wide (every hand this player was dealt into,
+    // not gated on seeing a flop) - "reached showdown" means they didn't
+    // fold AND the hand actually had a SHOW_HAND/MUCK event.
+    const playerFolded = (hand.actions || []).some(a => a.player === name && a.actionType === 'FOLD');
+    const hadShowdownForHand = (hand.actions || []).some(a => a.actionType === 'SHOW_HAND' || a.actionType === 'MUCK');
+    const reachedShowdown = !playerFolded && hadShowdownForHand;
+    if (isWinner) acc.showdownBreakdown[reachedShowdown ? 'wonAtShowdown' : 'wonNoShowdown']++;
+    else acc.showdownBreakdown[reachedShowdown ? 'lostAtShowdown' : 'lostNoShowdown']++;
+
+    for (const sink of [acc, posStats, ...groupBuckets].filter(Boolean)) bumpProfit(sink, hand, player);
   }
 
   return finalize(acc);
@@ -590,9 +622,12 @@ function finalizeVsStat(stat) {
 function finalizePositionStats(stats) {
   const out = {};
   for (const key of Object.keys(stats)) {
+    if (PROFIT_FIELD_KEYS.has(key)) continue;
     out[key] = finalizeRate(stats[key], key);
   }
-  return out;
+  // Per-position profitability (bb100) - see finalizeProfitLoss above,
+  // same currency-safety rule as everywhere else it's used.
+  return { ...out, ...finalizeProfitLoss(stats) };
 }
 
 function finalizeMatrix(matrix) {
@@ -715,6 +750,10 @@ function finalize(acc) {
     // - only the flop-street stats that depend on board texture. See
     // flopTexture.js for the wetness heuristic.
     byFlopTexture: finalizeGroupMap(acc.byFlopTexture),
+    // { wonNoShowdown, wonAtShowdown, lostNoShowdown, lostAtShowdown } -
+    // hand-wide counts (see newShowdownBreakdown() above), raw counts not
+    // percentages since the Study page donut wants relative slice sizes.
+    showdownBreakdown: acc.showdownBreakdown,
     // How many hands actually had a resolvable position (dealer flag +
     // >=2 active players) vs. total hands seen. If hands is 0 while
     // totalHands is high, the underlying hand data is missing isDealer -

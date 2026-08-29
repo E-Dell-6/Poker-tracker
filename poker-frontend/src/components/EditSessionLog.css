@@ -42,8 +42,8 @@
 .modal-input {
   width: 100%;
   padding: 9px 12px;
-  background: #2a2a3e;
-  border: 1px solid #3a3a5e;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   color: #e0e0e0;
   font-size: 0.95rem;
@@ -52,7 +52,7 @@
 }
 
 .modal-input:focus {
-  border-color: #6c63ff;
+  border-color: var(--color-accent);
 }
 
 /* Opponents section */
@@ -83,8 +83,8 @@
 .opponent-name-input {
   width: 100%;
   padding: 8px 10px;
-  background: #2a2a3e;
-  border: 1px solid #3a3a5e;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   color: #e0e0e0;
   font-size: 0.9rem;
@@ -93,7 +93,7 @@
 }
 
 .opponent-name-input:focus {
-  border-color: #6c63ff;
+  border-color: var(--color-accent);
 }
 
 /* Create person section */
@@ -103,8 +103,8 @@
 
 .create-person-btn {
   background: transparent;
-  border: 1px dashed #6c63ff;
-  color: #6c63ff;
+  border: 1px dashed var(--color-accent);
+  color: var(--color-accent);
   border-radius: 8px;
   padding: 8px 14px;
   cursor: pointer;
@@ -137,8 +137,8 @@
 }
 
 .upload-image-btn {
-  background: #2a2a3e;
-  border: 1px solid #3a3a5e;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
   color: #e0e0e0;
   border-radius: 8px;
   padding: 8px 14px;
@@ -149,7 +149,7 @@
 }
 
 .upload-image-btn:hover:not(:disabled) {
-  border-color: #6c63ff;
+  border-color: var(--color-accent);
 }
 
 .image-preview {
@@ -160,8 +160,8 @@
 
 .remove-image-btn {
   background: transparent;
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--color-negative);
+  color: var(--color-negative);
   border-radius: 6px;
   padding: 4px 10px;
   cursor: pointer;
@@ -181,8 +181,8 @@
 }
 
 .new-person-actions button {
-  background: #2a2a3e;
-  border: 1px solid #3a3a5e;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
   color: #e0e0e0;
   border-radius: 8px;
   padding: 8px 16px;
@@ -192,7 +192,7 @@
 }
 
 .new-person-actions button:hover:not(:disabled) {
-  background: #3a3a5e;
+  background: var(--color-border-strong);
 }
 
 /* Modal action buttons (Cancel / Save) */
@@ -204,8 +204,8 @@
 }
 
 .modal-actions button {
-  background: #2a2a3e;
-  border: 1px solid #3a3a5e;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
   color: #e0e0e0;
   border-radius: 8px;
   padding: 9px 18px;
@@ -215,12 +215,12 @@
 }
 
 .modal-actions button:hover {
-  background: #3a3a5e;
+  background: var(--color-border-strong);
 }
 
 .save-btn {
-  background: #6c63ff !important;
-  border-color: #6c63ff !important;
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
   color: #fff !important;
 }
 

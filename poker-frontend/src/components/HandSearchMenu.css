@@ -1,6 +1,6 @@
 .hand-search-menu {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
+  font-family: var(--font-sans);
+  color: var(--color-text);
   display: inline-flex;
 }
 
@@ -9,8 +9,8 @@
    than this being a wide labeled button on its own line above it. */
 .hand-search-toggle {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   width: 38px;
   height: 38px;
   border-radius: 10px;
@@ -24,9 +24,9 @@
 }
 
 .hand-search-toggle:hover {
-  background: var(--gold-dim);
-  border-color: var(--gold-border);
-  color: var(--gold);
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
   transform: scale(1.1);
 }
 
@@ -42,8 +42,8 @@
 }
 
 .hand-search-modal {
-  background: var(--bg2);
-  border: 1px solid var(--gold-border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-accent-border);
   border-radius: 12px;
   padding: 24px;
   width: 100%;
@@ -72,7 +72,7 @@
 .hand-search-close {
   background: transparent;
   border: none;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 1.1rem;
   cursor: pointer;
   line-height: 1;
@@ -80,7 +80,7 @@
 }
 
 .hand-search-close:hover {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .hand-search-row {
@@ -93,7 +93,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .hand-search-pillgroup {
@@ -103,9 +103,9 @@
 }
 
 .hand-search-pillgroup button {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.8rem;
@@ -113,9 +113,9 @@
 }
 
 .hand-search-pillgroup button.active {
-  background: var(--gold-dim);
-  border-color: var(--gold-border);
-  color: var(--gold);
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
 }
 
 .hole-cards-picker {
@@ -135,8 +135,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--bg3);
-  border: 1px solid var(--gold-border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-accent-border);
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 0.8rem;
@@ -145,21 +145,21 @@
 }
 
 .hole-card-chip.red {
-  color: var(--red);
+  color: var(--color-negative);
 }
 
 .hole-card-chip.black {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .hole-card-chip:hover {
-  background: var(--gold-dim);
+  background: var(--color-accent-dim);
 }
 
 .hole-cards-pick-btn {
-  background: var(--bg3);
-  border: 1px dashed var(--gold-border);
-  color: var(--gold);
+  background: var(--color-bg-elevated-hover);
+  border: 1px dashed var(--color-accent-border);
+  color: var(--color-accent);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -171,7 +171,7 @@
 }
 
 .hole-cards-pick-btn:hover:not(:disabled) {
-  background: var(--gold-dim);
+  background: var(--color-accent-dim);
 }
 
 .hole-cards-pick-btn:disabled {
@@ -195,14 +195,14 @@
 
 .hand-search-clear {
   background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .hand-search-run {
-  background: var(--gold);
-  border: 1px solid var(--gold);
-  color: #0d0f12;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  color: var(--color-bg);
   font-weight: 600;
 }
 
@@ -212,18 +212,18 @@
 }
 
 .hand-search-error {
-  color: var(--red);
+  color: var(--color-negative);
   font-size: 0.85rem;
 }
 
 .hand-search-results-header {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 }
 
 .hand-search-empty {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 
@@ -242,20 +242,20 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 8px 12px;
   cursor: pointer;
 }
 
 .hand-search-result-item:hover {
-  border-color: var(--gold-border);
+  border-color: var(--color-accent-border);
 }
 
 .result-date {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   min-width: 80px;
 }
 
@@ -271,11 +271,11 @@
 
 .result-game {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--color-text-muted);
   margin-left: auto;
 }
 
 .result-pot {
   font-weight: 600;
-  color: var(--gold);
+  color: var(--color-accent);
 }

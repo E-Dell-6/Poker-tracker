@@ -75,6 +75,11 @@ const PlayerStatsSchema = new mongoose.Schema({
   // see flopTexture.js/statsEngine.js's newTextureStats().
   byFlopTexture: { type: mongoose.Schema.Types.Mixed, default: {} },
 
+  // { wonNoShowdown, wonAtShowdown, lostNoShowdown, lostAtShowdown } - raw
+  // hand counts, hand-wide (not per-position) - see
+  // statsEngine.js's newShowdownBreakdown().
+  showdownBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
+
   lastComputedAt: { type: Date, default: Date.now }
 });
 

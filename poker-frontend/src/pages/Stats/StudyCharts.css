@@ -1,0 +1,38 @@
+.study-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+@media (max-width: 900px) {
+  .study-charts-grid { grid-template-columns: 1fr; }
+}
+
+.study-chart-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.study-chart-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.study-chart-card-header .section-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  margin: 0;
+}
+
+.study-chart-card-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

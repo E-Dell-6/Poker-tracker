@@ -1,18 +1,10 @@
 import { Layout } from "../../components/Layout";
 import { useState, useEffect, useMemo } from "react";
-import { TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import "./Profile.css";
 import { API_URL } from "../../config";
 import { toMajorUnits } from "../../utils/formatMoney";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
-  ResponsiveContainer,
-} from "recharts";
+import { CumulativeChart } from "../../components/CumulativeChart";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -28,15 +20,6 @@ const SOURCE_FILTERS = [
 ];
 
 /* ─── helpers ──────────────────────────────────────────── */
-function fmt$(n) {
-  if (n == null) return "—";
-  const abs = Math.abs(n);
-  const s = abs >= 1000
-    ? `$${(abs / 1000).toFixed(1)}k`
-    : `$${abs.toFixed(0)}`;
-  return n < 0 ? `-${s}` : s;
-}
-
 function fmtFull$(n) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-US", {
@@ -64,90 +47,6 @@ function fmtDate(d) {
 // stop being counted ~100x too large.
 function onlineSessionProfit(session) {
   return toMajorUnits(session.totalProfit ?? 0, session.currency);
-}
-
-/* ─── Recharts tooltip ─────────────────────────────────── */
-function CustomTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  const { cumulative, profit } = payload[0].payload;
-
-  return (
-    <div className="chart-tooltip" style={{ position: "static" }}>
-      <div className="tt-date">{label}</div>
-      <div className={`tt-val ${cumulative >= 0 ? "pos" : "neg"}`}>
-        {cumulative >= 0 ? "+" : ""}{fmtFull$(cumulative)}
-      </div>
-      <div className="tt-session">
-        {profit >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {fmtFull$(Math.abs(profit))} this session
-      </div>
-    </div>
-  );
-}
-
-/* ─── Recharts-powered cumulative profit chart ─────────── */
-function ProfitChart({ data }) {
-  if (data.length < 2) {
-    return (
-      <div className="chart-empty">
-        Not enough data — play more sessions!
-      </div>
-    );
-  }
-
-  const isUp = data[data.length - 1].cumulative >= 0;
-  const stroke = isUp ? "#22c55e" : "#ef4444";
-  const fillId = isUp ? "fillGreen" : "fillRed";
-
-  return (
-    <div className="chart-svg-wrap">
-      <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={data} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="fillGreen" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#22c55e" stopOpacity={0.22} />
-              <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="fillRed" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity={0.22} />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: "#6b7280" }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            tickFormatter={fmt$}
-            tick={{ fontSize: 10, fill: "#6b7280" }}
-            axisLine={false}
-            tickLine={false}
-            width={56}
-          />
-
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.18)" strokeDasharray="5 4" />
-
-          <Tooltip
-            content={<CustomTooltip />}
-            cursor={{ stroke: "rgba(255,255,255,0.18)", strokeDasharray: "4 3" }}
-          />
-
-          <Area
-            type="monotone"
-            dataKey="cumulative"
-            stroke={stroke}
-            strokeWidth={2.2}
-            fill={`url(#${fillId})`}
-            dot={false}
-            activeDot={{ r: 5, fill: stroke, stroke: "#0d0f12", strokeWidth: 2 }}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }
 
 /* ─── main page ─────────────────────────────────────────── */
@@ -239,7 +138,7 @@ export function Profile() {
   }, [fOnline, fLive, sourceFilter]);
 
   if (loading) return (
-    <Layout>
+    <Layout title="Profile">
       <div className="profile-loading"><div className="profile-spinner" /></div>
     </Layout>
   );
@@ -247,7 +146,7 @@ export function Profile() {
   const isUp = stats.totalProfit >= 0;
 
   return (
-    <Layout>
+    <Layout title="Profile" subtitle={user?.name ? `Account settings for ${user.name}` : undefined}>
       <div className="profile-page">
 
         {/* ── HERO ── */}
@@ -322,7 +221,7 @@ export function Profile() {
               {isUp ? "+" : ""}{fmtFull$(stats.totalProfit)}
             </div>
           </div>
-          <ProfitChart data={chartData} />
+          <CumulativeChart data={chartData} emptyMessage="Not enough data — play more sessions!" />
         </div>
 
         {/* ── LIVE BREAKDOWN ── */}

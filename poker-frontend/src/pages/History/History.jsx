@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, X, Star, FolderOpen, Plus } from "lucide-react";
+import { Camera, X, Star, Plus, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
+import { Tabs } from "../../components/ui/Tabs";
+import { toMajorUnits, formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
 import "./History.css";
 
@@ -379,9 +381,31 @@ export function History() {
     }
   };
 
+  const totalHands = sessions.reduce((sum, s) => sum + (s.totalHands ?? s.hands?.length ?? 0), 0);
+  // Each session's totalProfit is in ITS OWN currency's raw units (cents for
+  // USD/CAD) - normalize before summing across sessions, same as
+  // Profile.jsx's onlineSessionProfit, or a mix of real-money and play-chip
+  // sessions would silently inflate the real-money total ~100x.
+  const netProfit = sessions.reduce((sum, s) => sum + toMajorUnits(s.totalProfit ?? 0, s.currency), 0);
+  const subtitle = sessions.length > 0
+    ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${totalHands.toLocaleString()} hands · ${formatSignedMajorUnits(netProfit, sessions.every(s => s.currency === sessions[0].currency) ? sessions[0].currency : undefined)} net`
+    : undefined;
+
   return (
-    <Layout>
-      <div className="history-container">
+    <Layout
+      title="History"
+      subtitle={subtitle}
+      ctaLabel={uploadStatus === "uploading" ? "Processing..." : "Import hands"}
+      ctaIcon={Upload}
+      onCta={() => fileInputRef.current.click()}
+    >
+      <div
+        className={`history-container${isDraggingFile ? " drag-active" : ""}`}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {renamingState && (
           <EditSession
             renamingState={renamingState}
@@ -391,69 +415,24 @@ export function History() {
           />
         )}
 
-        <div className="history-header">
-          <h1>Hand History Review</h1>
-          <div
-            className={`upload-section${isDraggingFile ? " drag-active" : ""}`}
-            onDragEnter={handleDragEnter}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".csv,.txt"
-              multiple
-              className="visually-hidden-input"
-            />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept=".csv,.txt"
+          multiple
+          className="visually-hidden-input"
+        />
 
-            {error && <div className="error-message">{error}</div>}
+        {error && <div className="error-message">{error}</div>}
 
-            <div className="upload-info-wrap">
-              <button className="upload-info-btn" aria-label="Upload requirements">i</button>
-              <div className="upload-info-tooltip">
-                <div>Supported Logs:</div>
-                <ul>
-                  <li>PokerNow.com (.csv)</li>
-                  <li>ACR (.txt)</li>
-                  <li>No-Limit Hold'em (NLH)</li>
-                </ul>
-                <div>You can select or drag in multiple files at once.</div>
-              </div>
-            </div>
-            <div className="button-container">
-              <button
-                className="upload-button"
-                onClick={() => fileInputRef.current.click()}
-                disabled={uploadStatus === "uploading"}
-              >
-                {uploadStatus === "uploading" ? "Processing..." : <><FolderOpen size={15} /> Upload Logs</>}
-              </button>
-              <button
-                className="create-button"
-                onClick={() => navigate("/hand-creator")}
-              ><Plus size={15} /> Create Hand </button>
-            </div>
-
-            {isDraggingFile && (
-              <div className="drop-overlay">Drop .csv / .txt files to upload</div>
-            )}
-          </div>
-        </div>
+        {isDraggingFile && (
+          <div className="drop-overlay">Drop .csv / .txt files to upload</div>
+        )}
 
         <div className="filter-bar">
-          <div className="game-filter">
-            {gameFilters.map((game) => (
-              <button
-                key={game}
-                className={selectedGame === game ? "active" : ""}
-                onClick={() => setSelectedGame(game)}
-              >
-                {game}
-              </button>
-            ))}
+          <Tabs options={gameFilters} active={selectedGame} onChange={setSelectedGame} />
+          <div className="filter-bar-actions">
             <button
               className={`starred-sessions-filter ${showStarredSessions ? "active" : ""}`}
               onClick={() => setShowStarredSessions((prev) => !prev)}
@@ -461,8 +440,10 @@ export function History() {
             >
               <Star size={13} fill={showStarredSessions ? "currentColor" : "none"} /> Starred
             </button>
-          </div>
-          <div className="filter-bar-actions">
+            <button
+              className="create-button"
+              onClick={() => navigate("/hand-creator")}
+            ><Plus size={15} /> Create Hand </button>
             <HandSearchMenu
               onHandClick={(hand, session) =>
                 navigate("/hand-replay", { state: { hand, session } })

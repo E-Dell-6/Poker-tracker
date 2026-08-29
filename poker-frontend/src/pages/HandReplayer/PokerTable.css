@@ -17,16 +17,16 @@
     inset 0 0 20px rgba(0, 0, 0, 0.4),
     0 20px 60px rgba(0, 0, 0, 0.6),
     0 8px 24px rgba(0, 0, 0, 0.4),
-    0 0 0 2px rgba(212, 175, 55, 0.2),
+    0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent),
     0 0 0 10px rgba(0, 0, 0, 0.3);
 
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
-  color: #e8eaf0;
+  color: var(--color-text);
   pointer-events: none;
   overflow: visible;
 }
@@ -40,7 +40,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 6%, transparent) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -53,10 +53,10 @@
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    rgba(212, 175, 55, 0.25) 0%,
+    color-mix(in srgb, var(--color-accent) 25%, transparent) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(212, 175, 55, 0.12) 100%
+    color-mix(in srgb, var(--color-accent) 12%, transparent) 100%
   );
   pointer-events: none;
   z-index: -1;
@@ -127,15 +127,15 @@
   left: -76px;
   top: 50%;
   transform: translateY(-50%);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 700;
-  color: rgba(212, 175, 55, 0.7);
+  color: color-mix(in srgb, var(--color-accent) 70%, transparent);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   padding: 5px 10px;
   background: rgba(10, 14, 18, 0.7);
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-radius: 6px;
   white-space: nowrap;
 }
@@ -170,7 +170,7 @@
   transform: translateY(-10px) scale(1.04) !important;
   box-shadow:
     0 14px 36px rgba(0, 0, 0, 0.55),
-    0 0 16px rgba(212, 175, 55, 0.2) !important;
+    0 0 16px color-mix(in srgb, var(--color-accent) 20%, transparent) !important;
 }
 
 /* ── POT ────────────────────────────────────────────────── */
@@ -226,12 +226,12 @@
 .pot-image.large-stack  { width: 130px; height: 130px; }
 
 .pot-text {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 1.1rem;
   font-weight: 700;
-  color: #d4af37;
+  color: var(--color-accent);
   background: rgba(10, 14, 18, 0.82);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
   padding: 8px 20px;
   border-radius: 100px;
   white-space: nowrap;

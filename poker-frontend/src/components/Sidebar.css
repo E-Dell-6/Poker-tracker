@@ -1,17 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
 
 /* ── SIDEBAR ────────────────────────────────────────────── */
 .sidebar {
   position: relative;
   width: 220px;
   height: 100vh;
-  background: #0d0f12;
+  background: var(--color-bg);
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   transition: width 0.3s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .sidebar.collapsed {
@@ -31,16 +30,16 @@
 
 .sidebar-brand-icon {
   font-size: 22px;
-  color: #d4af37;
+  color: var(--color-accent);
   flex-shrink: 0;
   line-height: 1;
 }
 
 .sidebar-brand-name {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
   letter-spacing: 0.2px;
   opacity: 1;
   transition: opacity 0.2s ease;
@@ -71,7 +70,7 @@
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   text-decoration: none;
   border-radius: 8px;
   transition: background 0.15s ease, color 0.15s ease;
@@ -81,13 +80,13 @@
 
 .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  color: var(--color-text);
 }
 
 .sidebar-link.active {
-  background: rgba(212, 175, 55, 0.12);
-  color: #d4af37;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 .sidebar-icon {
@@ -116,6 +115,73 @@
   overflow: hidden;
 }
 
+/* ── LIVE SESSION WIDGET ────────────────────────────────── */
+.sidebar-live {
+  padding: 0 10px 12px;
+}
+
+.sidebar-live-heading {
+  padding: 0 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
+}
+
+.sidebar-live-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-positive-dim);
+  border: 1px solid color-mix(in srgb, var(--color-positive) 25%, transparent);
+  position: relative;
+}
+
+.sidebar.collapsed .sidebar-live-card {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sidebar-live-icon {
+  color: var(--color-positive);
+  flex-shrink: 0;
+}
+
+.sidebar-live-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-live-stakes {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.sidebar-live-timer {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.sidebar-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-positive);
+  flex-shrink: 0;
+  animation: sidebar-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sidebar-live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 /* ── COLLAPSE BUTTON ────────────────────────────────────── */
 .collapse-btn {
   width: 100%;
@@ -123,7 +189,7 @@
   background: none;
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 18px;
   cursor: pointer;
   transition: color 0.2s ease, background 0.2s ease;
@@ -133,6 +199,6 @@
 }
 
 .collapse-btn:hover {
-  color: #fff;
+  color: var(--color-text);
   background: rgba(255, 255, 255, 0.04);
 }

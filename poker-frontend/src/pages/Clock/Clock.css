@@ -1,26 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-/* ── TOKENS ─────────────────────────────────────────────── */
-:root {
-  --gold: #d4af37;
-  --gold-dim: rgba(212, 175, 55, 0.15);
-  --gold-border: rgba(212, 175, 55, 0.3);
-  --green: #22c55e;
-  --green-dim: rgba(34, 197, 94, 0.12);
-  --red: #ef4444;
-  --red-dim: rgba(239, 68, 68, 0.12);
-  --bg: #0d0f12;
-  --bg2: #13161b;
-  --bg3: #1a1f28;
-  --border: rgba(255, 255, 255, 0.07);
-  --text: #e8eaf0;
-  --muted: #6b7280;
-}
-
 /* ── PAGE ───────────────────────────────────────────────── */
 .clock-page {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
+  font-family: var(--font-sans);
+  color: var(--color-text);
   min-height: 100vh;
   padding: 48px 40px;
   box-sizing: border-box;
@@ -41,7 +22,7 @@
 }
 
 .clock-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 2.4rem;
   font-weight: 900;
   color: #fff;
@@ -49,7 +30,7 @@
 }
 
 .clock-subtitle {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 15px;
   font-weight: 400;
   margin: 0;
@@ -57,8 +38,8 @@
 
 /* ── MAIN CLOCK CARD ────────────────────────────────────── */
 .clock-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 24px;
   padding: 36px;
   display: flex;
@@ -79,7 +60,7 @@
   transform: translateX(-50%);
   width: 300px;
   height: 200px;
-  background: radial-gradient(ellipse, rgba(212,175,55,0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--color-accent) 7%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -94,13 +75,13 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--color-text-muted);
   transition: background 0.3s;
   flex-shrink: 0;
 }
 
 .status-dot.active {
-  background: var(--green);
+  background: var(--color-positive);
   box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
   animation: pulse-dot 2s ease-in-out infinite;
 }
@@ -113,7 +94,7 @@
 .status-text {
   font-size: 14px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -126,8 +107,8 @@
   text-align: center;
   width: 100%;
   max-width: 400px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 20px 28px;
 }
@@ -137,21 +118,21 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   align-self: end;
 }
 
 .time-value {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--color-accent);
   align-self: start;
 }
 
 .time-label.current,
 .time-value.current {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 /* ── CLOCK ACTION BUTTONS ───────────────────────────────── */
@@ -169,7 +150,7 @@
   padding: 13px 28px;
   border: none;
   border-radius: 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -189,30 +170,30 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #d4af37, #f4c430);
-  color: #0d0f12;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: var(--color-bg);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(212, 175, 55, 0.45);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .btn-secondary {
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px solid var(--gold-border);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
 }
 
 .btn-secondary:hover {
   transform: translateY(-2px);
-  background: rgba(212, 175, 55, 0.22);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
 .btn-danger {
   background: rgba(239, 68, 68, 0.15);
-  color: var(--red);
+  color: var(--color-negative);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
@@ -223,8 +204,8 @@
 
 .btn-ghost {
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 
 .btn-ghost:hover {
@@ -246,8 +227,8 @@
 }
 
 .clock-modal-content {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   width: 420px;
   max-width: 92vw;
@@ -264,7 +245,7 @@
 }
 
 .modal-header h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.35rem;
   font-weight: 700;
   color: #fff;
@@ -273,8 +254,8 @@
 
 .modal-close {
   background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -289,7 +270,7 @@
 
 .modal-close:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .modal-body {
@@ -300,17 +281,17 @@
 }
 
 .modal-info {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 14px;
   margin: 0;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 12px 16px;
 }
 
 .modal-info strong {
-  color: var(--gold);
+  color: var(--color-accent);
   font-weight: 700;
 }
 
@@ -333,17 +314,17 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .form-group input {
   width: 100%;
   padding: 11px 14px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: 15px;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -351,8 +332,8 @@
 }
 
 .form-group input:focus {
-  border-color: var(--gold-border);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.08);
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
 .form-group input::placeholder {
@@ -372,21 +353,21 @@
   gap: 8px;
   padding: 14px;
   border-radius: 12px;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
 }
 
 .profit-positive {
-  color: var(--green);
-  background: var(--green-dim);
+  color: var(--color-positive);
+  background: var(--color-positive-dim);
   border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .profit-negative {
-  color: var(--red);
-  background: var(--red-dim);
+  color: var(--color-negative);
+  background: var(--color-negative-dim);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
@@ -396,7 +377,7 @@
 }
 
 .history-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.4rem;
   font-weight: 700;
   color: #fff;
@@ -410,8 +391,8 @@
 }
 
 .session-item {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 20px 24px;
   display: flex;
@@ -422,7 +403,7 @@
 }
 
 .session-item:hover {
-  border-color: var(--gold-border);
+  border-color: var(--color-accent-border);
   transform: translateY(-2px);
 }
 
@@ -442,13 +423,13 @@
 .session-time-header > span {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .session-context-menu {
   position: fixed;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -462,8 +443,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -471,7 +452,7 @@
 }
 
 .context-menu-item.delete {
-  color: var(--red);
+  color: var(--color-negative);
 }
 
 .context-menu-item.delete:hover {
@@ -480,7 +461,7 @@
 
 .session-duration {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 /* ── SESSION DETAILS ────────────────────────────────────── */
@@ -506,25 +487,25 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .blinds-value,
 .buyin-value {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--color-accent);
 }
 
 .profit-value {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 700;
 }
 
-.profit-value.profit-positive { color: var(--green); }
-.profit-value.profit-negative { color: var(--red); }
+.profit-value.profit-positive { color: var(--color-positive); }
+.profit-value.profit-negative { color: var(--color-negative); }
 
 /* ── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes fadeUp {

@@ -1,15 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-:root {
-  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
-  --green: #22c55e; --red: #ef4444;
-  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
-  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
-}
-
 .player-starred-section {
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -17,7 +8,7 @@
 }
 
 .player-starred-section h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.6rem;
   font-weight: 700;
   color: #fff;
@@ -27,23 +18,23 @@
   gap: 8px;
 }
 
-.player-starred-section h2 svg { color: var(--gold); }
+.player-starred-section h2 svg { color: var(--color-accent); }
 
 .starred-placeholder {
   text-align: center;
-  color: var(--muted);
+  color: var(--color-text-muted);
   padding: 32px 20px;
   font-size: 14px;
   font-style: italic;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
 }
 
 .starred-group { display: flex; flex-direction: column; gap: 10px; }
 
 .starred-group-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
@@ -66,14 +57,14 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   transition: border-color 0.2s, transform 0.15s;
 }
 
 .starred-session-card:hover {
-  border-color: var(--gold-border);
+  border-color: var(--color-accent-border);
   transform: translateY(-1px);
 }
 
@@ -85,7 +76,7 @@
 }
 
 .starred-session-date {
-  color: var(--text);
+  color: var(--color-text);
   font-weight: 600;
   font-size: 0.88rem;
   white-space: nowrap;
@@ -105,15 +96,15 @@
 }
 
 .starred-session-profit {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 0.95rem;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.starred-session-profit.win { color: var(--green); }
-.starred-session-profit.loss { color: var(--red); }
+.starred-session-profit.win { color: var(--color-positive); }
+.starred-session-profit.loss { color: var(--color-negative); }
 
 /* ── STARRED HAND CARD ──────────────────────────────────── */
 .starred-hand-card {
@@ -122,14 +113,14 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   transition: border-color 0.2s, transform 0.15s;
 }
 
 .starred-hand-card:hover {
-  border-color: var(--gold-border);
+  border-color: var(--color-accent-border);
   transform: translateY(-1px);
 }
 
@@ -141,12 +132,12 @@
 }
 
 .starred-hand-index {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 0.82rem;
 }
 
 .starred-hand-date {
-  color: var(--text);
+  color: var(--color-text);
   font-weight: 600;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -173,15 +164,15 @@
 }
 
 .starred-hand-pot {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--color-accent);
   white-space: nowrap;
 }
 
 .starred-hand-winner {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;

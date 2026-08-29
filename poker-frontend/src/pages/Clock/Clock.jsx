@@ -262,15 +262,9 @@ export function Clock() {
   };
 
   return (
-    <Layout>
+    <Layout title="Session Tracker" subtitle="Track your poker sessions with precision">
       <div className="clock-page">
         <div className="clock-container">
-          {/* Header */}
-          <div className="clock-header">
-            <h1 className="clock-title">Session Tracker</h1>
-            <p className="clock-subtitle">Track your poker sessions with precision</p>
-          </div>
-
           {/* Main Clock Card */}
           <div className="clock-card">
             <div className="status-indicator">

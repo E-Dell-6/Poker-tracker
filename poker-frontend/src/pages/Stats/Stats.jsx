@@ -6,6 +6,8 @@ import { confidenceModifier } from '../../utils/confidence';
 import { PositionalStats } from '../../components/PositionalStats';
 import { GroupedStats } from '../../components/GroupedStats';
 import { EVGraph } from '../../components/EVGraph';
+import { StatTile } from '../../components/ui/StatTile';
+import { StudyCharts } from './StudyCharts';
 import './Stats.css';
 
 const STAT_GROUPS = [
@@ -116,7 +118,7 @@ export function Stats() {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout title="Study">
         <div className="study-page">
           <div className="study-status-container">
             <div className="study-spinner"></div>
@@ -129,7 +131,7 @@ export function Stats() {
 
   if (error) {
     return (
-      <Layout>
+      <Layout title="Study">
         <div className="study-page">
           <div className="study-status-container study-status-container--error">
             <h2>Couldn't load your stats</h2>
@@ -142,23 +144,19 @@ export function Stats() {
   }
 
   const netPositive = stats && stats.totalProfitLoss >= 0;
+  const subtitle = stats?.totalHands
+    ? `${stats.totalHands.toLocaleString()} hands analysed${stats.lastComputedAt ? ` · updated ${new Date(stats.lastComputedAt).toLocaleDateString()}` : ''}`
+    : undefined;
 
   return (
-    <Layout>
+    <Layout
+      title="Study"
+      subtitle={subtitle}
+      ctaLabel={refreshing ? 'Recomputing…' : 'Recompute Stats'}
+      ctaIcon={RotateCcw}
+      onCta={refreshStats}
+    >
       <div className="study-page">
-        <div className="study-header">
-          <div className="study-title-row">
-            <div>
-              <div className="study-eyebrow">Player Report</div>
-              <h1 className="study-title">My Statistics</h1>
-            </div>
-            <button className="refresh-btn" onClick={refreshStats} disabled={refreshing}>
-              {refreshing ? 'Recomputing…' : <><RotateCcw size={14} /> Recompute Stats</>}
-            </button>
-          </div>
-          <div className="study-divider" />
-        </div>
-
         {!stats || stats.totalHands === 0 ? (
           <div className="study-status-container">
             <h2>No data yet</h2>
@@ -166,21 +164,28 @@ export function Stats() {
           </div>
         ) : (
           <div className="stats-container">
+            <div className="study-tiles-grid">
+              <StatTile label="Hands" value={stats.totalHands.toLocaleString()} />
+              <StatTile
+                label="Win Rate"
+                value={stats.bb100 != null ? `${stats.bb100} bb/100` : '—'}
+                valueClassName={stats.bb100 != null ? (stats.bb100 >= 0 ? 'pos' : 'neg') : ''}
+              />
+              <StatTile label="VPIP / PFR" value={`${stats.vpip.pct}% / ${stats.pfr.pct}%`} />
+              <StatTile label="3-Bet" value={`${stats.threeBet.pct}%`} />
+              <StatTile label="Flop C-Bet" value={`${stats.cbFlop.pct}%`} />
+              <StatTile label="WTSD / W$SD" value={`${stats.wtsd.pct}% / ${stats.wsd.pct}%`} />
+            </div>
+
+            <StudyCharts positional={stats.positional} showdownBreakdown={stats.showdownBreakdown} />
+
             <div className="stats-grid stats-grid--hero">
-              <div className="stat-box stat-box--hero">
-                <div className="stat-label">Total Hands</div>
-                <div className="stat-value">{stats.totalHands}</div>
-              </div>
               <div className="stat-box stat-box--hero">
                 <div className="stat-label">Net Won</div>
                 <div className={`stat-value ${netPositive ? 'stat-value--positive' : 'stat-value--negative'}`}>
                   {netPositive ? '+' : ''}{stats.totalProfitLoss}
                 </div>
                 <div className="stat-sample">{stats.handsWithProfitData} hands w/ data</div>
-              </div>
-              <div className="stat-box stat-box--hero">
-                <div className="stat-label">BB/100</div>
-                <div className="stat-value">{stats.bb100 ?? '—'}</div>
               </div>
               <div className="stat-box stat-box--hero">
                 <div className="stat-label">Aggression %</div>

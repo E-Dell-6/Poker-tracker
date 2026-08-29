@@ -25,6 +25,7 @@ function App() {
       <Route path="hand-replay" element={<HandReplayRoute />}/>
       <Route path="/players" element={<Players />} />
       <Route path="/stats" element={<Stats />} />
+      <Route path="/study" element={<Stats />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/login" element={<Login />} />
       <Route path='/hand-creator' element={<HandCreator />}/>

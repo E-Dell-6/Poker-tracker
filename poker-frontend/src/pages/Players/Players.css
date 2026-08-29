@@ -1,32 +1,66 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-:root {
-  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
-  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
-  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
-}
-
 .players-container {
   display: flex;
+  flex-direction: column;
   gap: 24px;
-  height: 100%;
-  padding: 32px 40px;
+  width: 100%;
   box-sizing: border-box;
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
+  font-family: var(--font-sans);
+  color: var(--color-text);
 }
 
-.player-list {
+.player-list-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 240px;
-  flex-shrink: 0;
-  overflow-y: auto;
+  gap: 14px;
+  width: 100%;
 }
 
-.player-list::-webkit-scrollbar { width: 5px; }
-.player-list::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); border-radius: 3px; }
+/* ── TABLE ROW EXTRAS (Table primitive handles the base look) ──── */
+.ui-table-row--active .ui-table-cell {
+  background: var(--color-accent-dim);
+}
+
+.player-row-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.player-avatar--sm {
+  width: 28px;
+  height: 28px;
+}
+
+.player-avatar-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.player-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ui-table-value-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-table-value-pos { color: var(--color-positive); }
+.ui-table-value-neg { color: var(--color-negative); }
+.ui-table-value-muted { color: var(--color-text-faint); }
 
 /* ── SEARCH & STAR FILTER ───────────────────────────────── */
 .player-list-controls {
@@ -39,22 +73,22 @@
   flex: 1;
   min-width: 0;
   padding: 10px 14px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: 14px;
   box-sizing: border-box;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.player-search::placeholder { color: var(--muted); }
+.player-search::placeholder { color: var(--color-text-muted); }
 
 .player-search:focus {
-  border-color: var(--gold-border);
-  box-shadow: 0 0 0 3px rgba(212,175,55,0.08);
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
 .star-filter-btn {
@@ -64,20 +98,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.star-filter-btn:hover { color: var(--text); border-color: var(--gold-border); }
+.star-filter-btn:hover { color: var(--color-text); border-color: var(--color-accent-border); }
 
 .star-filter-btn.active {
-  background: var(--gold-dim);
-  color: var(--gold);
-  border-color: var(--gold-border);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
 }
 
 .no-info--inline {
@@ -97,18 +131,18 @@
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: color 0.2s, background 0.2s, transform 0.15s;
 }
 
 .star-toggle-btn:hover {
-  color: var(--gold);
+  color: var(--color-accent);
   background: rgba(255,255,255,0.08);
   transform: scale(1.1);
 }
 
-.star-toggle-btn.starred { color: var(--gold); }
+.star-toggle-btn.starred { color: var(--color-accent); }
 
 .player-info-container {
   flex: 1;
@@ -121,7 +155,7 @@
 .no-info {
   width: 100%;
   text-align: center;
-  color: var(--muted);
+  color: var(--color-text-muted);
   margin-top: 80px;
   font-size: 15px;
   font-style: italic;
@@ -134,26 +168,26 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
 .player-card:hover {
   background: rgba(255,255,255,0.07);
-  border-color: var(--gold-border);
+  border-color: var(--color-accent-border);
   transform: translateX(3px);
 }
 
 .player-card.active {
-  background: var(--gold-dim);
-  border-color: var(--gold-border);
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
 }
 
 .player-card h3 {
   margin: 0;
-  color: var(--text);
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
@@ -161,7 +195,7 @@
   text-overflow: ellipsis;
 }
 
-.player-card.active h3 { color: var(--gold); }
+.player-card.active h3 { color: var(--color-accent); }
 
 /* ── AVATAR ─────────────────────────────────────────────── */
 .player-avatar {
@@ -170,7 +204,7 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid var(--gold-border);
+  border: 2px solid var(--color-accent-border);
 }
 
 @media (max-width: 768px) {

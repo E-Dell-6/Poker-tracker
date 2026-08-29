@@ -1,29 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-/* ── TOKENS ─────────────────────────────────────────────── */
-:root {
-  --gold: #d4af37;
-  --gold-dim: rgba(212, 175, 55, 0.15);
-  --gold-border: rgba(212, 175, 55, 0.3);
-  --green: #22c55e;
-  --red: #ef4444;
-  --bg: #0d0f12;
-  --bg2: #13161b;
-  --bg3: #1a1f28;
-  --border: rgba(255, 255, 255, 0.07);
-  --text: #e8eaf0;
-  --muted: #6b7280;
-}
-
 /* ── PAGE CONTAINER ─────────────────────────────────────── */
 .history-container {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-  padding: 40px;
-  max-width: 1100px;
-  margin: 0 auto;
+  position: relative; /* lets .error-message/.drop-overlay anchor here */
+  font-family: var(--font-sans);
+  color: var(--color-text);
   width: 100%;
   box-sizing: border-box;
+}
+
+.history-container.drag-active {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
@@ -37,7 +24,7 @@
 }
 
 .history-header h1 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 2rem;
   font-weight: 700;
   color: #fff;
@@ -67,23 +54,23 @@
 }
 
 .upload-section.drag-active {
-  outline: 2px dashed var(--gold);
+  outline: 2px dashed var(--color-accent);
   outline-offset: 4px;
   border-radius: 8px;
 }
 
 .upload-button {
-  background: linear-gradient(135deg, #d4af37, #f4c430);
-  color: #0d0f12;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: var(--color-bg);
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-accent) 25%, transparent);
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
@@ -92,12 +79,12 @@
 }
 
 .create-button {
-  background: linear-gradient(135deg, #d4af37, #f4c430);
-  color: #0d0f12;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: var(--color-bg);
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -106,18 +93,18 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--color-accent) 25%, transparent);
   white-space: nowrap;
 }
 
 .create-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 .upload-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 .upload-button:disabled {
@@ -134,7 +121,7 @@
     width never affects their layout. */
   margin-right: 12px;
   width: 260px;
-  color: var(--red);
+  color: var(--color-negative);
   font-size: 13px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.25);
@@ -150,12 +137,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(212, 175, 55, 0.08);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   border-radius: 8px;
   pointer-events: none;
   font-weight: 600;
   font-size: 13px;
-  color: var(--gold);
+  color: var(--color-accent);
   text-align: center;
   padding: 8px;
 }
@@ -179,7 +166,7 @@
   border-radius: 50%;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
   font-style: italic;
@@ -196,8 +183,8 @@
 }
 
 .upload-info-btn:hover {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .upload-info-tooltip {
@@ -205,14 +192,14 @@
   top: calc(100% + 10px);
   left: 0;
   transform: translateY(-4px);
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 12px 16px;
   width: 220px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
   font-size: 13px;
-  color: var(--text);
+  color: var(--color-text);
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
@@ -228,9 +215,9 @@
   left: 8px;
   width: 10px;
   height: 10px;
-  background: var(--bg3);
-  border-left: 1px solid var(--border);
-  border-top: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border-left: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
   rotate: 45deg;
 }
 
@@ -261,7 +248,7 @@
 
 .upload-info-tooltip ul li {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .upload-info-tooltip ul + div {
@@ -299,11 +286,11 @@
 
 .game-filter button {
   background: rgba(255, 255, 255, 0.05);
-  color: var(--muted);
-  border: 1px solid var(--border);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
   padding: 7px 18px;
   border-radius: 100px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -312,13 +299,13 @@
 
 .game-filter button:hover {
   background: rgba(255, 255, 255, 0.09);
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .game-filter button.active {
-  background: var(--gold-dim);
-  color: var(--gold);
-  border-color: var(--gold-border);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
 }
 
 /* ── STARRED SESSIONS FILTER ────────────────────────────── */
@@ -331,21 +318,21 @@
   gap: 5px;
   margin-left: 8px;
   padding-left: 18px;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--color-border);
 }
 
 .starred-sessions-filter.active {
-  background: var(--gold-dim);
-  color: var(--gold);
-  border-color: var(--gold-border);
-  border-left: 1px solid var(--gold-border);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+  border-left: 1px solid var(--color-accent-border);
 }
 
 /* ── FAVOURITES TOGGLE ──────────────────────────────────── */
 .favourites-toggle {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   font-size: 18px;
   width: 38px;
   height: 38px;
@@ -359,20 +346,20 @@
 }
 
 .favourites-toggle:hover {
-  background: var(--gold-dim);
-  border-color: var(--gold-border);
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
   transform: scale(1.1);
 }
 
 .favourites-toggle.active {
-  background: var(--gold-dim);
-  border-color: var(--gold-border);
+  background: var(--color-accent-dim);
+  border-color: var(--color-accent-border);
 }
 
 /* ── DIVIDER ────────────────────────────────────────────── */
 hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   margin: 0 0 24px;
 }
 
@@ -382,7 +369,7 @@ hr {
   flex-direction: column;
   align-items: center;
   padding: 80px 20px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 15px;
   text-align: center;
 }
@@ -390,7 +377,7 @@ hr {
 .no-sessions::before {
   content: '♠';
   font-size: 48px;
-  color: var(--gold);
+  color: var(--color-accent);
   opacity: 0.25;
   margin-bottom: 16px;
   display: block;
@@ -409,19 +396,19 @@ hr {
 }
 
 .player-search-modal {
-  background: var(--bg3);
+  background: var(--color-bg-elevated-hover);
   padding: 28px;
   border-radius: 20px;
   width: 420px;
   max-width: 92%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
 .player-search-modal h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
@@ -433,21 +420,21 @@ hr {
   max-height: 240px;
   overflow-y: auto;
   margin: 14px 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--bg2);
+  background: var(--color-bg-elevated);
 }
 
 .player-scroll-list::-webkit-scrollbar { width: 6px; }
-.player-scroll-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 3px; }
-.player-scroll-list::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.25); border-radius: 3px; }
+.player-scroll-list::-webkit-scrollbar-track { background: var(--color-bg); border-radius: 3px; }
+.player-scroll-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--color-accent) 25%, transparent); border-radius: 3px; }
 
 .player-row {
   display: flex;
   align-items: center;
   padding: 10px 14px;
   cursor: pointer;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
   transition: background 0.15s;
   font-size: 14px;
   font-weight: 500;
@@ -458,8 +445,8 @@ hr {
 }
 
 .player-row:hover {
-  background: var(--gold-dim);
-  color: var(--gold);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
 }
 
 .player-avatar-small {
@@ -468,14 +455,14 @@ hr {
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
 }
 
 .avatar-placeholder {
   width: 32px;
   height: 32px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   margin-right: 12px;
   flex-shrink: 0;
@@ -485,12 +472,12 @@ hr {
 .create-toggle-btn {
   width: 100%;
   padding: 11px;
-  background: var(--gold-dim);
-  color: var(--gold);
-  border: 1px dashed var(--gold-border);
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border: 1px dashed var(--color-accent-border);
   border-radius: 8px;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 14px;
   margin-top: 10px;
@@ -498,8 +485,8 @@ hr {
 }
 
 .create-toggle-btn:hover {
-  background: rgba(212, 175, 55, 0.22);
-  border-color: var(--gold);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-color: var(--color-accent);
 }
 
 .create-form {
@@ -515,23 +502,23 @@ hr {
 }
 
 .save-btn {
-  background: linear-gradient(135deg, #d4af37, #f4c430);
-  color: #0d0f12;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: var(--color-bg);
   border: none;
   padding: 10px 16px;
   flex: 1;
   border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.25);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 .save-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 5px 20px color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 .save-btn:disabled {
@@ -542,12 +529,12 @@ hr {
 
 .back-btn {
   background: rgba(255, 255, 255, 0.07);
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   padding: 10px 16px;
   flex: 1;
   border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;

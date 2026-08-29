@@ -93,7 +93,7 @@
 }
 
 .cs-card-selected {
-  box-shadow: 0 0 0 2px #d4af37 inset;
+  box-shadow: 0 0 0 2px var(--color-accent) inset;
   background: #fff8e1;
 }
 

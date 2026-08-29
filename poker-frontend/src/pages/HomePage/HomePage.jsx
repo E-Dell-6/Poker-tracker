@@ -1,10 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Eye, ArrowRight } from 'lucide-react';
+import { List, Eye, ArrowRight, Star } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { API_URL } from '../../config';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { StatTile } from '../../components/ui/StatTile';
+import { CumulativeChart } from '../../components/CumulativeChart';
+import { Tabs } from '../../components/ui/Tabs';
+import { Table, TableHead, TableBody, TableRow, TableCell } from '../../components/ui/Table';
+import { toMajorUnits, formatSignedMajorUnits } from '../../utils/formatMoney';
 import './HomePage.css';
+
+const CHART_RANGES = [
+  { key: 7, label: '7D' },
+  { key: 30, label: '30D' },
+  { key: 90, label: '90D' },
+  { key: null, label: 'All' },
+];
+
+// Card glyphs for the starred-hands panel - same 2-char-code convention
+// (rank + suit letter) used throughout the app (see CardSelector.jsx).
+const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const isRedCard = (card) => 'hd'.includes(card.slice(-1));
+const cardLabel = (card) => `${card.slice(0, -1)}${SUIT_SYMBOLS[card.slice(-1)] || card.slice(-1)}`;
 
 const STAT_CARDS = [
   { label: 'Total Hands', key: 'totalHands', icon: '♠', suffix: '' },
@@ -92,8 +110,9 @@ export function HomePage() {
   const [sessions, setSessions] = useState([]);
   const [combinedSessions, setCombinedSessions] = useState([]);
   const [stats, setStats] = useState(null);
-  const [pulse, setPulse] = useState([]);
-  const [showPulse, setShowPulse] = useState(false);
+  const [heroStats, setHeroStats] = useState(null);
+  const [favourites, setFavourites] = useState([]);
+  const [chartRange, setChartRange] = useState(30);
 
   useEffect(() => {
     fetch(`${API_URL}/api/user/data`, { credentials: 'include' })
@@ -112,7 +131,15 @@ export function HomePage() {
       fetch(`${API_URL}/api/live-sessions`, { credentials: 'include' })
         .then(r => r.json())
         .catch(() => []),
-    ]).then(([onlineData, liveData]) => {
+      fetch(`${API_URL}/api/stats/me`, { credentials: 'include' })
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch(`${API_URL}/api/favourites`, { credentials: 'include' })
+        .then(r => (r.ok ? r.json() : []))
+        .catch(() => []),
+    ]).then(([onlineData, liveData, heroStatsData, favouritesData]) => {
+      setHeroStats(heroStatsData);
+      setFavourites(Array.isArray(favouritesData) ? favouritesData.slice(0, 4) : []);
       const onlineSessions = Array.isArray(onlineData) ? onlineData : [];
       const liveSessions = Array.isArray(liveData) ? liveData : [];
 
@@ -124,12 +151,6 @@ export function HomePage() {
       ];
 
       setCombinedSessions(combined);
-
-      const recent = [...combined]
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
-        .slice(-10);
-
-      setPulse(recent.map(s => s.totalProfit ?? 0));
 
       // Session list responses no longer include the full `hands` array
       // (see GET /api/sessions) - use the precomputed per-session count.
@@ -154,7 +175,6 @@ export function HomePage() {
       ...GUEST_LIVE_SESSIONS.map(s => ({ ...s, isLive: true })),
     ]);
     setStats(GUEST_STATS);
-    setPulse(GUEST_PULSE);
   };
 
   const recentSessions = [...combinedSessions]
@@ -169,6 +189,45 @@ export function HomePage() {
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
   };
+
+  // Each session's profit is normalized to major units by ITS OWN currency
+  // before being combined - same reasoning as Profile.jsx's
+  // onlineSessionProfit (a real-money/play-chip mix would otherwise inflate
+  // the real-money total ~100x). Live sessions have no `currency` field and
+  // are already entered in major units, so toMajorUnits passes them through
+  // unchanged (CHIPS-style fallback = identity).
+  const normalizedProfit = (s) => toMajorUnits(s.totalProfit ?? 0, s.currency);
+
+  const thirtyDaysAgo = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d;
+  }, []);
+
+  const netProfit30d = combinedSessions
+    .filter(s => new Date(s.date) >= thirtyDaysAgo)
+    .reduce((sum, s) => sum + normalizedProfit(s), 0);
+
+  const hoursPlayedMs = combinedSessions
+    .filter(s => s.isLive && s.clockInTime && s.clockOutTime)
+    .reduce((sum, s) => sum + (new Date(s.clockOutTime) - new Date(s.clockInTime)), 0);
+
+  const chartData = useMemo(() => {
+    const cutoff = chartRange ? (() => { const d = new Date(); d.setDate(d.getDate() - chartRange); return d; })() : null;
+    const pts = [...combinedSessions]
+      .filter(s => !cutoff || new Date(s.date) >= cutoff)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    let cum = 0;
+    return pts.map(s => {
+      const profit = normalizedProfit(s);
+      cum += profit;
+      return {
+        label: new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        profit,
+        cumulative: cum,
+      };
+    });
+  }, [combinedSessions, chartRange]);
 
   if (isLoggedIn === false && !isGuest) {
     const previewTrendPositive = computeTrendSlope(GUEST_PULSE) >= 0;
@@ -324,8 +383,15 @@ export function HomePage() {
     );
   }
 
+  const hoursPlayed = hoursPlayedMs / 3600000;
+
   return (
-    <Layout>
+    <Layout
+      title="Dashboard"
+      subtitle="Last 30 days · All games · All stakes"
+      ctaLabel="Import hands"
+      onCta={() => navigate('/history')}
+    >
       <div className="hp-dashboard">
         {isGuest && (
           <div className="hp-guest-banner">
@@ -340,136 +406,127 @@ export function HomePage() {
           </div>
         )}
 
-        <section className="hp-section">
-          <h2 className="hp-section-title">Performance Snapshot</h2>
+        <div className="hp-tiles-grid">
+          <StatTile
+            label="Net Profit (30D)"
+            value={formatSignedMajorUnits(netProfit30d, sessions[0]?.currency)}
+            valueClassName={netProfit30d >= 0 ? 'pos' : 'neg'}
+          />
+          <StatTile label="Hands Tracked" value={(stats?.totalHands ?? 0).toLocaleString()} />
+          <StatTile label="Hours Played" value={hoursPlayed > 0 ? hoursPlayed.toFixed(1) : '0'} />
+          <StatTile
+            label="Win Rate"
+            value={heroStats?.bb100 != null ? `${heroStats.bb100} bb/100` : '—'}
+            valueClassName="accent"
+            delta={heroStats?.bb100 != null ? 'NL Hold\'em only' : undefined}
+          />
+        </div>
 
-          <div className="hp-stats-grid">
-            {STAT_CARDS.map(card => (
-              <div key={card.key} className="hp-stat-card">
-                <div className="hp-stat-icon">{card.icon}</div>
-                <div className="hp-stat-value">
-                  {stats ? stats[card.key] ?? '--' : '--'}
-                  {card.suffix && stats?.[card.key] !== '--'
-                    ? card.suffix
-                    : ''}
-                </div>
-                <div className="hp-stat-label">{card.label}</div>
+        <div className="hp-main-grid">
+          <section className="hp-chart-card">
+            <div className="hp-chart-card-header">
+              <div>
+                <h2 className="hp-section-title">Bankroll</h2>
+                <p className="hp-chart-sub">Cumulative profit, last {chartRange ?? 'all time'}{chartRange ? ' days' : ''}</p>
               </div>
-            ))}
+              <Tabs options={CHART_RANGES} active={chartRange} onChange={setChartRange} />
+            </div>
+            <CumulativeChart data={chartData} emptyMessage="Not enough session data yet - play more sessions or import hand histories." />
+          </section>
+
+          <section className="hp-starred-card">
+            <div className="hp-chart-card-header">
+              <h2 className="hp-section-title">Starred hands</h2>
+              {favourites.length > 0 && (
+                <button className="hp-btn-ghost hp-starred-review" onClick={() => navigate('/history')}>Review</button>
+              )}
+            </div>
+            {favourites.length === 0 ? (
+              <p className="hp-starred-empty">Star a hand from History or the Replayer to pin it here.</p>
+            ) : (
+              <div className="hp-starred-list">
+                {favourites.map(hand => {
+                  const hero = hand.players?.find(p => p.isHero);
+                  const profit = typeof hero?.profitLoss === 'number'
+                    ? hero.profitLoss
+                    : (hand.winners?.includes(hero?.name) ? hand.finalPotSize ?? 0 : null);
+                  const board = [...(hand.board?.flop || []), ...(hand.board?.turn?.slice(-1) || []), ...(hand.board?.river?.slice(-1) || [])];
+                  return (
+                    <button
+                      key={hand._id}
+                      type="button"
+                      className="hp-starred-item"
+                      onClick={() => navigate('/hand-replay', { state: { hand, session: null } })}
+                    >
+                      <div className="hp-starred-cards">
+                        {(hero?.holeCards || []).map((c, i) => (
+                          <span key={i} className={`hp-card ${isRedCard(c) ? 'red' : ''}`}>{cardLabel(c)}</span>
+                        ))}
+                      </div>
+                      <div className="hp-starred-board">
+                        {board.map((c, i) => <span key={i}>{cardLabel(c)}</span>)}
+                      </div>
+                      {profit != null && (
+                        <span className={`hp-starred-profit ${profit >= 0 ? 'pos' : 'neg'}`}>
+                          {profit >= 0 ? '+' : ''}{formatSignedMajorUnits(profit, hand.currency)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section className="hp-section hp-section-dark">
+          <div className="hp-chart-card-header">
+            <h2 className="hp-section-title">Recent sessions</h2>
+            {!isGuest && (
+              <button className="hp-btn-ghost hp-view-all" onClick={() => navigate('/history')}>
+                All sessions <ArrowRight size={14} />
+              </button>
+            )}
           </div>
 
-          {pulse.length > 1 && (
-            <div
-              className="hp-sparkline-card"
-              onClick={() => !showPulse && setShowPulse(true)}
-              style={{ cursor: showPulse ? 'default' : 'pointer' }}
-            >
-              <div className="hp-sparkline-label">
-                Session Profit Trend
-              </div>
-              {showPulse ? (
-                <Sparkline values={pulse} positive={computeTrendSlope(pulse) >= 0} />
-              ) : (
-                <div
-                  className="sparkline"
-                  style={{
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--muted, #6b7280)',
-                    fontSize: '13px',
-                  }}
-                >
-                  Click to reveal
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-
-        {recentSessions.length > 0 && (
-          <section className="hp-section hp-section-dark">
-            <h2 className="hp-section-title">Recent Sessions</h2>
-
-            <div className="hp-feed">
-              {recentSessions.map(s => (
-                <div
-                  key={s._id}
-                  className="hp-feed-item"
-                  onClick={() => !isGuest && navigate('/history')}
-                  style={isGuest ? { cursor: 'default' } : {}}
-                >
-                  <div className="hp-feed-left">
-                    <span className="hp-feed-type">
-                      {s.isLive ? 'Live · ' : ''}{s.gameType ?? '—'}
-                    </span>
-
-                    <span className="hp-feed-date">
-                      {new Date(s.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </span>
-
-                    <span className="hp-feed-hands">
-                      {s.isLive
-                        ? formatSessionDuration(s.clockInTime, s.clockOutTime) ?? 'Live session'
-                        : `${s.totalHands ?? s.hands?.length ?? 0} hands`}
-                    </span>
-                  </div>
-
-                  <div
-                    className={`hp-feed-profit ${
-                      (s.totalProfit ?? 0) >= 0 ? 'pos' : 'neg'
-                    }`}
-                  >
-                    {(s.totalProfit ?? 0) >= 0 ? '+' : ''}
-                    {s.totalProfit ?? 0}
-                  </div>
-                </div>
-              ))}
-
-              {!isGuest && (
-                <button
-                  className="hp-btn-ghost hp-view-all"
-                  onClick={() => navigate('/history')}
-                >
-                  View All Sessions <ArrowRight size={14} />
-                </button>
-              )}
-
-              {isGuest && (
-                <button
-                  className="hp-btn-primary hp-view-all"
-                  onClick={() => navigate('/login')}
-                >
-                  Sign up to track your own sessions <ArrowRight size={14} />
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {combinedSessions.length === 0 && stats && (
-          <section className="hp-section">
+          {recentSessions.length > 0 ? (
+            <Table>
+              <TableHead>
+                <TableCell header>Date</TableCell>
+                <TableCell header>Game</TableCell>
+                <TableCell header>Venue</TableCell>
+                <TableCell header align="right">Hands</TableCell>
+                <TableCell header align="right">Duration</TableCell>
+                <TableCell header align="right">Result</TableCell>
+              </TableHead>
+              <TableBody>
+                {recentSessions.map(s => (
+                  <TableRow key={s._id} onClick={() => !isGuest && navigate('/history')}>
+                    <TableCell>{new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</TableCell>
+                    <TableCell>{s.isLive ? <span className="ui-table-value-mono">Live</span> : (s.gameType ?? '—')}</TableCell>
+                    <TableCell>{s.source ?? s.venue ?? '—'}</TableCell>
+                    <TableCell align="right"><span className="ui-table-value-mono">{s.isLive ? '—' : (s.totalHands ?? s.hands?.length ?? 0)}</span></TableCell>
+                    <TableCell align="right"><span className="ui-table-value-mono">{s.isLive ? (formatSessionDuration(s.clockInTime, s.clockOutTime) ?? '—') : '—'}</span></TableCell>
+                    <TableCell align="right">
+                      <span className={`ui-table-value-mono ${normalizedProfit(s) >= 0 ? 'ui-table-value-pos' : 'ui-table-value-neg'}`}>
+                        {formatSignedMajorUnits(normalizedProfit(s), s.currency)}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
             <div className="hp-empty">
               <div className="hp-empty-icon">♠</div>
               <h3>No sessions yet</h3>
-              <p>
-                Upload a PokerNow CSV to get started tracking your game.
-              </p>
-
-              <button
-                className="hp-btn-primary"
-                onClick={() => navigate('/history')}
-              >
+              <p>Upload a hand history to get started tracking your game.</p>
+              <button className="hp-btn-primary" onClick={() => navigate('/history')}>
                 Upload Hand History
               </button>
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </div>
     </Layout>
   );

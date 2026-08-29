@@ -14,7 +14,7 @@
 
 .pos-glyph {
   font-size: 15px;
-  color: #d4af37;
+  color: var(--color-accent);
   line-height: 1;
 }
 
@@ -39,7 +39,7 @@
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
-  color: #8a8a8f;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
@@ -47,13 +47,13 @@
 }
 
 .pos-size-tab:hover {
-  border-color: rgba(212, 175, 55, 0.5);
-  color: #f2f0ea;
+  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
+  color: var(--color-text);
 }
 
 .pos-size-tab.active {
-  background: linear-gradient(145deg, #d4af37, #f4c430);
-  border-color: #d4af37;
+  background: linear-gradient(145deg, var(--color-accent), var(--color-accent-hover));
+  border-color: var(--color-accent);
   color: #17130a;
 }
 
@@ -89,7 +89,7 @@
 }
 
 .pos-table thead th {
-  color: #8a8a8f;
+  color: var(--color-text-muted);
   font-weight: 600;
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -99,22 +99,22 @@
 
 .pos-table tbody th {
   text-align: left;
-  color: #f2f0ea;
+  color: var(--color-text);
   font-weight: 600;
 }
 
 .pos-cell-pct {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 1.15rem;
   line-height: 1.2;
-  color: #f4c430;
+  color: var(--color-accent-hover);
   font-variant-numeric: tabular-nums;
 }
 
 .pos-cell-sample {
   font-size: 0.68rem;
-  color: #55565c;
+  color: var(--color-text-faint);
   margin-top: 3px;
 }
 
@@ -154,11 +154,11 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: #f2f0ea;
+  color: var(--color-text);
 }
 
 .pos-matrix-desc {
-  color: #8a8a8f;
+  color: var(--color-text-muted);
   font-size: 0.78rem;
   margin: 0.3rem 0 0;
   max-width: 640px;
@@ -174,7 +174,7 @@
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: transparent;
-  color: #8a8a8f;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 600;
@@ -182,11 +182,11 @@
 }
 
 .pos-mode-btn:hover {
-  color: #f2f0ea;
+  color: var(--color-text);
 }
 
 .pos-mode-btn.active {
-  background: rgba(212, 175, 55, 0.14);
-  border-color: #d4af37;
-  color: #f4c430;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
 }

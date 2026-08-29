@@ -1,19 +1,68 @@
 import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { LayoutDashboard, List, Clock, Users, BarChart2, Spade, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, List, Users, BarChart2, Spade, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { API_URL } from "../config";
 
+// Replayer is deliberately NOT a sidebar item - it's a full-screen,
+// distraction-free view (see HandReplayer.jsx/HandReplayer.css), matching
+// its mockup, which shows no sidebar at all, just a top-left Exit button.
+// A sidebar link into a page with no sidebar shell would be inconsistent -
+// hands are opened into it from History/Dashboard/etc instead.
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", to: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
   { icon: List, label: "History", to: "/history" },
-  { icon: Clock, label: "Clock In", to: "/clock" },
   { icon: Users, label: "Players", to: "/players" },
   { icon: BarChart2, label: "Study", to: "/study" },
 ];
 
+function formatElapsed(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+}
+
+// Polls for an active clocked-in live session the same way Clock.jsx
+// restores one on load - the sidebar just needs to know whether one's
+// running and since when, not the full clock-in/buy-in form state.
+function useActiveLiveSession() {
+  const [session, setSession] = useState(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/live-sessions/active`, { credentials: "include" });
+        if (!res.ok) return;
+        const active = await res.json();
+        if (!cancelled) setSession(active || null);
+      } catch {
+        // no active session / not logged in - sidebar just omits the Live section
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [session]);
+
+  if (!session) return null;
+  return {
+    stakes: `$${session.smallBlind}/$${session.bigBlind}`,
+    elapsedMs: now - new Date(session.clockInTime).getTime()
+  };
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const live = useActiveLiveSession();
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -39,6 +88,23 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* Live session widget - only rendered when one is actually active */}
+      {live && (
+        <div className="sidebar-live">
+          {!collapsed && <div className="sidebar-live-heading">Live</div>}
+          <div className="sidebar-live-card" title={collapsed ? `Live: ${live.stakes}` : ''}>
+            <Clock size={16} className="sidebar-live-icon" />
+            {!collapsed && (
+              <div className="sidebar-live-info">
+                <div className="sidebar-live-stakes">{live.stakes}</div>
+                <div className="sidebar-live-timer">{formatElapsed(live.elapsedMs)}</div>
+              </div>
+            )}
+            <span className="sidebar-live-dot" aria-hidden="true" />
+          </div>
+        </div>
+      )}
+
       {/* Collapse toggle at bottom */}
       <button
         className="collapse-btn"
@@ -51,3 +117,5 @@ export function Sidebar() {
     </aside>
   );
 }
+
+export default Sidebar;

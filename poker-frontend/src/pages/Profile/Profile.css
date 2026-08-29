@@ -1,16 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-:root {
-  --gold: #d4af37; --gold-dim: rgba(212,175,55,0.15); --gold-border: rgba(212,175,55,0.3);
-  --green: #22c55e; --red: #ef4444;
-  --bg: #0d0f12; --bg2: #13161b; --bg3: #1a1f28;
-  --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #6b7280;
-}
-
 /* ── PAGE ─────────────────────────────────────────────── */
 .profile-page {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
+  font-family: var(--font-sans);
+  color: var(--color-text);
   padding: 40px;
   max-width: 1000px;
   margin: 0 auto;
@@ -32,8 +23,8 @@
 
 .profile-spinner {
   width: 38px; height: 38px;
-  border: 3px solid var(--border);
-  border-top-color: var(--gold);
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
@@ -45,8 +36,8 @@
   display: flex;
   align-items: center;
   gap: 24px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 22px;
   padding: 28px 32px;
   position: relative;
@@ -57,15 +48,15 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% -20%, rgba(212,175,55,0.07) 0%, transparent 65%);
+  background: radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--color-accent) 7%, transparent) 0%, transparent 65%);
   pointer-events: none;
 }
 
 .profile-avatar {
   width: 76px; height: 76px;
   border-radius: 50%;
-  border: 3px solid var(--gold-border);
-  background: var(--bg2);
+  border: 3px solid var(--color-accent-border);
+  background: var(--color-bg-elevated);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; overflow: hidden;
 }
@@ -73,14 +64,14 @@
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .profile-avatar span {
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem; font-weight: 700; color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: 2rem; font-weight: 700; color: var(--color-accent);
 }
 
 .profile-hero-info { flex: 1; min-width: 0; }
 
 .profile-name {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 2rem; font-weight: 900; color: #fff;
   margin: 0 0 10px; line-height: 1;
 }
@@ -88,8 +79,8 @@
 .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .badge {
-  font-size: 12px; font-weight: 600; color: var(--muted);
-  background: var(--bg2); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--color-text-muted);
+  background: var(--color-bg-elevated); border: 1px solid var(--color-border);
   padding: 4px 12px; border-radius: 100px;
   display: inline-flex; align-items: center; gap: 5px;
 }
@@ -98,25 +89,25 @@
 
 .hero-pnl-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px;
+  letter-spacing: 0.8px; color: var(--color-text-muted); margin-bottom: 4px;
 }
 
 .hero-pnl-value {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 2rem; font-weight: 900; line-height: 1;
 }
 
 /* ── COLORS ───────────────────────────────────────────── */
-.pos { color: var(--green); }
-.neg { color: var(--red); }
+.pos { color: var(--color-positive); }
+.neg { color: var(--color-negative); }
 
 /* ── FILTERS ──────────────────────────────────────────── */
 .profile-filters { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .seg-group {
   display: flex;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 100px;
   padding: 3px;
   gap: 2px;
@@ -127,17 +118,17 @@
   border: none;
   border-radius: 100px;
   background: transparent;
-  color: var(--muted);
-  font-family: 'DM Sans', sans-serif;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
   font-size: 13px; font-weight: 600;
   cursor: pointer;
   transition: background 0.18s, color 0.18s;
   white-space: nowrap;
 }
 
-.seg-btn:hover { color: var(--text); }
+.seg-btn:hover { color: var(--color-text); }
 
-.seg-btn.active { background: var(--gold-dim); color: var(--gold); }
+.seg-btn.active { background: var(--color-accent-dim); color: var(--color-accent); }
 
 /* ── STAT CARDS ───────────────────────────────────────── */
 .profile-stats-grid {
@@ -147,30 +138,30 @@
 }
 
 .pstat {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 20px 16px;
   text-align: center;
   transition: transform 0.18s, border-color 0.18s;
 }
 
-.pstat:hover { transform: translateY(-3px); border-color: var(--gold-border); }
+.pstat:hover { transform: translateY(-3px); border-color: var(--color-accent-border); }
 
 .pstat-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.6px; color: var(--muted); margin-bottom: 9px;
+  letter-spacing: 0.6px; color: var(--color-text-muted); margin-bottom: 9px;
 }
 
 .pstat-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.7rem; font-weight: 700; color: var(--gold); line-height: 1;
+  font-family: var(--font-sans);
+  font-size: 1.7rem; font-weight: 700; color: var(--color-accent); line-height: 1;
 }
 
 /* ── CHART CARD ───────────────────────────────────────── */
 .profile-chart-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 28px;
 }
@@ -181,14 +172,14 @@
 }
 
 .chart-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 3px;
 }
 
-.chart-sub { font-size: 12px; color: var(--muted); }
+.chart-sub { font-size: 12px; color: var(--color-text-muted); }
 
 .chart-total {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.35rem; font-weight: 700;
 }
 
@@ -207,7 +198,7 @@
 
 .chart-empty {
   display: flex; align-items: center; justify-content: center;
-  height: 160px; color: var(--muted); font-size: 14px; font-style: italic;
+  height: 160px; color: var(--color-text-muted); font-size: 14px; font-style: italic;
 }
 
 /* Tooltip */
@@ -215,8 +206,8 @@
   position: absolute;
   top: 16px;
   pointer-events: none;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 10px 14px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -226,26 +217,26 @@
 
 .tt-date {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px;
+  letter-spacing: 0.5px; color: var(--color-text-muted); margin-bottom: 4px;
 }
 
 .tt-val {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.05rem; font-weight: 700; margin-bottom: 2px;
 }
 
-.tt-session { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.tt-session { font-size: 11px; color: var(--color-text-muted); display: flex; align-items: center; gap: 4px; }
 
 /* ── LIVE CARD ────────────────────────────────────────── */
 .profile-live-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 24px 28px;
 }
 
 .live-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-sans);
   font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 18px;
   display: flex; align-items: center; gap: 8px;
 }
@@ -258,20 +249,20 @@
 
 .live-stat {
   text-align: center;
-  background: var(--bg2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px 10px;
 }
 
 .live-stat-label {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.6px; color: var(--muted); margin-bottom: 8px;
+  letter-spacing: 0.6px; color: var(--color-text-muted); margin-bottom: 8px;
 }
 
 .live-stat-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem; font-weight: 700; color: var(--gold);
+  font-family: var(--font-sans);
+  font-size: 1.3rem; font-weight: 700; color: var(--color-accent);
 }
 
 /* ── RESPONSIVE ───────────────────────────────────────── */
