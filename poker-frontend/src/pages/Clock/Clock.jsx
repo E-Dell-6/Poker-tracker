@@ -2,6 +2,14 @@ import { Layout } from "../../components/Layout";
 import { useState, useEffect } from "react";
 import { Play, Square, X, TrendingUp, TrendingDown, Trash2, Plus } from "lucide-react";
 import { SessionHistorySkeleton } from "./SessionHistorySkeleton";
+import {
+  getLiveSessions,
+  getActiveLiveSession,
+  clockIn as apiClockIn,
+  clockOut as apiClockOut,
+  addBuyIn as apiAddBuyIn,
+  deleteLiveSession,
+} from "../../api/liveSessions";
 import "./Clock.css";
 
 const normalizeSession = (s) => ({
@@ -31,9 +39,7 @@ export function Clock() {
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const res = await fetch("/api/live-sessions", { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to load sessions");
-        const data = await res.json();
+        const data = await getLiveSessions();
         setCompletedSessions(data.map(normalizeSession));
       } catch (err) {
         console.error(err);
@@ -44,9 +50,7 @@ export function Clock() {
 
     const restoreActiveSession = async () => {
       try {
-        const res = await fetch("/api/live-sessions/active", { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to check active session");
-        const active = await res.json();
+        const active = await getActiveLiveSession();
         if (active) {
           setSessionId(active._id ?? active.id);
           setIsClocked(true);
@@ -104,16 +108,7 @@ export function Clock() {
     setSaveError(null);
 
     try {
-      const res = await fetch(`/api/live-sessions/${sessionId}/clock-out`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ cashOut })
-      });
-
-      if (!res.ok) throw new Error("Failed to save session");
-
-      const savedSession = await res.json();
+      const savedSession = await apiClockOut(sessionId, cashOut);
       setCompletedSessions([normalizeSession(savedSession), ...completedSessions]);
 
       setIsClocked(false);
@@ -143,22 +138,13 @@ export function Clock() {
     setSaveError(null);
 
     try {
-      const res = await fetch("/api/live-sessions/clock-in", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          clockInTime: clockInTime ?? new Date(),
-          bigBlind: parseFloat(formData.bigBlind),
-          smallBlind: parseFloat(formData.smallBlind),
-          buyIns: [buyIn],
-          totalBuyIn: buyIn
-        })
+      const session = await apiClockIn({
+        clockInTime: clockInTime ?? new Date(),
+        bigBlind: parseFloat(formData.bigBlind),
+        smallBlind: parseFloat(formData.smallBlind),
+        buyIns: [buyIn],
+        totalBuyIn: buyIn
       });
-
-      if (!res.ok) throw new Error("Failed to start session");
-
-      const session = await res.json();
       setSessionId(session._id ?? session.id);
       setIsClocked(true);
       setClockInTime(new Date(session.clockInTime));
@@ -184,15 +170,7 @@ export function Clock() {
     setSaveError(null);
 
     try {
-      const res = await fetch(`/api/live-sessions/${sessionId}/buy-in`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ amount })
-      });
-
-      if (!res.ok) throw new Error("Failed to add buy-in");
-
+      await apiAddBuyIn(sessionId, amount);
       setActiveBuyIns([...activeBuyIns, amount]);
       setShowBuyInForm(false);
       setFormData({ ...formData, buyIn: "" });
@@ -216,13 +194,7 @@ export function Clock() {
     setIsDeleting(true);
 
     try {
-      const res = await fetch(`/api/live-sessions/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-      });
-
-      if (!res.ok) throw new Error("Failed to delete session");
-
+      await deleteLiveSession(id);
       setCompletedSessions(completedSessions.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);

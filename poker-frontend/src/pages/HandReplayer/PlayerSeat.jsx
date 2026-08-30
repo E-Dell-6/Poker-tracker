@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Camera, X } from "lucide-react";
 import "./PlayerSeat.css";
 import { API_URL } from "../../config";
+import { uploadImage } from "../../api/uploads";
+import { getPeople, createPerson } from "../../api/people";
 import { formatAmount } from "../../utils/formatMoney";
 
 export default function PlayerSeat({
@@ -23,11 +25,7 @@ export default function PlayerSeat({
   useEffect(() => {
     const fetchPeople = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/people`);
-        if (response.ok) {
-          const data = await response.json();
-          setPeople(data);
-        }
+        setPeople(await getPeople());
       } catch (error) {
         console.error("Failed to fetch people:", error);
       }
@@ -39,12 +37,9 @@ export default function PlayerSeat({
     if (player.isHero || isPublic) return;
     const fetchPlayerImage = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/people`);
-        if (response.ok) {
-          const allPeople = await response.json();
-          const matchedPerson = allPeople.find(p => p.name === player.name);
-          if (matchedPerson?.image) setPlayerImage(matchedPerson.image);
-        }
+        const allPeople = await getPeople();
+        const matchedPerson = allPeople.find(p => p.name === player.name);
+        if (matchedPerson?.image) setPlayerImage(matchedPerson.image);
       } catch (error) {
         console.error("Failed to fetch player image:", error);
       }
@@ -75,28 +70,13 @@ export default function PlayerSeat({
     setSelectedFile(file);
   };
 
-  const uploadImageToServer = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const response = await fetch(`${API_URL}/api/upload-image`, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('Failed to upload image');
-    const result = await response.json();
-    return result.imageUrl;
-  };
-
   const handleCreateNewPerson = async () => {
     if (!newPersonName.trim()) { alert("Please enter a name"); return; }
     setIsUploading(true);
     try {
       let imageUrl = "";
-      if (selectedFile) imageUrl = await uploadImageToServer(selectedFile);
-      const response = await fetch(`${API_URL}/api/people`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newPersonName, image: imageUrl })
-      });
-      if (!response.ok) throw new Error("Failed to create person");
-      const newPerson = await response.json();
+      if (selectedFile) imageUrl = await uploadImage(selectedFile);
+      const newPerson = await createPerson({ name: newPersonName, image: imageUrl });
       setPeople(prev => [...prev, newPerson]);
       setNewPersonName(""); setImagePreview(null); setSelectedFile(null);
       setIsCreatingNewPerson(false);

@@ -3,7 +3,8 @@ import { Pencil, Trash2, Star } from "lucide-react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
 import { Tag } from "./ui/Tag";
-import { API_URL } from "../config";
+import { getSessionHands, deleteSession } from "../api/sessions";
+import { getFavourites } from "../api/favourites";
 import { formatAmount, formatSignedAmount } from "../utils/formatMoney";
 import { handMatchesFilter, getAvailableFilters } from "../utils/handFilters";
 import "./SessionLog.css";
@@ -27,10 +28,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
     if (handsBySession[sessionId]) return handsBySession[sessionId];
     setLoadingHandsFor(prev => new Set(prev).add(sessionId));
     try {
-      const res = await fetch(`${API_URL}/api/sessions/${sessionId}/hands`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load hands");
-      const data = await res.json();
-      const hands = Array.isArray(data.hands) ? data.hands : [];
+      const hands = await getSessionHands(sessionId);
       setHandsBySession(prev => ({ ...prev, [sessionId]: hands }));
       return hands;
     } catch (err) {
@@ -48,13 +46,9 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
   useEffect(() => {
     const fetchFavourites = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/favourites`, { credentials: "include" });
-        if (response.ok) {
-          const favourites = await response.json();
-          const data = Array.isArray(favourites) ? favourites : [];
-          const ids = data.map(h => typeof h === "string" ? h : h._id);
-          setFavouriteHandIds(new Set(ids));
-        }
+        const favourites = await getFavourites();
+        const ids = favourites.map(h => typeof h === "string" ? h : h._id);
+        setFavouriteHandIds(new Set(ids));
       } catch (err) {
         console.error("Failed to fetch favourites:", err);
       }
@@ -107,10 +101,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
       setContextMenu(null); return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/sessions/${s._id}`, {
-        method: "DELETE", credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to delete session");
+      await deleteSession(s._id);
       onSessionsChange?.(prev => prev.filter(x => x._id !== s._id));
       setContextMenu(null);
     } catch (err) {

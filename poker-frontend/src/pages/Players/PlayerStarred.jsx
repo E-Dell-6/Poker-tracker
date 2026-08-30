@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import './PlayerStarred.css';
-import { API_URL } from '../../config';
+import { getPersonStarredItems } from '../../api/people';
 import { formatAmount, formatSignedAmount } from '../../utils/formatMoney';
 
 // Favourited hands saved before sessionCurrency was tracked won't have it;
@@ -26,11 +26,7 @@ export function PlayerStarred({ player }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API_URL}/api/people/${player._id}/starred`, {
-          credentials: 'include',
-        });
-        if (!res.ok) throw new Error('Failed to load starred items');
-        const data = await res.json();
+        const data = await getPersonStarredItems(player._id);
         if (cancelled) return;
         setStarredHands(Array.isArray(data.starredHands) ? data.starredHands : []);
         setStarredSessions(Array.isArray(data.starredSessions) ? data.starredSessions : []);

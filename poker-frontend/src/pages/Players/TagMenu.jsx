@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './TagMenu.css';
-import { API_URL } from '../../config';
+import { addPersonTag } from '../../api/people';
 
 const PRESET_COLORS = [
   '#ef4444', 
@@ -33,22 +33,11 @@ export function TagMenu({ player, onClose, onTagCreated }) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/people/${player._id}/tags`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          label: tagLabel.trim(),
-          color: selectedColor
-        })
+      const updatedPlayer = await addPersonTag(player._id, {
+        label: tagLabel.trim(),
+        color: selectedColor,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create tag');
-      }
-
-      const updatedPlayer = await response.json();
-      
       if (onTagCreated) {
         onTagCreated(updatedPlayer);
       }

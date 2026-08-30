@@ -3,6 +3,9 @@ import { useState, useEffect, useMemo } from "react";
 import { Clock } from "lucide-react";
 import "./Profile.css";
 import { API_URL } from "../../config";
+import { getUserData } from "../../api/user";
+import { getAllSessions } from "../../api/sessions";
+import { getLiveSessions } from "../../api/liveSessions";
 import { toMajorUnits } from "../../utils/formatMoney";
 import { CumulativeChart } from "../../components/CumulativeChart";
 import { ProfileSkeleton } from "./ProfileSkeleton";
@@ -62,13 +65,10 @@ export function Profile() {
   useEffect(() => {
     (async () => {
       try {
-        const [uRes, oRes, lRes] = await Promise.all([
-          fetch(`${API_URL}/api/user/data`,      { credentials: "include" }),
-          fetch(`${API_URL}/api/sessions`,       { credentials: "include" }),
-          fetch(`${API_URL}/api/live-sessions`,  { credentials: "include" }),
-        ]);
         const [uData, oData, lData] = await Promise.all([
-          uRes.json(), oRes.json(), lRes.json(),
+          getUserData(),
+          getAllSessions().catch(() => []),
+          getLiveSessions().catch(() => []),
         ]);
         if (uData?.userData) setUser(uData.userData);
         setOnline(Array.isArray(oData) ? oData : []);

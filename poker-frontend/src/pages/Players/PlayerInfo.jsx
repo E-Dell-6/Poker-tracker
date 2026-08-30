@@ -5,6 +5,8 @@ import { PlayerStarred } from './PlayerStarred';
 import { useState, useRef, useEffect } from 'react';
 import { Loader2, Camera, Pencil } from 'lucide-react';
 import { API_URL } from '../../config';
+import { uploadImage } from '../../api/uploads';
+import { updatePerson, updatePersonNotes } from '../../api/people';
 
 export function PlayerInfo({ player, onPlayerUpdate }) {
 
@@ -35,27 +37,8 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
 
         setIsUploadingImage(true);
         try {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            const uploadResponse = await fetch(`${API_URL}/api/upload-image`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData,
-            });
-
-            if (!uploadResponse.ok) throw new Error('Failed to upload image');
-            const { imageUrl } = await uploadResponse.json();
-
-            const updateResponse = await fetch(`${API_URL}/api/people/${currentPlayer._id}`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageUrl }),
-            });
-
-            if (!updateResponse.ok) throw new Error('Failed to update player image');
-            const updatedPlayer = await updateResponse.json();
+            const imageUrl = await uploadImage(file);
+            const updatedPlayer = await updatePerson(currentPlayer._id, { image: imageUrl });
 
             setCurrentPlayer(updatedPlayer);
             if (onPlayerUpdate) onPlayerUpdate(updatedPlayer);
@@ -71,16 +54,7 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
     const handleSaveNotes = async () => {
         setIsSavingNotes(true);
         try {
-            const response = await fetch(`${API_URL}/api/people/${currentPlayer._id}/notes`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ notes }),
-            });
-
-            if (!response.ok) throw new Error('Failed to update notes');
-
-            const updatedPlayer = await response.json();
+            const updatedPlayer = await updatePersonNotes(currentPlayer._id, notes);
             setCurrentPlayer(updatedPlayer);
             setIsEditingNotes(false);
             if (onPlayerUpdate) onPlayerUpdate(updatedPlayer);

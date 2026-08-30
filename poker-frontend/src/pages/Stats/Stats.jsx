@@ -1,7 +1,7 @@
 import { Layout } from '../../components/Layout';
 import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { API_URL } from '../../config';
+import { getMyStats, getMyFilteredStats, recomputeMyStats } from '../../api/stats';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
 import { PositionalStats } from '../../components/PositionalStats';
 import { GroupedStats } from '../../components/GroupedStats';
@@ -62,13 +62,7 @@ export function Stats() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_URL}/api/stats/me`, { credentials: 'include' });
-      if (res.status === 404) {
-        setBaseStats(null);
-        return;
-      }
-      if (!res.ok) throw new Error('Failed to load stats');
-      setBaseStats(await res.json());
+      setBaseStats(await getMyStats());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -80,12 +74,7 @@ export function Stats() {
     try {
       setFilterLoading(true);
       setError(null);
-      const params = new URLSearchParams();
-      if (stakesFilter) params.set('stakes', stakesFilter);
-      if (fromISO) params.set('from', fromISO);
-      const res = await fetch(`${API_URL}/api/stats/me/filtered?${params.toString()}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to load filtered stats');
-      setFilteredStats(await res.json());
+      setFilteredStats(await getMyFilteredStats({ stakes: stakesFilter, from: fromISO }));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,14 +85,7 @@ export function Stats() {
   const refreshStats = async () => {
     try {
       setRefreshing(true);
-      const res = await fetch(`${API_URL}/api/stats/me/recompute`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      if (!res.ok) throw new Error('Failed to recompute stats');
-      setBaseStats(await res.json());
+      setBaseStats(await recomputeMyStats());
       // Recompute always refreshes the unfiltered cached doc - if a filter
       // is active, re-run it too so the visible (filtered) view reflects
       // the fresh data instead of silently going stale.

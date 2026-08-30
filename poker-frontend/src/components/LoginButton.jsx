@@ -2,7 +2,8 @@ import { Link} from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Check, AlertTriangle, User, Mail } from "lucide-react";
 import "./LoginButton.css";
-import { API_URL } from "../config";
+import { getUserData } from "../api/user";
+import { logout, sendVerifyOtp, verifyAccount } from "../api/auth";
 
 export function LoginButton() {
   const [userData, setUserData] = useState(null);
@@ -15,8 +16,7 @@ export function LoginButton() {
   const otpRefs = useRef([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/user/data`, { credentials: "include" })
-      .then((r) => r.json())
+    getUserData()
       .then((d) => { if (d.success) setUserData(d.userData); })
       .catch(() => {});
   }, []);
@@ -43,7 +43,7 @@ export function LoginButton() {
   };
 
   const handleLogout = async () => {
-    await fetch(`${API_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
+    await logout();
     setUserData(null);
     closeDropdown();
     window.location.href = "/";
@@ -53,10 +53,7 @@ export function LoginButton() {
     setVerifyState("sending");
     setOtpError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/send-verify-otp`, {
-        method: "POST", credentials: "include",
-      });
-      const data = await res.json();
+      const data = await sendVerifyOtp();
       if (data.success) {
         setVerifyState("otp");
         setTimeout(() => otpRefs.current[0]?.focus(), 100);
@@ -100,12 +97,7 @@ export function LoginButton() {
     setVerifyState("verifying");
     setOtpError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/verify-account`, {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: code }),
-      });
-      const data = await res.json();
+      const data = await verifyAccount(code);
       if (data.success) {
         setVerifyState("done");
         setUserData((u) => ({ ...u, isAccountVerified: true }));

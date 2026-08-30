@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { PlayerInfo } from './PlayerInfo';
 import { PlayerInfoSkeleton } from './PlayerInfoSkeleton';
-import { API_URL } from '../../config';
+import { getPeople } from '../../api/people';
 import './Players.css'; // shared .no-info empty-state style
 import './PlayerProfile.css';
 
@@ -25,9 +25,8 @@ export function PlayerProfile() {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/people`, { credentials: 'include' });
-        const people = await res.json();
-        if (!cancelled) setPlayer((Array.isArray(people) ? people : []).find(p => p._id === personId) || null);
+        const people = await getPeople();
+        if (!cancelled) setPlayer(people.find(p => p._id === personId) || null);
       } catch (error) {
         console.error('Error fetching player:', error);
         if (!cancelled) setPlayer(null);

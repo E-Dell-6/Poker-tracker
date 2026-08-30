@@ -8,6 +8,8 @@ import { Tag } from "../../components/ui/Tag";
 import { Pagination } from "../../components/ui/Pagination";
 import { PlayersTableSkeleton } from "./PlayersTableSkeleton";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
+import { getPlayersStats } from "../../api/stats";
+import { getPeoplePage, updatePerson } from "../../api/people";
 import { API_URL } from "../../config";
 
 const PAGE_SIZE = 50;
@@ -29,11 +31,7 @@ export function Players() {
   // pagination itself (see peopleRoute.js's GET /) - otherwise a search
   // would only ever match whichever page happened to already be loaded.
   const fetchPlayers = () => {
-    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (showStarredOnly) params.set('starred', 'true');
-    return fetch(`${API_URL}/api/people?${params.toString()}`, { credentials: 'include' })
-      .then(res => res.json())
+    return getPeoplePage({ page, limit: PAGE_SIZE, search: debouncedSearch, starred: showStarredOnly })
       .then(data => {
         setPlayers(Array.isArray(data.players) ? data.players : []);
         setTotal(data.total ?? 0);
@@ -67,11 +65,10 @@ export function Players() {
   // and pagination here would just mean keeping two paginated fetches in
   // sync for no real benefit.
   useEffect(() => {
-    fetch(`${API_URL}/api/stats/players`, { credentials: "include" })
-      .then(res => res.ok ? res.json() : [])
+    getPlayersStats()
       .then(statsData => {
         const byId = {};
-        (Array.isArray(statsData) ? statsData : []).forEach(s => { byId[String(s.personId)] = s; });
+        statsData.forEach(s => { byId[String(s.personId)] = s; });
         setStatsByPersonId(byId);
       })
       .catch(error => console.error('Error fetching player stats:', error));
@@ -83,13 +80,7 @@ export function Players() {
     e.stopPropagation();
     const nextStarred = !player.starred;
     try {
-      const res = await fetch(`${API_URL}/api/people/${player._id}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ starred: nextStarred }),
-      });
-      if (!res.ok) throw new Error('Failed to update star');
+      await updatePerson(player._id, { starred: nextStarred });
       // Refetch rather than patch the local array in place - if
       // "starred only" is active, un-starring a player has to drop them
       // from the current page (and the total count), which a simple

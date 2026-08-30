@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { User, Mail, Lock, ShieldCheck, EyeOff, Eye, Check, ArrowLeft } from "lucide-react";
 import "./Login.css";
-import { API_URL } from "../../config";
+import { login, register, sendResetOtp, resetPassword } from "../../api/auth";
 
 // ── Icons (defined outside to prevent remounting) ──
 const UserIcon = () => <User className="login-icon-svg" />;
@@ -74,11 +74,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify(loginForm),
-      });
-      const data = await res.json();
+      const data = await login(loginForm);
       if (data.success) window.location.href = "/";
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }
@@ -95,11 +91,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify(registerForm),
-      });
-      const data = await res.json();
+      const data = await register(registerForm);
       if (data.success) window.location.href = "/";
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }
@@ -111,11 +103,7 @@ export function Login() {
       return setErrors({ forgotEmail: "Please enter a valid email" });
     setLoading(true); setServerError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/send-reset-otp`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify({ email: forgotEmail }),
-      });
-      const data = await res.json();
+      const data = await sendResetOtp(forgotEmail);
       if (data.success) switchView("reset");
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }
@@ -130,12 +118,7 @@ export function Login() {
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
-      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email: forgotEmail, otp: resetForm.otp, newPassword: resetForm.newPassword }),
-      });
-      const data = await res.json();
+      const data = await resetPassword({ email: forgotEmail, otp: resetForm.otp, newPassword: resetForm.newPassword });
       if (data.success) setSuccess(true);
       else setServerError(data.message);
     } catch { setServerError("Something went wrong."); }

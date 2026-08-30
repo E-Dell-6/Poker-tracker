@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import './FavouritesLog.css';
-import { API_URL } from "../config";
+import { removeFavourite } from "../api/favourites";
 import { Tag } from "./ui/Tag";
 
 // ── Filter definitions ───────────────────────────────────
@@ -101,10 +101,7 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
       setTimeout(async () => {
         if (!newStatus) {
           try {
-            await fetch(`${API_URL}/api/favourites/${handId}`, {
-              method: "DELETE",
-              credentials: "include",
-            });
+            await removeFavourite(handId);
             setHands(prevHands => prevHands.filter(h => h._id !== handId));
           } catch (err) {
             console.error("Failed to delete hand", err);

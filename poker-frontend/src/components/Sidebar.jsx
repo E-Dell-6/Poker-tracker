@@ -2,7 +2,7 @@ import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LayoutDashboard, List, Users, BarChart2, Spade, ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { API_URL } from "../config";
+import { getActiveLiveSession } from "../api/liveSessions";
 
 // Replayer is deliberately NOT a sidebar item - it's a full-screen,
 // distraction-free view (see HandReplayer.jsx/HandReplayer.css), matching
@@ -36,9 +36,7 @@ function useActiveLiveSession() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/live-sessions/active`, { credentials: "include" });
-        if (!res.ok) return;
-        const active = await res.json();
+        const active = await getActiveLiveSession();
         if (!cancelled) setSession(active || null);
       } catch {
         // no active session / not logged in - sidebar just omits the Live section

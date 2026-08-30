@@ -2,7 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { List, Eye, ArrowRight, Star } from 'lucide-react';
 import { Layout } from '../../components/Layout';
-import { API_URL } from '../../config';
+import { getUserData } from '../../api/user';
+import { getMyStats } from '../../api/stats';
+import { getAllSessions } from '../../api/sessions';
+import { getLiveSessions } from '../../api/liveSessions';
+import { getFavourites } from '../../api/favourites';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { StatTile } from '../../components/ui/StatTile';
 import { CumulativeChart } from '../../components/CumulativeChart';
@@ -117,8 +121,7 @@ export function HomePage() {
   const [chartRange, setChartRange] = useState(30);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/user/data`, { credentials: 'include' })
-      .then(r => r.json())
+    getUserData()
       .then(data => setIsLoggedIn(data.success === true))
       .catch(() => setIsLoggedIn(false));
   }, []);
@@ -127,18 +130,10 @@ export function HomePage() {
     if (!isLoggedIn) return;
 
     Promise.all([
-      fetch(`${API_URL}/api/sessions`, { credentials: 'include' })
-        .then(r => r.json())
-        .catch(() => []),
-      fetch(`${API_URL}/api/live-sessions`, { credentials: 'include' })
-        .then(r => r.json())
-        .catch(() => []),
-      fetch(`${API_URL}/api/stats/me`, { credentials: 'include' })
-        .then(r => (r.ok ? r.json() : null))
-        .catch(() => null),
-      fetch(`${API_URL}/api/favourites`, { credentials: 'include' })
-        .then(r => (r.ok ? r.json() : []))
-        .catch(() => []),
+      getAllSessions().catch(() => []),
+      getLiveSessions().catch(() => []),
+      getMyStats().catch(() => null),
+      getFavourites().catch(() => []),
     ]).then(([onlineData, liveData, heroStatsData, favouritesData]) => {
       setHeroStats(heroStatsData);
       setFavourites(Array.isArray(favouritesData) ? favouritesData.slice(-4).reverse() : []);

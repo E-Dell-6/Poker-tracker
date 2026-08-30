@@ -9,7 +9,7 @@ import {
   ReferenceLine,
   ResponsiveContainer
 } from 'recharts';
-import { API_URL } from '../config';
+import { getEvGraph } from '../api/stats';
 import './PositionalStats.css'; // shared section-header/glyph/rule classes
 import './EVGraph.css';
 
@@ -63,15 +63,8 @@ export function EVGraph({ stakes, from, to } = {}) {
       try {
         setLoading(true);
         setError(null);
-        const params = new URLSearchParams();
-        if (stakes) params.set('stakes', stakes);
-        if (from) params.set('from', from);
-        if (to) params.set('to', to);
-        const qs = params.toString();
-        const res = await fetch(`${API_URL}/api/stats/me/ev-graph${qs ? `?${qs}` : ''}`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to load EV graph');
-        const data = await res.json();
-        if (!cancelled) setRows(Array.isArray(data) ? data : []);
+        const data = await getEvGraph({ stakes, from, to });
+        if (!cancelled) setRows(data);
       } catch (err) {
         if (!cancelled) setError(err.message);
       } finally {

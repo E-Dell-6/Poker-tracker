@@ -1,4 +1,6 @@
-import { API_URL } from "../config";
+import { uploadImage } from "../api/uploads";
+import { getPeople, createPerson } from "../api/people";
+import { updateSession } from "../api/sessions";
 import React, { useState, useEffect } from "react";
 import { Check, X, Camera } from "lucide-react";
 import './EditSessionLog.css';
@@ -32,9 +34,8 @@ export function EditSessionLog({
 
   useEffect(() => {
     if (!isOpen) return;
-    fetch(`${API_URL}/api/people`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => setPeople(Array.isArray(data) ? data : []))
+    getPeople()
+      .then(data => setPeople(data))
       .catch(err => console.error("Failed to fetch people:", err));
   }, [isOpen]);
 
@@ -82,35 +83,14 @@ export function EditSessionLog({
     setSelectedFile(file);
   };
 
-  const uploadImageToServer = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const response = await fetch(`${API_URL}/api/upload-image`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to upload image');
-    const result = await response.json();
-    return result.imageUrl;
-  };
-
   const handleCreateNewPerson = async () => {
     if (!newPersonName.trim()) { showStatus('error', 'Please enter a name'); return; }
     setIsUploading(true);
     try {
       let imageUrl = "";
-      if (selectedFile) imageUrl = await uploadImageToServer(selectedFile);
+      if (selectedFile) imageUrl = await uploadImage(selectedFile);
 
-      const response = await fetch(`${API_URL}/api/people`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newPersonName, image: imageUrl }),
-      });
-      if (!response.ok) throw new Error("Failed to create person");
-
-      const newPerson = await response.json();
+      const newPerson = await createPerson({ name: newPersonName, image: imageUrl });
       setPeople(prev => [...prev, newPerson]);
       setNewPersonName("");
       setNewPersonImage("");
@@ -141,23 +121,12 @@ export function EditSessionLog({
         if (opp.original !== opp.current) renameMap[opp.original] = opp.current;
       });
 
-      const response = await fetch(
-        `${API_URL}/api/sessions/${editFormData.id}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date: editFormData.date,
-            gameType: editFormData.gameType,
-            opponentRenames: renameMap,
-            totalProfit: Number(editFormData.totalProfit),
-          }),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to update data");
-
-      const result = await response.json();
+      const result = await updateSession(editFormData.id, {
+        date: editFormData.date,
+        gameType: editFormData.gameType,
+        opponentRenames: renameMap,
+        totalProfit: Number(editFormData.totalProfit),
+      });
       if (onSave) onSave(result.hand || result);
       onClose();
     } catch (error) {

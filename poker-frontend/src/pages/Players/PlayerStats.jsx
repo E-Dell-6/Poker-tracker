@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import './PlayerStats.css';
-import { API_URL } from '../../config';
+import { getPersonStats, recomputePersonStats } from '../../api/stats';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
 import { confidenceModifier } from '../../utils/confidence';
 import { PositionalStats } from '../../components/PositionalStats';
@@ -67,13 +67,7 @@ export function PlayerStats({ player }) {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_URL}/api/stats/person/${personId}`, { credentials: 'include' });
-      if (res.status === 404) {
-        setStats(null);
-        return;
-      }
-      if (!res.ok) throw new Error('Failed to load stats');
-      setStats(await res.json());
+      setStats(await getPersonStats(personId));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,12 +78,7 @@ export function PlayerStats({ player }) {
   const refreshStats = async () => {
     try {
       setRefreshing(true);
-      const res = await fetch(`${API_URL}/api/stats/person/${player._id}/recompute`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error('Failed to recompute stats');
-      setStats(await res.json());
+      setStats(await recomputePersonStats(player._id));
     } catch (err) {
       setError(err.message);
     } finally {

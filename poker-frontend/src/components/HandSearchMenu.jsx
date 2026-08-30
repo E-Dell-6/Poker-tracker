@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, X, Layers } from "lucide-react";
-import { API_URL } from "../config";
+import { searchHands } from "../api/handSearch";
 import { HAND_FILTERS } from "../utils/handFilters";
 import { formatAmount } from "../utils/formatMoney";
 import CardSelector from "./CardSelector";
@@ -55,19 +55,14 @@ export function HandSearchMenu({ onHandClick }) {
     setIsSearching(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (gameType !== "All") params.set("gameType", gameType);
-      if (result !== "all") params.set("result", result);
-      if (filterKey) params.set("filter", filterKey);
-      if (position) params.set("position", position);
-      if (selectedCards.length > 0) params.set("holeCards", selectedCards.join(","));
-
-      const res = await fetch(`${API_URL}/api/hands/search?${params.toString()}`, {
-        credentials: "include",
+      const hands = await searchHands({
+        gameType: gameType !== "All" ? gameType : undefined,
+        result: result !== "all" ? result : undefined,
+        filter: filterKey || undefined,
+        position: position || undefined,
+        holeCards: selectedCards.length > 0 ? selectedCards.join(",") : undefined,
       });
-      if (!res.ok) throw new Error("Search failed");
-      const data = await res.json();
-      setResults(Array.isArray(data.hands) ? data.hands : []);
+      setResults(hands);
     } catch (err) {
       setError(err.message);
       setResults([]);

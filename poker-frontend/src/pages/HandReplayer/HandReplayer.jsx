@@ -7,7 +7,7 @@ import PokerTable from "./PokerTable";
 import PlayerSeat from "./PlayerSeat";
 import Controller from "../../components/Controller";
 
-import { API_URL } from "../../config";
+import { getSharedHand, createShareLink, deleteShareLink } from "../../api/share";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 import { formatAmount } from "../../utils/formatMoney";
 import { PublicHandViewerSkeleton } from "./PublicHandViewerSkeleton";
@@ -74,10 +74,8 @@ export function PublicHandViewer() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/share/${id}`);
-        if (res.status === 404) { setStatus("notfound"); return; }
-        if (!res.ok) throw new Error("Server error");
-        const { hand } = await res.json();
+        const hand = await getSharedHand(id);
+        if (!hand) { setStatus("notfound"); return; }
         setHand(hand);
         setStatus("found");
       } catch {
@@ -140,14 +138,7 @@ function ShareModal({ hand, session, onClose }) {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/share`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ hand, userId: session?.userId }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const { shareId: id } = await res.json();
+      const id = await createShareLink(hand, session?.userId);
       localStorage.setItem(`share:${hand._id}`, id);
       setShareId(id);
       setIsShared(true);
@@ -163,13 +154,7 @@ function ShareModal({ hand, session, onClose }) {
     if (!shareId || revokeLoading) return;
     setRevokeLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/share/${shareId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ userId: session?.userId }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      await deleteShareLink(shareId, session?.userId);
       localStorage.removeItem(`share:${hand._id}`);
       setShareId(null);
       setIsShared(false);

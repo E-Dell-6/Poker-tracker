@@ -9,7 +9,10 @@ import { Tabs } from "../../components/ui/Tabs";
 import { Pagination } from "../../components/ui/Pagination";
 import { SessionListSkeleton } from "./SessionListSkeleton";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
-import { API_URL } from "../../config";
+import { uploadImage, uploadSessionCsv } from "../../api/uploads";
+import { getPeople, createPerson } from "../../api/people";
+import { getSessions, getSessionStakes, mapSessionPlayer, updateSession } from "../../api/sessions";
+import { getFavourites } from "../../api/favourites";
 import "./History.css";
 
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
@@ -25,9 +28,8 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/people`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => setPeople(Array.isArray(data) ? data : []))
+    getPeople()
+      .then((data) => setPeople(data))
       .catch(() => {});
   }, []);
 
@@ -53,28 +55,9 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
     setIsUploading(true);
     try {
       let imageUrl = "";
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append("image", selectedFile);
-        const imgRes = await fetch(`${API_URL}/api/upload-image`, {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
-        if (!imgRes.ok) throw new Error("Image upload failed");
-        const imgData = await imgRes.json();
-        imageUrl = imgData.imageUrl;
-      }
+      if (selectedFile) imageUrl = await uploadImage(selectedFile);
 
-      const res = await fetch(`${API_URL}/api/people`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, image: imageUrl }),
-      });
-      if (!res.ok) throw new Error("Failed to create person");
-      const newPerson = await res.json();
-
+      const newPerson = await createPerson({ name: newName, image: imageUrl });
       onSelect(newPerson);
     } catch (err) {
       alert(err.message);
@@ -209,12 +192,7 @@ export function History() {
   // *whole* filtered set, not just this page) backs the header subtitle
   // below.
   const fetchSessions = () => {
-    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
-    if (selectedGame !== "All") params.set("gameType", selectedGame);
-    if (selectedStakes !== "All") params.set("stakes", selectedStakes);
-    if (showStarredSessions) params.set("starred", "true");
-    return fetch(`${API_URL}/api/sessions?${params.toString()}`, { credentials: "include" })
-      .then((res) => res.json())
+    return getSessions({ page, limit: PAGE_SIZE, gameType: selectedGame, stakes: selectedStakes, starred: showStarredSessions })
       .then((data) => {
         setSessions(Array.isArray(data.sessions) ? data.sessions : []);
         setTotal(data.total ?? 0);
@@ -233,17 +211,15 @@ export function History() {
   // an upload, in case it introduced a new stakes level), not per
   // page/filter change.
   useEffect(() => {
-    fetch(`${API_URL}/api/sessions/stakes`, { credentials: "include" })
-      .then((res) => res.json())
+    getSessionStakes()
       .then((data) => setStakesOptions(Array.isArray(data.stakes) ? data.stakes : []))
       .catch(() => {});
   }, [uploadStatus]);
 
   useEffect(() => {
     if (!showFavourites) return;
-    fetch(`${API_URL}/api/favourites`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => setFavourites(Array.isArray(data) ? data : []))
+    getFavourites()
+      .then((data) => setFavourites(data))
       .catch((err) => console.error("Failed to load favourites", err));
   }, [showFavourites]);
 
@@ -263,23 +239,8 @@ export function History() {
     setError(null);
     setUploadStatus("uploading");
 
-    const formData = new FormData();
-    files.forEach((file) => formData.append("csvFile", file));
-
     try {
-      const response = await fetch(`${API_URL}/api/upload`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      // Older single-file error shape (network/server-level failure before
-      // any per-file results exist)
-      if (!response.ok && !result.results) {
-        throw new Error(result.error || "Upload failed");
-      }
+      const result = await uploadSessionCsv(files);
 
       const perFileResults = result.results || [];
       const duplicates = perFileResults.filter((r) => !r.success && r.duplicate);
@@ -361,19 +322,7 @@ export function History() {
   const onPlayerMapped = async (person) => {
     const { sessionId, originalName } = renamingState;
     try {
-      const response = await fetch(
-        `${API_URL}/api/sessions/${sessionId}/map-player`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pokerNowName: originalName,
-            personId: person._id,
-          }),
-        }
-      );
-      if (!response.ok) throw new Error("Mapping failed");
+      await mapSessionPlayer(sessionId, { pokerNowName: originalName, personId: person._id });
 
       setSessions((prev) =>
         prev.map((s) => {
@@ -406,13 +355,7 @@ export function History() {
   const handleToggleSessionStar = async (session) => {
     const nextStarred = !session.starred;
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${session._id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starred: nextStarred }),
-      });
-      if (!response.ok) throw new Error("Failed to update session");
+      await updateSession(session._id, { starred: nextStarred });
       // Refetch rather than patch the local array in place - if the
       // "starred only" filter is active, un-starring a session has to
       // drop it from the current page (and the total count), which a

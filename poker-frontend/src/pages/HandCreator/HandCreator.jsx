@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Check, X, Camera, Trash2, Star } from 'lucide-react';
 import './HandCreator.css';
 import CardSelector from '../../components/CardSelector';
-import { API_URL } from '../../config';
+import { uploadImage } from '../../api/uploads';
+import { getPeople, createPerson } from '../../api/people';
+import { saveFavouriteHand } from '../../api/favourites';
 
 const STREETS = ['PREFLOP', 'FLOP', 'TURN', 'RIVER'];
 
@@ -571,10 +573,9 @@ export default function HandCreator({ onSubmit }) {
     let cancelled = false;
 
     setPeopleLoading(true);
-    fetch(`${API_URL}/api/people`, { credentials: 'include' })
-      .then((r) => r.json())
+    getPeople()
       .then((data) => {
-        if (!cancelled) setPeople(Array.isArray(data) ? data : []);
+        if (!cancelled) setPeople(data);
       })
       .catch((err) => {
         console.error('Failed to fetch people:', err);
@@ -588,33 +589,12 @@ export default function HandCreator({ onSubmit }) {
     };
   }, [step]);
 
-  const uploadImageToServer = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const response = await fetch(`${API_URL}/api/upload-image`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    if (!response.ok) throw new Error('Failed to upload image');
-    const result = await response.json();
-    return result.imageUrl;
-  };
-
   const createAndLinkPerson = async (seat, name, imageFile) => {
     try {
       let imageUrl = '';
-      if (imageFile) imageUrl = await uploadImageToServer(imageFile);
+      if (imageFile) imageUrl = await uploadImage(imageFile);
 
-      const response = await fetch(`${API_URL}/api/people`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, image: imageUrl }),
-      });
-      if (!response.ok) throw new Error('Failed to create person');
-
-      const created = await response.json();
+      const created = await createPerson({ name, image: imageUrl });
       setPeople((prev) => [...prev, created]);
       updatePlayerField(seat, 'personId', created._id);
       showStatus('success', `"${created.name}" created successfully`);
@@ -650,15 +630,7 @@ export default function HandCreator({ onSubmit }) {
     setIsSavingHand(true);
     try {
       const placeholderId = `new-${Date.now()}`;
-      const response = await fetch(`${API_URL}/api/favourites/${placeholderId}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalHand),
-      });
-      if (!response.ok) throw new Error('Failed to save hand');
-
-      const result = await response.json();
+      const result = await saveFavouriteHand(placeholderId, finalHand);
       const savedHand = Array.isArray(result.hands)
         ? result.hands[result.hands.length - 1]
         : finalHand;
