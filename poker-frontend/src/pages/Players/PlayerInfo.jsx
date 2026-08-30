@@ -44,7 +44,7 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
             if (onPlayerUpdate) onPlayerUpdate(updatedPlayer);
         } catch (error) {
             console.error('Error uploading image:', error);
-            alert('Failed to upload image');
+            alert(error.message || 'Failed to upload image');
         } finally {
             setIsUploadingImage(false);
             e.target.value = '';

@@ -22,8 +22,16 @@ const isRedCard = (card) => "hd".includes(card.slice(-1));
 // no special-casing required.
 const MAX_SELECTABLE_CARDS = 4;
 
-export function HandSearchMenu({ onHandClick }) {
-  const [isOpen, setIsOpen] = useState(false);
+// `open`/`onOpenChange` are optional - pass both to run this as a
+// controlled overlay with no trigger button of its own (e.g. TopHeader's
+// search bar opens it externally); omit them for the default
+// uncontrolled mode with its own icon-button trigger (as used inline on
+// the History page toolbar).
+export function HandSearchMenu({ onHandClick, open: controlledOpen, onOpenChange }) {
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
   const [gameType, setGameType] = useState("All");
   const [result, setResult] = useState("all");
   const [filterKey, setFilterKey] = useState("");
@@ -41,7 +49,7 @@ export function HandSearchMenu({ onHandClick }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
 
   const toggleCard = (card) => {
     setSelectedCards((prev) => {
@@ -83,14 +91,16 @@ export function HandSearchMenu({ onHandClick }) {
 
   return (
     <div className="hand-search-menu">
-      <button
-        type="button"
-        className="hand-search-toggle"
-        onClick={() => setIsOpen(true)}
-        title="Search Hands"
-      >
-        <Search size={16} />
-      </button>
+      {!isControlled && (
+        <button
+          type="button"
+          className="hand-search-toggle"
+          onClick={() => setIsOpen(true)}
+          title="Search Hands"
+        >
+          <Search size={16} />
+        </button>
+      )}
 
       {isOpen && (
         <div className="hand-search-overlay" onClick={() => setIsOpen(false)}>

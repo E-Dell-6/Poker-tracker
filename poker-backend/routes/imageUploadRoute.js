@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import userAuth from '../middleware/userAuth.js';
 import { ALLOWED_MIME_TO_EXT } from '../services/imageService.js';
-import { uploadImage, removeImage } from '../controllers/imageController.js';
+import { uploadImage, removeImage, handleUploadError } from '../controllers/imageController.js';
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ const upload = multer({
   }
 });
 
-router.post('/', userAuth, upload.single('image'), uploadImage);
+router.post('/', userAuth, upload.single('image'), handleUploadError, uploadImage);
 router.delete('/:filename', userAuth, removeImage);
 
 export default router;

@@ -4,7 +4,10 @@ export async function uploadImage(file) {
   const formData = new FormData();
   formData.append("image", file);
   const res = await apiFetch("/api/upload-image", { method: "POST", body: formData });
-  if (!res.ok) throw new Error("Failed to upload image");
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || "Failed to upload image");
+  }
   const { imageUrl } = await res.json();
   return imageUrl;
 }

@@ -1,4 +1,22 @@
+import multer from 'multer';
 import { saveImage, deleteImage } from '../services/imageService.js';
+
+// multer's own middleware (file-size limit, fileFilter's rejected-type
+// error) fails BEFORE uploadImage below ever runs, by calling next(err) -
+// which skips straight to Express's default error handler and returns an
+// HTML error page (with a stack trace) instead of JSON, unless an
+// error-handling middleware (4 args) is wired in after it. This is that
+// handler - keeps upload failures in the same JSON `{ error }` shape as
+// every other response here.
+export function handleUploadError(err, req, res, next) {
+  if (!err) return next();
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ error: 'Image must be under 5MB' });
+  }
+  // Covers both other MulterErrors and the fileFilter's own thrown Error
+  // (unsupported file type) - both carry a safe, user-facing message.
+  res.status(400).json({ error: err.message || 'Failed to upload image' });
+}
 
 export function uploadImage(req, res) {
   try {
