@@ -9,6 +9,14 @@ import { formatAmount, formatSignedAmount } from "../utils/formatMoney";
 import { handMatchesFilter, getAvailableFilters } from "../utils/handFilters";
 import "./SessionLog.css";
 
+// Matches HomePage.jsx/HandSearchMenu.jsx's own local copies of this same
+// helper (no shared home for it yet) - renders hole cards as compact
+// suit-colored text (e.g. "A♠") instead of image card graphics, the
+// pattern already established for hand rows elsewhere in the app.
+const SUIT_SYMBOLS = { s: "♠", h: "♥", d: "♦", c: "♣" };
+const cardLabel = (card) => `${card.slice(0, -1)}${SUIT_SYMBOLS[card.slice(-1)] || card.slice(-1)}`;
+const isRedCard = (card) => "hd".includes(card.slice(-1));
+
 export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleStar }) {
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
@@ -242,9 +250,9 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
                             <div className="hand-cards">
                               {hero && hero.holeCards?.length > 0 ? (
                                 hero.holeCards.map((card, ci) => (
-                                  <div key={ci} className="card-wrapper">
-                                    <img src={`/images/cards/${card}.png`} alt={card} className="card-img" />
-                                  </div>
+                                  <span key={ci} className={`hand-card ${isRedCard(card) ? "red" : ""}`}>
+                                    {cardLabel(card)}
+                                  </span>
                                 ))
                               ) : (
                                 <span className="no-cards">No Cards</span>

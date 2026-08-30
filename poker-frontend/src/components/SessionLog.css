@@ -1,42 +1,56 @@
+/* Every selector below that also exists in FavouritesLog.css is scoped
+   under .session-card (SessionLog-only, never rendered by FavouritesLog -
+   see its own CSS file's comment) so it reliably wins the cascade over
+   FavouritesLog.css's differently-styled same-named rules regardless of
+   which stylesheet the bundler happens to place last - both load globally
+   on the History page at once, since it renders both components. Plain
+   class selectors here previously had equal specificity to
+   FavouritesLog.css's, so edits to shared class names like .hand-item
+   would silently do nothing whenever the other file's bundle position won
+   the tie. */
+
 /* ── HAND FILTER BAR ────────────────────────────────────── */
-.hand-filter-bar {
+.session-card .hand-filter-bar {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
   padding: 10px 16px;
   background: var(--color-bg);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgba(0, 0, 0, 0.9);
 }
 
-.hand-filter-btn {
+/* Matches .ui-tab (components/ui/Tabs.css) - same pill shape and
+   solid-fill active state used for every other filter/tab control on this
+   page, instead of this bar's own dimmer, differently-bordered treatment. */
+.session-card .hand-filter-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   padding: 5px 12px;
-  border-radius: 100px;
+  border-radius: 999px;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
   white-space: nowrap;
 }
 
-.hand-filter-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+.session-card .hand-filter-btn:hover {
+  border-color: var(--color-accent-border);
   color: var(--color-text);
 }
 
-.hand-filter-btn.active {
-  background: var(--color-accent-dim);
-  color: var(--color-accent);
-  border-color: var(--color-accent-border);
+.session-card .hand-filter-btn.active {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
 }
 
-.hand-filter-count {
+.session-card .hand-filter-count {
   font-size: 10px;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.08);
@@ -47,13 +61,13 @@
   text-align: center;
 }
 
-.hand-filter-btn.active .hand-filter-count {
-  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  color: var(--color-accent);
+.session-card .hand-filter-btn.active .hand-filter-count {
+  background: color-mix(in srgb, var(--color-accent-contrast) 15%, transparent);
+  color: var(--color-accent-contrast);
 }
 
 /* ── EMPTY FILTER STATE ─────────────────────────────────── */
-.hands-empty-filter {
+.session-card .hands-empty-filter {
   padding: 24px 10px;
   color: var(--color-text-muted);
   font-size: 13px;
@@ -87,7 +101,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(0, 0, 0, 0.9);
   border-radius: 10px;
   cursor: pointer;
   overflow: hidden;
@@ -189,12 +203,12 @@
 }
 
 /* ── HANDS LIST (ACCORDION) ─────────────────────────────── */
-.hands-list {
+.session-card .hands-list {
   list-style: none;
   padding: 8px 16px 16px;
   margin: 0;
   background: var(--color-bg);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgba(0, 0, 0, 0.9);
   animation: slideDown 0.2s ease-out;
 }
 
@@ -202,28 +216,28 @@
 /* Grid instead of a wrapping flex row: every hand gets the same column
    widths (index / cards / winner / pot / profit / star), so the list
    lines up instead of each row reflowing to its own content width. */
-.hand-item {
+.session-card .hand-item {
   display: grid;
   grid-template-columns: 30px auto 1fr auto auto 32px;
   align-items: center;
   gap: 16px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
+  padding: 4px 12px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.9);
   color: var(--color-text);
   cursor: pointer;
-  border-radius: 8px;
   transition: background 0.15s ease;
 }
 
-.hand-item:last-child {
+.session-card .hand-item:last-child {
   border-bottom: none;
 }
 
-.hand-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+.session-card .hand-item:hover {
+  background: var(--color-bg-elevated-hover);
 }
 
-.hand-info {
+.session-card .hand-info {
   display: contents; /* children become direct grid items of .hand-item,
     so hand-index / hand-cards / hand-winner each land in their own
     column instead of being measured as one bundled flex child. */
@@ -233,48 +247,43 @@
    order) because .hand-profit only renders when a profit figure exists -
    auto-placement would shift every column after it left on rows without
    one, so pot/star would stop lining up between hands. */
-.hand-index {
+.session-card .hand-index {
   grid-column: 1;
   color: var(--color-text-muted);
   font-size: 0.85em;
   font-family: var(--font-sans);
 }
 
-.hand-cards {
+/* Matches .hp-starred-cards (HomePage.css) - compact suit-colored text
+   instead of image card graphics, so hand rows read like the rest of the
+   app's hand summaries rather than this list's own boxed card art. */
+.session-card .hand-cards {
   grid-column: 2;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  font-weight: 700;
 }
 
-.card-wrapper {
-  width: 34px;
-  height: 48px;
-  background: #CCCCCC;
-  border-radius: 3px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
+.session-card .hand-card {
+  color: var(--color-text);
+  white-space: nowrap;
 }
 
-.card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
+.session-card .hand-card.red {
+  color: var(--color-negative);
 }
 
-.no-cards {
+.session-card .no-cards {
   color: var(--color-text-muted);
   font-size: 0.85em;
   font-family: var(--font-sans);
   white-space: nowrap;
 }
 
-.hand-winner {
+.session-card .hand-winner {
   grid-column: 3;
   color: var(--color-text-muted);
   font-size: 0.88em;
@@ -288,12 +297,12 @@
 }
 
 /* ── HAND RIGHT GROUP ───────────────────────────────────── */
-.hand-right {
+.session-card .hand-right {
   display: contents;
 }
 
 /* ── HAND POT ───────────────────────────────────────────── */
-.hand-pot {
+.session-card .hand-pot {
   grid-column: 4;
   font-family: var(--font-sans);
   font-size: 0.95rem;
@@ -306,7 +315,7 @@
   white-space: nowrap;
 }
 
-.pot-label {
+.session-card .pot-label {
   font-family: var(--font-sans);
   color: var(--color-text-muted);
   font-size: 0.72em;
@@ -314,7 +323,7 @@
 }
 
 /* ── HAND PROFIT ────────────────────────────────────────── */
-.hand-profit {
+.session-card .hand-profit {
   grid-column: 5;
   font-family: var(--font-sans);
   font-size: 0.95rem;
@@ -325,22 +334,22 @@
   white-space: nowrap;
 }
 
-.hand-profit.win {
+.session-card .hand-profit.win {
   color: var(--color-positive);
   background: rgba(34, 197, 94, 0.1);
 }
 
-.hand-profit.loss {
+.session-card .hand-profit.loss {
   color: var(--color-negative);
   background: rgba(239, 68, 68, 0.1);
 }
 
 /* ── STAR BUTTON ────────────────────────────────────────── */
-/* Was previously unstyled here - HandleStars renders this exact class,
-   but only FavouritesLog.css (not loaded on the History page) defined
-   it, so this rendered as a plain unstyled native button (grey box,
-   default border) sitting in the middle of an otherwise dark/gold row. */
-.star-btn {
+/* HandleStars (a shared component) renders this exact class name, which
+   FavouritesLog.css ALSO styles differently (its own, non-grid layout) -
+   scoped under .session-card so this grid-column placement reliably wins
+   over that instead of losing the cascade tie depending on bundle order. */
+.session-card .star-btn {
   grid-column: 6;
   background: none;
   border: none;
@@ -353,7 +362,7 @@
   transition: transform 0.15s ease;
 }
 
-.star-btn:hover {
+.session-card .star-btn:hover {
   transform: scale(1.15);
 }
 
@@ -657,14 +666,14 @@ select.modal-input option { background: var(--color-bg-elevated-hover); }
   /* Drop the winner name and shrink gaps so index/cards/pot/profit/star
      still fit on one line instead of squeezing six columns into a
      phone-width row. */
-  .hand-item {
+  .session-card .hand-item {
     grid-template-columns: 22px auto auto auto 28px;
     gap: 8px;
     padding: 10px 8px;
   }
-  .hand-winner { display: none; }
-  .hand-pot { grid-column: 3; font-size: 0.85rem; }
-  .hand-profit { grid-column: 4; font-size: 0.85rem; padding: 2px 8px; }
-  .star-btn { grid-column: 5; }
-  .card-wrapper { width: 28px; height: 40px; }
+  .session-card .hand-winner { display: none; }
+  .session-card .hand-pot { grid-column: 3; font-size: 0.85rem; }
+  .session-card .hand-profit { grid-column: 4; font-size: 0.85rem; padding: 2px 8px; }
+  .session-card .star-btn { grid-column: 5; }
+  .session-card .hand-cards { font-size: 0.85em; }
 }

@@ -36,6 +36,18 @@ function sortPositions(positions) {
   });
 }
 
+// Matches handClass.js's RANK_LABELS token format ("22".."AA").
+const RANK_VALUE = { 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, T: 10, J: 11, Q: 12, K: 13, A: 14 };
+
+// Pocket pairs read naturally low-to-high (22 -> AA); every other category
+// keeps the existing most-played-first ordering.
+function sortHandEntries(catKey, entries) {
+  if (catKey === 'pocketPairs') {
+    return [...entries].sort((a, b) => RANK_VALUE[a[0][0]] - RANK_VALUE[b[0][0]]);
+  }
+  return [...entries].sort((a, b) => b[1].hands - a[1].hands);
+}
+
 const AXIS_TICK = { fontSize: 11, fill: 'var(--color-text-muted)' };
 const TOOLTIP_STYLE = {
   background: 'var(--color-bg-elevated)',
@@ -115,9 +127,10 @@ export function HandClassBreakdown({ byHandClass, byHandClassCategory }) {
 
     if (!catExpanded) continue;
 
-    const handEntries = Object.entries(byHandClass || {})
-      .filter(([, v]) => v.category === catKey && v.hands > 0)
-      .sort((a, b) => b[1].hands - a[1].hands);
+    const handEntries = sortHandEntries(
+      catKey,
+      Object.entries(byHandClass || {}).filter(([, v]) => v.category === catKey && v.hands > 0)
+    );
 
     for (const [token, handData] of handEntries) {
       const handExpanded = expandedHands.has(token);
