@@ -10,6 +10,7 @@ import Controller from "../../components/Controller";
 import { API_URL } from "../../config";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 import { formatAmount } from "../../utils/formatMoney";
+import { PublicHandViewerSkeleton } from "./PublicHandViewerSkeleton";
 
 const HAND_FILTERS = [
   { key: "flop",  label: "Saw Flop" },
@@ -86,11 +87,7 @@ export function PublicHandViewer() {
   }, []);
 
   if (status === "loading") {
-    return (
-      <div className="hand-replayer public-loading">
-        <div className="public-status">Loading hand…</div>
-      </div>
-    );
+    return <PublicHandViewerSkeleton />;
   }
 
   if (status === "notfound") {

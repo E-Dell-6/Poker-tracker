@@ -11,6 +11,7 @@ import { Tabs } from '../../components/ui/Tabs';
 import { StudyCharts } from './StudyCharts';
 import { PositionMatrixTables } from './PositionMatrixTables';
 import { HandClassBreakdown } from './HandClassBreakdown';
+import { StudyPageSkeleton } from './StudyPageSkeleton';
 import './Stats.css';
 
 const SECTION_TABS = [
@@ -126,10 +127,7 @@ export function Stats() {
     return (
       <Layout title="Study">
         <div className="study-page">
-          <div className="study-status-container">
-            <div className="study-spinner"></div>
-            <p>Loading your stats…</p>
-          </div>
+          <StudyPageSkeleton />
         </div>
       </Layout>
     );

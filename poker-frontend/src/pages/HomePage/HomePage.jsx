@@ -8,6 +8,7 @@ import { StatTile } from '../../components/ui/StatTile';
 import { CumulativeChart } from '../../components/CumulativeChart';
 import { Tabs } from '../../components/ui/Tabs';
 import { Table, TableHead, TableBody, TableRow, TableCell } from '../../components/ui/Table';
+import { DashboardSkeleton } from './DashboardSkeleton';
 import { toMajorUnits, formatSignedMajorUnits } from '../../utils/formatMoney';
 import './HomePage.css';
 
@@ -107,6 +108,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [sessions, setSessions] = useState([]);
   const [combinedSessions, setCombinedSessions] = useState([]);
   const [stats, setStats] = useState(null);
@@ -164,11 +166,13 @@ export function HomePage() {
         onlineSessions: onlineSessions.length,
         liveSessions: liveSessions.length,
       });
+      setDataLoading(false);
     });
   }, [isLoggedIn]);
 
   const handleGuestMode = () => {
     setIsGuest(true);
+    setDataLoading(false);
     setSessions(GUEST_SESSIONS);
     setCombinedSessions([
       ...GUEST_SESSIONS.map(s => ({ ...s, isLive: false })),
@@ -376,8 +380,8 @@ export function HomePage() {
   if (isLoggedIn === null) {
     return (
       <div className="hp-root">
-        <div className="hp-loading">
-          <div className="hp-spinner" />
+        <div className="hp-dashboard hp-dashboard--pre-auth">
+          <DashboardSkeleton />
         </div>
       </div>
     );
@@ -406,6 +410,8 @@ export function HomePage() {
           </div>
         )}
 
+        {dataLoading ? <DashboardSkeleton /> : (
+        <>
         <div className="hp-tiles-grid">
           <StatTile
             label="Net Profit (30D)"
@@ -527,6 +533,8 @@ export function HomePage() {
             </div>
           )}
         </section>
+        </>
+        )}
       </div>
     </Layout>
   );

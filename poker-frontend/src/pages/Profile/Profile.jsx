@@ -5,6 +5,7 @@ import "./Profile.css";
 import { API_URL } from "../../config";
 import { toMajorUnits } from "../../utils/formatMoney";
 import { CumulativeChart } from "../../components/CumulativeChart";
+import { ProfileSkeleton } from "./ProfileSkeleton";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -139,7 +140,7 @@ export function Profile() {
 
   if (loading) return (
     <Layout title="Profile">
-      <div className="profile-loading"><div className="profile-spinner" /></div>
+      <ProfileSkeleton />
     </Layout>
   );
 

@@ -1,6 +1,7 @@
 import { Layout } from "../../components/Layout";
 import { useState, useEffect } from "react";
 import { Play, Square, X, TrendingUp, TrendingDown, Trash2, Plus } from "lucide-react";
+import { SessionHistorySkeleton } from "./SessionHistorySkeleton";
 import "./Clock.css";
 
 const normalizeSession = (s) => ({
@@ -23,6 +24,7 @@ export function Clock() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
 
@@ -35,6 +37,8 @@ export function Clock() {
         setCompletedSessions(data.map(normalizeSession));
       } catch (err) {
         console.error(err);
+      } finally {
+        setSessionsLoading(false);
       }
     };
 
@@ -443,7 +447,9 @@ export function Clock() {
           )}
 
           {/* Completed Session History */}
-          {completedSessions.length > 0 && (
+          {sessionsLoading ? (
+            <SessionHistorySkeleton />
+          ) : completedSessions.length > 0 && (
             <div className="history-section">
               <h2 className="history-title">Session History</h2>
               <div className="session-list">

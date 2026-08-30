@@ -7,6 +7,7 @@ import { FavouritesLog } from "../../components/FavouritesLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
 import { Tabs } from "../../components/ui/Tabs";
 import { Pagination } from "../../components/ui/Pagination";
+import { SessionListSkeleton } from "./SessionListSkeleton";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
 import "./History.css";
@@ -184,6 +185,7 @@ export function History() {
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedGame, setSelectedGame] = useState("All");
   const [uploadStatus, setUploadStatus] = useState(null);
@@ -218,7 +220,8 @@ export function History() {
         setTotal(data.total ?? 0);
         setSummary(data.summary ?? null);
       })
-      .catch(() => setError("Server connection failed."));
+      .catch(() => setError("Server connection failed."))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -513,7 +516,9 @@ export function History() {
         </div>
         <hr />
         {!showFavourites ? (
-          sessions.length === 0 ? (
+          loading ? (
+            <SessionListSkeleton />
+          ) : sessions.length === 0 ? (
             <div className="no-sessions">
               <p>No sessions found.</p>
             </div>

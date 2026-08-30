@@ -37,27 +37,6 @@
   width: 100%;
 }
 
-/* ── LOADING ────────────────────────────────────────────── */
-.hp-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.hp-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255,255,255,0.07);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ── HERO ───────────────────────────────────────────────── */
 .hp-hero {
   position: relative;
@@ -390,6 +369,14 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Only used for the pre-auth skeleton (isLoggedIn still unknown) - that
+   render happens outside Layout/.main-content entirely (we don't know yet
+   whether to show the real sidebar), so it needs its own page padding
+   instead of relying on .main-content's. */
+.hp-dashboard--pre-auth {
+  padding: 32px;
 }
 
 .hp-tiles-grid {

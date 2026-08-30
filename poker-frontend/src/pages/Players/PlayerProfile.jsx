@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { PlayerInfo } from './PlayerInfo';
+import { PlayerInfoSkeleton } from './PlayerInfoSkeleton';
 import { API_URL } from '../../config';
 import './Players.css'; // shared .no-info empty-state style
 import './PlayerProfile.css';
@@ -45,7 +46,7 @@ export function PlayerProfile() {
         </button>
 
         {loading ? (
-          <p className="no-info">Loading player…</p>
+          <PlayerInfoSkeleton />
         ) : !player ? (
           <p className="no-info">Player not found.</p>
         ) : (

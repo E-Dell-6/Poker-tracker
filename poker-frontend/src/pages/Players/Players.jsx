@@ -6,6 +6,7 @@ import './Players.css';
 import { Table, TableHead, TableBody, TableRow, TableCell } from "../../components/ui/Table";
 import { Tag } from "../../components/ui/Tag";
 import { Pagination } from "../../components/ui/Pagination";
+import { PlayersTableSkeleton } from "./PlayersTableSkeleton";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
 
@@ -15,6 +16,7 @@ export function Players() {
   const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [statsByPersonId, setStatsByPersonId] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,7 +38,8 @@ export function Players() {
         setPlayers(Array.isArray(data.players) ? data.players : []);
         setTotal(data.total ?? 0);
       })
-      .catch(error => console.error('Error fetching players:', error));
+      .catch(error => console.error('Error fetching players:', error))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -104,7 +107,29 @@ export function Players() {
   return (
     <Layout title="Players" subtitle={subtitle}>
       <div className="players-container">
-        {total === 0 && !hasActiveFilter ? (
+        {loading ? (
+          <div className="player-list-panel">
+            <div className="player-list-controls">
+              <input
+                type="text"
+                className="player-search"
+                placeholder="Search players..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button
+                type="button"
+                className={`star-filter-btn ${showStarredOnly ? 'active' : ''}`}
+                onClick={handleToggleStarredOnly}
+                title={showStarredOnly ? 'Show all players' : 'Show starred players'}
+                aria-pressed={showStarredOnly}
+              >
+                <Star size={16} fill={showStarredOnly ? 'currentColor' : 'none'} />
+              </button>
+            </div>
+            <PlayersTableSkeleton />
+          </div>
+        ) : total === 0 && !hasActiveFilter ? (
           <p className="no-info">
             No players yet. Map a player from the History page to get started.
           </p>

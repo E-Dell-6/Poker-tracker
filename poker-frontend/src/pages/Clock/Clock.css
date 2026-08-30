@@ -523,6 +523,12 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* ── SESSION HISTORY SKELETON ──────────────────────────── */
+.session-item--skeleton:hover {
+  transform: none;
+  border-color: var(--color-border);
+}
+
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 640px) {
   .clock-page { padding: 28px 16px; }

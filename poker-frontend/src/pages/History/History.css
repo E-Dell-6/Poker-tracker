@@ -595,6 +595,20 @@ hr {
   cursor: not-allowed;
 }
 
+/* ── SESSION LIST SKELETON ──────────────────────────────── */
+/* Reuses .session-card's real padding/layout (defined in SessionLog.css,
+   already loaded on this page) so the skeleton lines up with the real
+   rows, but isn't actually clickable - drop the hover affordance. */
+.session-card--skeleton {
+  cursor: default;
+}
+
+.session-card--skeleton:hover {
+  transform: none;
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 768px) {
   .history-container { padding: 24px 16px; }
