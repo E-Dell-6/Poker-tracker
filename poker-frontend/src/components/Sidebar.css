@@ -26,6 +26,13 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
   white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar-brand:hover {
+  opacity: 0.8;
 }
 
 .sidebar-brand-icon {

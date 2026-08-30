@@ -69,10 +69,10 @@ export function Sidebar() {
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
 
       {/* Brand */}
-      <div className="sidebar-brand">
+      <Link to="/dashboard" className="sidebar-brand">
         <Spade className="sidebar-brand-icon" size={20} fill="currentColor" />
         {!collapsed && <span className="sidebar-brand-name">PokerFlow</span>}
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav className="sidebar-nav">

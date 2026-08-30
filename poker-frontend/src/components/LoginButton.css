@@ -18,7 +18,7 @@
   background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
   border: none;
   border-radius: 10px;
-  color: #ffffff;
+  color: var(--color-accent-contrast);
   font-size: 14px;
   font-weight: 700;
   font-family: var(--font-sans);
@@ -37,12 +37,12 @@
 .lb-button--user {
   padding: 6px 12px 6px 6px;
   background: var(--color-bg-elevated);
-  border: 1.5px solid rgba(123, 110, 246, 0.35);
+  border: 1.5px solid var(--color-border);
 }
 
 .lb-button--user:hover {
   border-color: var(--color-accent-hover);
-  background: #252545;
+  background: var(--color-bg-elevated-hover);
   opacity: 1;
   transform: translateY(-1px);
 }
@@ -57,7 +57,7 @@
   justify-content: center;
   font-size: 13px;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-accent-contrast);
   flex-shrink: 0;
 }
 
@@ -71,7 +71,7 @@
 }
 
 .lb-chevron {
-  color: rgba(160, 160, 210, 0.6);
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   transition: transform 0.2s;
@@ -87,8 +87,8 @@
   top: calc(100% + 8px);
   right: 0;
   min-width: 220px;
-  background: #13132b;
-  border: 1.5px solid rgba(123, 110, 246, 0.25);
+  background: var(--color-bg-elevated);
+  border: 1.5px solid var(--color-border);
   border-radius: 14px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -119,7 +119,7 @@
   justify-content: center;
   font-size: 16px;
   font-weight: 800;
-  color: #fff;
+  color: var(--color-accent-contrast);
   flex-shrink: 0;
 }
 
@@ -156,7 +156,7 @@
 /* ── Divider ── */
 .lb-divider {
   height: 1px;
-  background: rgba(123, 110, 246, 0.12);
+  background: var(--color-border);
   margin: 0;
 }
 
@@ -178,20 +178,20 @@
 }
 
 .lb-menu-item--verify {
-  color: #a78bfa;
+  color: var(--color-accent);
 }
 
 .lb-menu-item--verify:hover {
-  background: rgba(123, 110, 246, 0.1);
+  background: var(--color-accent-dim);
 }
 
 .lb-menu-item--logout {
-  color: rgba(160, 160, 210, 0.7);
+  color: var(--color-text-muted);
 }
 
 .lb-menu-item--logout:hover {
-  background: rgba(255, 107, 107, 0.08);
-  color: #ff8f8f;
+  background: var(--color-negative-dim);
+  color: var(--color-negative);
 }
 
 /* ── OTP section ── */
@@ -200,7 +200,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  color: rgba(160, 160, 210, 0.7);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 600;
 }
@@ -210,7 +210,7 @@
 }
 
 .lb-otp-label {
-  color: rgba(160, 160, 210, 0.7);
+  color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 10px;
@@ -226,7 +226,7 @@
   width: 32px;
   height: 36px;
   background: var(--color-bg-elevated);
-  border: 1.5px solid rgba(123, 110, 246, 0.3);
+  border: 1.5px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text);
   font-size: 15px;
@@ -242,7 +242,7 @@
 }
 
 .lb-otp-input--error {
-  border-color: #ff6b6b;
+  border-color: var(--color-negative);
 }
 
 .lb-otp-input:disabled {
@@ -250,7 +250,7 @@
 }
 
 .lb-otp-error {
-  color: #ff6b6b;
+  color: var(--color-negative);
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 8px;
@@ -262,7 +262,7 @@
   background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
   border: none;
   border-radius: 8px;
-  color: #fff;
+  color: var(--color-accent-contrast);
   font-size: 13px;
   font-weight: 800;
   font-family: var(--font-sans);
