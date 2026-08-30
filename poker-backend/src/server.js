@@ -7,7 +7,7 @@ import helmet from 'helmet'; // npm install helmet
 import 'dotenv/config';
 
 import sessionRouter from '../routes/sessionRoute.js';
-import favouritesRouter from '../routes/handRoute.js';
+import favouritesRouter from '../routes/favouritesRoute.js';
 import peopleRouter from '../routes/peopleRoute.js';
 import imageUploadRouter from '../routes/imageUploadRoute.js';
 import authRouter from '../routes/authRoutes.js';
