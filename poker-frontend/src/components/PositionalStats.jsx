@@ -12,6 +12,21 @@ function sortPositions(positions) {
   });
 }
 
+// Total hands across every position in a table-size bucket - see
+// StudyCharts.jsx's identical helper for why the default table size shown
+// should be based on this (the size actually played most), not just the
+// largest size ever seen.
+function bucketHandCount(bucket) {
+  return Object.values(bucket?.positions || {}).reduce((sum, p) => sum + (p.hands || 0), 0);
+}
+
+function mostPopulousSize(positional, sizes) {
+  if (sizes.length === 0) return null;
+  return sizes.reduce((best, size) =>
+    bucketHandCount(positional[size]) > bucketHandCount(positional[best]) ? size : best
+  , sizes[0]);
+}
+
 const POSITION_COLUMNS = [
   ['vpip', 'VPIP'],
   ['pfr', 'PFR'],
@@ -117,7 +132,7 @@ export function PositionalStats({ positional, coverage }) {
   // Keep the selected tab valid as `positional` loads/changes (e.g. after
   // a recompute adds/removes a table-size bucket).
   useEffect(() => {
-    setActiveSize(prev => (prev !== null && sizes.includes(prev) ? prev : (sizes[0] ?? null)));
+    setActiveSize(prev => (prev !== null && sizes.includes(prev) ? prev : mostPopulousSize(positional, sizes)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(sizes)]);
 
@@ -160,7 +175,7 @@ export function PositionalStats({ positional, coverage }) {
               className={`pos-size-tab ${activeSize === size ? 'active' : ''}`}
               onClick={() => setActiveSize(size)}
             >
-              {size}-handed
+              {size}-handed ({bucketHandCount(positional[size])})
             </button>
           ))}
         </div>

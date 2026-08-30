@@ -9,9 +9,13 @@ function rate(made, opportunities, confidence = 'high') {
 
 const POSITION_KEYS = ['vpip', 'pfr', 'open', 'steal', 'threeBet', 'foldTo3Bet', 'fourBet', 'foldTo4Bet', 'cbFlop', 'foldToCbFlop', 'wtsd', 'wwsf'];
 
-// Fills every POSITION_COLUMNS key with a default rate, then applies overrides.
+// Fills every POSITION_COLUMNS key with a default rate, then applies
+// overrides. `hands` defaults to 10 (matching finalizePositionStats()'
+// real shape, which always has a top-level `hands` count) so
+// bucketHandCount()-driven behavior (the table-size tab labels/default)
+// has something meaningful to sum across every existing fixture here.
 function positionStats(overrides = {}) {
-  const base = {};
+  const base = { hands: 10 };
   for (const key of POSITION_KEYS) base[key] = rate(5, 10);
   return { ...base, ...overrides };
 }
@@ -41,13 +45,26 @@ describe('PositionalStats', () => {
     expect(screen.getByText(/Hit Recompute/i)).toBeInTheDocument();
   });
 
-  it('defaults to the largest table size', () => {
+  it('defaults to the largest table size when hand counts tie', () => {
     const positional = {
       6: bucket({ positions: { BTN: positionStats() } }),
       9: bucket({ positions: { BTN: positionStats() } })
     };
     render(<PositionalStats positional={positional} coverage={{ hands: 10, totalHands: 10 }} />);
-    expect(screen.getByRole('button', { name: '9-handed' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: '9-handed (10)' })).toHaveClass('active');
+  });
+
+  it('defaults to the most-played size, not the largest, when they differ', () => {
+    // 9-handed is the larger table, but only 1 of the 51 total hands was
+    // played there - the old "always pick the largest size" behavior would
+    // silently hide the other 50 hands. See StudyCharts.jsx's identical fix.
+    const positional = {
+      6: bucket({ positions: { BTN: positionStats({ hands: 50 }) } }),
+      9: bucket({ positions: { CO: positionStats({ hands: 1 }) } })
+    };
+    render(<PositionalStats positional={positional} coverage={{ hands: 51, totalHands: 51 }} />);
+    expect(screen.getByRole('button', { name: '6-handed (50)' })).toHaveClass('active');
+    expect(screen.getByRole('columnheader', { name: 'BTN' })).toBeInTheDocument();
   });
 
   it('switching the size tab switches the displayed position rows', async () => {
@@ -61,7 +78,7 @@ describe('PositionalStats', () => {
     expect(screen.getByRole('columnheader', { name: 'CO' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'BTN' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '6-handed' }));
+    await user.click(screen.getByRole('button', { name: '6-handed (10)' }));
     expect(screen.getByRole('columnheader', { name: 'BTN' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'CO' })).not.toBeInTheDocument();
   });

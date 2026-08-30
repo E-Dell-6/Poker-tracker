@@ -4,7 +4,7 @@
   gap: 7px;
   flex-wrap: wrap;
   padding: 10px 16px;
-  background: var(--color-bg-elevated);
+  background: var(--color-bg);
   border-top: 1px solid var(--color-border);
 }
 
@@ -86,7 +86,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg-elevated-hover);
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
@@ -123,20 +123,6 @@
   font-weight: 600;
   font-size: 0.88rem;
   white-space: nowrap;
-}
-
-.session-game-type {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  background: #3a3000;
-  color: #fde68a;
-  padding: 2px 7px;
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  border: 1px solid rgba(253, 230, 138, 0.25);
 }
 
 .session-players {
@@ -199,7 +185,7 @@
   list-style: none;
   padding: 8px 16px 16px;
   margin: 0;
-  background: var(--color-bg-elevated);
+  background: var(--color-bg);
   border-top: 1px solid var(--color-border);
   animation: slideDown 0.2s ease-out;
 }
@@ -435,7 +421,7 @@
   padding-bottom: 16px;
   margin-bottom: 24px;
   font-size: 1.4rem;
-  color: #fff;
+  color: var(--color-text);
 }
 
 /* ── MODAL FORM ─────────────────────────────────────────── */
@@ -546,7 +532,7 @@ select.modal-input option { background: var(--color-bg-elevated-hover); }
   padding: 16px;
 }
 
-.new-person-form h4 { font-family: var(--font-sans); color: #fff; margin: 0 0 16px; font-size: 1rem; }
+.new-person-form h4 { font-family: var(--font-sans); color: var(--color-text); margin: 0 0 16px; font-size: 1rem; }
 
 .new-person-actions { display: flex; gap: 8px; margin-top: 12px; }
 

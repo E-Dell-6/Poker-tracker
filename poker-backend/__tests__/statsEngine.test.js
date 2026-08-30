@@ -216,3 +216,158 @@ describe('computeStatsForHands: probe bet', () => {
     expect(stats.probe).toEqual(expect.objectContaining({ made: 1, opportunities: 1 }));
   });
 });
+
+describe('computeStatsForHands: per-position foldToSteal/limp/coldCall (Study\'s preflop matrix)', () => {
+  it('mirrors foldToSteal, limp, and coldCall into the position bucket the same way checkRaise/wsd already do', () => {
+    // Hand 1: Villain (BTN, a steal position) opens, Hero (BB, a blind
+    // position) folds - a fold to steal.
+    const foldToStealHand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 300 },
+        { seat: 2, name: 'SBPlayer', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -100 },
+        { seat: 3, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -200 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'SBPlayer', amount: 0, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Hero', amount: 0, potSizeAfter: 900 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    // Hand 2: Hero (BTN) limps.
+    const limpHand = {
+      handIndex: 2, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -100 },
+        { seat: 2, name: 'SBPlayer', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 0 },
+        { seat: 3, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 100 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Villain', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 200, potSizeAfter: 500 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'SBPlayer', amount: 0, potSizeAfter: 500 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Villain', amount: 0, potSizeAfter: 500 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    // Hand 3: Villain (BTN) opens, Hero (BB) cold calls.
+    const coldCallHand = {
+      handIndex: 3, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -300 },
+        { seat: 2, name: 'SBPlayer', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -100 },
+        { seat: 3, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 400 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'SBPlayer', amount: 0, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 400, potSizeAfter: 1300 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    const stats = computeStatsForHands([foldToStealHand, limpHand, coldCallHand], matchHero());
+
+    // Both hand 1 and hand 3 face a BTN steal from the BB - hand 1 folds
+    // (the "made" case), hand 3 cold calls instead, so BB's foldToSteal
+    // opportunity count spans both hands while only hand 1 counts as made.
+    expect(stats.positional[3].positions.BB.foldToSteal).toEqual(expect.objectContaining({ made: 1, opportunities: 2 }));
+    expect(stats.positional[3].positions.BTN.limp).toEqual(expect.objectContaining({ made: 1, opportunities: 1 }));
+    expect(stats.positional[3].positions.BB.coldCall).toEqual(expect.objectContaining({ made: 1, opportunities: 1 }));
+  });
+});
+
+describe('computeStatsForHands: win rate by hand class', () => {
+  it('buckets an open by hand class, category, and position', () => {
+    // 3-handed: Hero (BTN, dealer) opens AKs, both blinds fold.
+    const players = [
+      { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 300, holeCards: ['Ah', 'Kh'] },
+      { seat: 2, name: 'V1', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -100 },
+      { seat: 3, name: 'V2', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -200 },
+    ];
+    const actions = [
+      { street: 'PREFLOP', actionType: 'POST_SB', player: 'V1', amount: 100, potSizeAfter: 100 },
+      { street: 'PREFLOP', actionType: 'POST_BB', player: 'V2', amount: 200, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'V1', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'V2', amount: 0, potSizeAfter: 900 },
+    ];
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players, actions,
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byHandClassCategory.axSuited).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass.AKs.category).toBe('axSuited');
+    expect(stats.byHandClass.AKs.contexts.open).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass.AKs.contexts.open.byPosition.BTN).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass.AKs.contexts.open.byPosition.BTN.totalProfitLoss).toBeGreaterThan(0);
+  });
+
+  it('classifies hero 3-betting then folding to a 4-bet, and skips hands hero never voluntarily played', () => {
+    // 2-handed: Villain (BTN/SB) opens, Hero (BB) 3-bets with 76s, Villain
+    // 4-bets, Hero folds - the "loses every time from a 4-bet" spot.
+    const playedHand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 900 },
+        { seat: 2, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -900, holeCards: ['7h', '6h'] },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Villain', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 1800, potSizeAfter: 2700 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 5400, potSizeAfter: 8100 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Hero', amount: 0, potSizeAfter: 8100 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    // A hand hero folded first-in with zero voluntary investment - should
+    // contribute no byHandClass data at all (see classifyHeroPreflopContext's
+    // null-context rule).
+    const foldedHand = {
+      handIndex: 2, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 200 },
+        { seat: 2, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -200, holeCards: ['2c', '7d'] },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Villain', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Hero', amount: 0, potSizeAfter: 900 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    const stats = computeStatsForHands([playedHand, foldedHand], matchHero());
+
+    expect(stats.byHandClass['76s'].category).toBe('suitedConnectors');
+    expect(stats.byHandClass['76s'].contexts.foldTo4Bet).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass['76s'].contexts.foldTo4Bet.totalProfitLoss).toBeLessThan(0);
+    // Confirms the deepest action (the fold to the 4-bet) supersedes the
+    // earlier 3-bet label for this hand - only one context bucket exists.
+    expect(stats.byHandClass['76s'].contexts.threeBet).toBeUndefined();
+
+    expect(stats.byHandClass['72o']).toBeUndefined();
+  });
+});

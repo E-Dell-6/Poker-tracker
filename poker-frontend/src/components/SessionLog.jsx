@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Pencil, Trash2, Star } from "lucide-react";
 import { HandleStars } from "./HandleStars";
 import { EditSessionLog } from "./EditSessionLog.jsx";
+import { Tag } from "./ui/Tag";
 import { API_URL } from "../config";
 import { formatAmount, formatSignedAmount } from "../utils/formatMoney";
 import { handMatchesFilter, getAvailableFilters } from "../utils/handFilters";
@@ -185,7 +186,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
               <div className="session-header">
                 <div className="session-left">
                   <span className="session-date">{new Date(session.date).toLocaleDateString()}</span>
-                  <span className="session-game-type">{session.gameType}</span>
+                  <Tag variant="neutral" label={session.gameType} />
                   <span className="session-players">{session.totalHands ?? hands.length} hands</span>
                 </div>
                 <div className="session-right">

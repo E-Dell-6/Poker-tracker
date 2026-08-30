@@ -1,17 +1,17 @@
 import { Layout } from "../../components/Layout"
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
 import './Players.css';
-import { PlayerInfo } from "./PlayerInfo";
 import { Table, TableHead, TableBody, TableRow, TableCell } from "../../components/ui/Table";
 import { Tag } from "../../components/ui/Tag";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
 
 export function Players() {
+  const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [statsByPersonId, setStatsByPersonId] = useState({});
-  const [currInfoPlayer, setCurrInfoPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showStarredOnly, setShowStarredOnly] = useState(false);
 
@@ -47,19 +47,6 @@ export function Players() {
     fetchData();
   }, []);
 
-  function togglePlayerInfo(player) {
-    if (currInfoPlayer?._id === player._id) {
-      setCurrInfoPlayer(null);
-    } else {
-      setCurrInfoPlayer(player);
-    }
-  }
-
-  const handlePlayerUpdate = (updatedPlayer) => {
-    setPlayers(prev => prev.map(p => p._id === updatedPlayer._id ? updatedPlayer : p));
-    setCurrInfoPlayer(updatedPlayer);
-  };
-
   const handleToggleStar = async (e, player) => {
     e.stopPropagation();
     const nextStarred = !player.starred;
@@ -73,7 +60,6 @@ export function Players() {
       if (!res.ok) throw new Error('Failed to update star');
       const updatedPlayer = await res.json();
       setPlayers(prev => prev.map(p => p._id === updatedPlayer._id ? updatedPlayer : p));
-      if (currInfoPlayer?._id === updatedPlayer._id) setCurrInfoPlayer(updatedPlayer);
     } catch (error) {
       console.error('Error toggling star:', error);
     }
@@ -133,12 +119,10 @@ export function Players() {
                   <TableBody>
                     {filteredPlayers.map((player) => {
                       const stat = statsByPersonId[String(player._id)];
-                      const isActive = currInfoPlayer?._id === player._id;
                       return (
                         <TableRow
                           key={player._id}
-                          className={isActive ? 'ui-table-row--active' : ''}
-                          onClick={() => togglePlayerInfo(player)}
+                          onClick={() => navigate(`/players/${player._id}`)}
                         >
                           <TableCell>
                             <div className="player-row-name">
@@ -188,14 +172,6 @@ export function Players() {
                 </Table>
               )}
             </div>
-            {currInfoPlayer && (
-              <div className="player-info-container">
-                <PlayerInfo
-                  player={currInfoPlayer}
-                  onPlayerUpdate={handlePlayerUpdate}
-                />
-              </div>
-            )}
           </>
         )}
       </div>

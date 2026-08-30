@@ -1,5 +1,5 @@
 import PlayerStats from '../model/PlayerStats.js';
-import { recomputeStatsForPerson, recomputeHeroStats, getHeroEvGraph } from '../services/statsService.js';
+import { recomputeStatsForPerson, recomputeHeroStats, computeFilteredHeroStats, getHeroEvGraph } from '../services/statsService.js';
 
 // GET /api/stats/me
 export async function getHeroStats(req, res) {
@@ -11,6 +11,17 @@ export async function getHeroStats(req, res) {
 // POST /api/stats/me/recompute
 export async function refreshHeroStats(req, res) {
   const stats = await recomputeHeroStats(req.userId);
+  res.json(stats);
+}
+
+// GET /api/stats/me/filtered?stakes=&from=&to= - live-computed, not cached
+// to the PlayerStats doc (see computeFilteredHeroStats). All three query
+// params are optional; omitting all of them still recomputes live rather
+// than reading the cached doc GET /me serves - the frontend only calls this
+// when a filter is actually active.
+export async function getFilteredHeroStats(req, res) {
+  const { stakes, from, to } = req.query;
+  const stats = await computeFilteredHeroStats(req.userId, { stakes, from, to });
   res.json(stats);
 }
 
@@ -36,8 +47,9 @@ export async function listPlayerStats(req, res) {
   res.json(stats);
 }
 
-// GET /api/stats/me/ev-graph
+// GET /api/stats/me/ev-graph?stakes=&from=&to=
 export async function getHeroEvGraphRoute(req, res) {
-  const rows = await getHeroEvGraph(req.userId);
+  const { stakes, from, to } = req.query;
+  const rows = await getHeroEvGraph(req.userId, { stakes, from, to });
   res.json(rows);
 }

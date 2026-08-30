@@ -48,7 +48,11 @@ function EVTooltip({ active, payload, label }) {
   );
 }
 
-export function EVGraph() {
+// `stakes`/`from`/`to` mirror Stats.jsx's page-wide Stakes/Time filter
+// (see statsController.js's getHeroEvGraphRoute) - all optional, omitted
+// entirely means "all hands", matching this component's own prior
+// behavior exactly when the Study page has no filter active.
+export function EVGraph({ stakes, from, to } = {}) {
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,7 +63,12 @@ export function EVGraph() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API_URL}/api/stats/me/ev-graph`, { credentials: 'include' });
+        const params = new URLSearchParams();
+        if (stakes) params.set('stakes', stakes);
+        if (from) params.set('from', from);
+        if (to) params.set('to', to);
+        const qs = params.toString();
+        const res = await fetch(`${API_URL}/api/stats/me/ev-graph${qs ? `?${qs}` : ''}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load EV graph');
         const data = await res.json();
         if (!cancelled) setRows(Array.isArray(data) ? data : []);
@@ -70,7 +79,7 @@ export function EVGraph() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [stakes, from, to]);
 
   if (loading) return null;
   if (error) return <div className="ev-graph-section stats-placeholder">{error}</div>;

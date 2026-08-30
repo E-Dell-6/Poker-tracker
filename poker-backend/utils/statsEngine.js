@@ -7,6 +7,7 @@ import { parseBigBlind, CENTS_CURRENCIES } from './blinds.js';
 import { getStackDepthBucket } from './stackDepth.js';
 import { parseBoard } from './cardParser.js';
 import { classifyFlopTexture } from './flopTexture.js';
+import { classifyHoleCards } from './handClass.js';
 import { getConfidence, getConfidenceForStat, CONFIDENCE_PROFILES } from './confidence.js';
 
 const STEAL_POSITIONS = ['CO', 'BTN', 'SB'];
@@ -78,6 +79,15 @@ function newPositionStats() {
     pfr: newRateStat(),
     open: newRateStat(),
     steal: newRateStat(),
+    // foldToSteal/limp/coldCall were already being mirrored into posStats
+    // by the generic bump() sinks mechanism (accumulatePreflop already
+    // passes posStats as a sink for all three) - same no-op-until-the-key-
+    // exists mechanism as checkRaise/wsd below. Adding the fields here is
+    // the only change needed to start populating them per-position, for
+    // the Study page's "Preflop matrix by position" table.
+    foldToSteal: newRateStat(),
+    limp: newRateStat(),
+    coldCall: newRateStat(),
     threeBet: newRateStat(),
     foldTo3Bet: newRateStat(),
     fourBet: newRateStat(),
@@ -169,6 +179,30 @@ function newTextureStats() {
     foldToCbFlop: newRateStat(),
     checkRaise: newRateStat()
   };
+}
+
+// Profit-only bucket shape shared by every level of the hand-class
+// breakdown (category, specific hand, preflop context, position-within-
+// context) - same fields bumpProfit()/finalizeProfitLoss() already expect,
+// just without any rate-stat counters, since "how often did I play this"
+// isn't the question here (unlike positional/byStakes) - only "how did it
+// go when I did".
+function newProfitOnlyBucket() {
+  return { hands: 0, totalProfitLoss: 0, handsWithProfitData: 0, bbUnitsWon: 0, handsWithBbData: 0, currencies: new Set() };
+}
+
+// One per specific 169-hand-class token (e.g. "AKs", "76o", "AA").
+// `category` is stamped once at creation (see classifyHoleCards) so the
+// frontend can group hand rows under their category without re-deriving
+// the classification rules itself.
+function newHandClassBucket(category) {
+  return { ...newProfitOnlyBucket(), category, contexts: {} };
+}
+
+// One per preflop context (open/limp/threeBet/... - see
+// classifyHeroPreflopContext) within a specific hand class.
+function newHandClassContextBucket() {
+  return { ...newProfitOnlyBucket(), byPosition: {} };
 }
 
 // acc.positional is keyed by table size (number of active players in the
@@ -305,6 +339,14 @@ function newAccumulator() {
     byStakesAndStackDepth: {},
     // 'dry'|'semi-wet'|'wet' -> newTextureStats() - see flopTexture.js.
     byFlopTexture: {},
+    // 169-hand-class token (e.g. "AKs") -> newHandClassBucket(); broad
+    // display category (e.g. 'pocketPairs') -> newProfitOnlyBucket() - see
+    // handClass.js/classifyHeroPreflopContext above. Only accumulated for
+    // hands the player voluntarily entered preflop (see
+    // classifyHeroPreflopContext's null-context rule) - a folded-first-in
+    // hand carries no hand-class signal, just blind-loss noise.
+    byHandClass: {},
+    byHandClassCategory: {},
     // Won/lost x with/without showdown, hand-wide (not per-position) - the
     // "Showdown breakdown" donut on the Study page. See
     // newShowdownBreakdown() above for the classification.
@@ -430,6 +472,74 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats, gr
   if (playerHasRaised) bump(sinks, 'pfr', 'made');
 
   return { sawFlop: !real.some(a => a.player === name && a.actionType === 'FOLD') };
+}
+
+// Standalone counterpart to accumulatePreflop's level-tracking, for the
+// hand-class breakdown: that function bumps aggregate made/opportunities
+// counters and is entangled with the sinks/bump() machinery, but the
+// hand-class breakdown needs a single label per hand ("this AKs was an
+// open", "this 76s was a fold to a 4-bet") rather than an aggregate. Kept
+// as its own pass over hand.actions rather than threading a return value
+// through accumulatePreflop, to avoid risking the already-tested aggregate
+// logic there.
+//
+// Returns null for any hand where `name` never voluntarily put money in
+// preflop (folded first-in, or simply wasn't dealt a decision) - blend-in
+// hands like that would just dilute every hand class's win rate with a
+// trivial small loss and add no signal (same reasoning real HUD tools use
+// for "hand class" stats: only played hands count).
+const CONTEXT_ORDER = ['open', 'threeBet', 'fourBet', 'coldCall', 'limp', 'checkedOption', 'foldTo3Bet', 'foldTo4Bet', 'foldPreflop'];
+
+function classifyHeroPreflopContext(hand, name) {
+  const real = (hand.actions || []).filter(
+    a => a.street === 'PREFLOP' && a.actionType !== 'POST_SB' && a.actionType !== 'POST_BB'
+  );
+
+  let level = 0;
+  let playerHasVpipd = false;
+  const facedAtLevel = new Set();
+  let context = null;
+
+  for (const a of real) {
+    if (a.player === name && !facedAtLevel.has(level)) {
+      facedAtLevel.add(level);
+
+      if (level === 0) {
+        if (a.actionType === 'RAISE' || a.actionType === 'BET') context = 'open';
+        else if (a.actionType === 'CALL') context = 'limp';
+        else if (a.actionType === 'CHECK') context = 'checkedOption';
+      } else if (level === 1) {
+        // Facing an open: raising here is the *second* raise of the hand -
+        // a 3-bet, not an open. A fold here has no dedicated label unless
+        // hero already had money in (e.g. limped, then folded to a raise).
+        if (a.actionType === 'RAISE') context = 'threeBet';
+        else if (a.actionType === 'CALL') context = 'coldCall';
+        else if (a.actionType === 'FOLD' && playerHasVpipd) context = 'foldPreflop';
+      } else if (level === 2) {
+        // Facing a 3-bet.
+        if (a.actionType === 'RAISE') context = 'fourBet';
+        else if (a.actionType === 'CALL') context = 'coldCall';
+        else if (a.actionType === 'FOLD' && playerHasVpipd) context = 'foldTo3Bet';
+      } else if (level === 3) {
+        // Facing a 4-bet.
+        if (a.actionType === 'FOLD' && playerHasVpipd) context = 'foldTo4Bet';
+        else if (a.actionType === 'CALL') context = 'coldCall';
+        // 5-bet+ jams are rare enough to fold into the same "made a big
+        // raise facing 3+ bets" bucket as a 4-bet, rather than a fifth label.
+        else if (a.actionType === 'RAISE') context = 'fourBet';
+      } else if (a.actionType === 'FOLD' && playerHasVpipd) {
+        context = 'foldPreflop';
+      }
+
+      if (a.actionType === 'CALL' || a.actionType === 'RAISE' || a.actionType === 'BET') {
+        playerHasVpipd = true;
+      }
+    }
+
+    if (a.actionType === 'RAISE' || a.actionType === 'BET') level++;
+  }
+
+  return context;
 }
 
 // textureBucket = a { cbFlop, foldToCbFlop, checkRaise } bucket for this
@@ -670,6 +780,28 @@ export function computeStatsForHands(hands, matchPlayer) {
     else acc.showdownBreakdown[reachedShowdown ? 'lostAtShowdown' : 'lostNoShowdown']++;
 
     for (const sink of [acc, posStats, ...groupBuckets].filter(Boolean)) bumpProfit(sink, hand, player);
+
+    const classInfo = classifyHoleCards(player.holeCards);
+    const preflopContext = classInfo ? classifyHeroPreflopContext(hand, name) : null;
+    if (classInfo && preflopContext) {
+      const categoryBucket = ensureGroup(acc.byHandClassCategory, classInfo.category, newProfitOnlyBucket);
+      categoryBucket.hands++;
+      bumpProfit(categoryBucket, hand, player);
+
+      const classBucket = ensureGroup(acc.byHandClass, classInfo.token, () => newHandClassBucket(classInfo.category));
+      classBucket.hands++;
+      bumpProfit(classBucket, hand, player);
+
+      const contextBucket = ensureGroup(classBucket.contexts, preflopContext, newHandClassContextBucket);
+      contextBucket.hands++;
+      bumpProfit(contextBucket, hand, player);
+
+      if (position) {
+        const posInContext = ensureGroup(contextBucket.byPosition, position, newProfitOnlyBucket);
+        posInContext.hands++;
+        bumpProfit(posInContext, hand, player);
+      }
+    }
   }
 
   return finalize(acc);
@@ -812,6 +944,39 @@ function finalizeGroupMap(map) {
   return out;
 }
 
+// byHandClassCategory: a lean profit-only bucket per broad category
+// ('pocketPairs', 'axSuited', ...) - no nested breakdown, just the
+// top-level "win rate by hand class" figure the Study page charts.
+function finalizeHandClassCategoryMap(map) {
+  const out = {};
+  for (const key of Object.keys(map)) {
+    out[key] = { hands: map[key].hands, ...finalizeProfitLoss(map[key]) };
+  }
+  return out;
+}
+
+// byHandClass: one entry per specific 169-hand-class token, each carrying
+// its own overall profit figure plus a `contexts` breakdown (preflop
+// action type -> profit figure -> per-position profit figure) - the
+// three-level drill-down the Study page's hand-class table renders.
+function finalizeHandClassMap(map) {
+  const out = {};
+  for (const token of Object.keys(map)) {
+    const bucket = map[token];
+    const contexts = {};
+    for (const ctxKey of Object.keys(bucket.contexts)) {
+      const ctxBucket = bucket.contexts[ctxKey];
+      const byPosition = {};
+      for (const pos of Object.keys(ctxBucket.byPosition)) {
+        byPosition[pos] = { hands: ctxBucket.byPosition[pos].hands, ...finalizeProfitLoss(ctxBucket.byPosition[pos]) };
+      }
+      contexts[ctxKey] = { hands: ctxBucket.hands, ...finalizeProfitLoss(ctxBucket), byPosition };
+    }
+    out[token] = { hands: bucket.hands, category: bucket.category, ...finalizeProfitLoss(bucket), contexts };
+  }
+  return out;
+}
+
 // Every top-level rate-stat key, in display order. Looping over this
 // (rather than repeating each key twice as `key: finalizeRate(acc.key)`)
 // is what makes finalizeRate's statKey argument (-> confidence profile)
@@ -863,6 +1028,12 @@ function finalize(acc) {
     // hand-wide counts (see newShowdownBreakdown() above), raw counts not
     // percentages since the Study page donut wants relative slice sizes.
     showdownBreakdown: acc.showdownBreakdown,
+    // Win rate by starting hand - see handClass.js/classifyHeroPreflopContext
+    // above. byHandClassCategory is the flat "Pocket pairs +18.4bb/100"
+    // summary; byHandClass drills into individual hands, each further split
+    // by preflop context (open/3bet/4bet/...) and then by position.
+    byHandClassCategory: finalizeHandClassCategoryMap(acc.byHandClassCategory),
+    byHandClass: finalizeHandClassMap(acc.byHandClass),
     // How many hands actually had a resolvable position (dealer flag +
     // >=2 active players) vs. total hands seen. If hands is 0 while
     // totalHands is high, the underlying hand data is missing isDealer -

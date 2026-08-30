@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import './FavouritesLog.css';
 import { API_URL } from "../config";
+import { Tag } from "./ui/Tag";
 
 // ── Filter definitions ───────────────────────────────────
 // Mirrors SessionLog.jsx's HAND_FILTERS exactly (same keys/labels/logic)
@@ -187,7 +188,7 @@ export function FavouritesLog({ hands: initialHands, onHandClick }) {
                   <span className="hand-date">{new Date(hand.sessionDate).toLocaleDateString()}</span>
                 )}
                 {hand.sessionGameType && (
-                  <span className="hand-game-type">{hand.sessionGameType}</span>
+                  <Tag variant="neutral" label={hand.sessionGameType} />
                 )}
 
                 <div className="hand-cards">

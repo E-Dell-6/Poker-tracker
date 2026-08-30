@@ -136,17 +136,6 @@
   gap: 44px;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.stats-grid--hero {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
-}
-
 .study-tiles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -154,105 +143,55 @@
   margin-bottom: 8px;
 }
 
-.stat-box {
-  position: relative;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 16px 18px;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-}
+/* ---------- Stakes/Time filter bar ---------- */
 
-.stat-box:hover {
-  background: var(--color-bg-elevated-hover);
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.stat-box--hero {
-  padding-top: 19px;
-  border-top: 2px solid var(--color-accent);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-}
-
-.stat-box--hero:hover {
-  transform: translateY(-2px);
-}
-
-.stat-box--empty {
-  border-style: dashed;
-  opacity: 0.55;
-}
-
-.stat-box--empty:hover {
-  transform: none;
-}
-
-.stat-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 26px;
-  line-height: 1.1;
-  color: var(--color-accent-hover);
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-box--empty .stat-value {
-  color: var(--color-text-faint);
-}
-
-/* Confidence gating (sample-size tagging): a low-sample stat should never
-   compete visually with a high-sample one at the same pct value - muted
-   opacity + a dimmer value color, not just a small badge next to it. */
-.stat-box--low-confidence {
-  opacity: 0.5;
-}
-
-.stat-box--low-confidence .stat-value {
-  color: var(--color-text-faint);
-}
-
-.stat-box--medium-confidence {
-  opacity: 0.8;
-}
-
-.stat-value--positive {
-  color: var(--color-positive);
-}
-
-.stat-value--negative {
-  color: var(--color-negative);
-}
-
-.stat-sample {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--color-text-faint);
-}
-
-/* ---------- section dividers (Preflop / Postflop / Positional) ---------- */
-
-.section-header {
+.study-filter-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: -20px;
 }
 
-.section-glyph {
-  font-size: 15px;
-  color: var(--color-accent);
-  line-height: 1;
+.study-filter-select {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.18s ease;
 }
+
+.study-filter-select:hover {
+  border-color: var(--color-border-strong);
+}
+
+.study-filter-select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.study-filter-updating {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  font-style: italic;
+}
+
+/* .stats-container's flex `gap` already spaces every direct child
+   (including this tab row) at the page's normal 44px rhythm - that's the
+   right amount of separation from StudyCharts above, but too much between
+   the tab selector and the section it controls below it, so pull just that
+   side in. */
+.study-section-tabs {
+  margin-bottom: -20px;
+}
+
+/* ---------- section title (shared by StudyCharts/PositionMatrixTables/
+   HandClassBreakdown card headers, and PositionalStats) ---------- */
 
 .section-title {
   font-size: 13px;
@@ -262,12 +201,6 @@
   color: var(--color-text);
   margin: 0;
   white-space: nowrap;
-}
-
-.section-rule {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, var(--color-border) 0%, transparent 100%);
 }
 
 /* ---------- footer note ---------- */
@@ -294,10 +227,5 @@
 
   .study-title-row {
     align-items: flex-start;
-  }
-
-  .stats-grid,
-  .stats-grid--hero {
-    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEvGraphRows } from '../services/statsService.js';
+import { buildEvGraphRows, filterHands } from '../services/statsService.js';
 
 function heroHand({ handIndex, profitLoss, allInEV = null }) {
   return {
@@ -78,5 +78,48 @@ describe('buildEvGraphRows', () => {
 
   it('returns an empty array for no sessions', () => {
     expect(buildEvGraphRows([])).toEqual([]);
+  });
+});
+
+describe('filterHands', () => {
+  function hand({ stakes, datePlayed }) {
+    return { stakes, datePlayed };
+  }
+
+  const hands = [
+    hand({ stakes: '$1/$2', datePlayed: '2026-01-01' }),
+    hand({ stakes: '$1/$2', datePlayed: '2026-02-01' }),
+    hand({ stakes: '$5/$10', datePlayed: '2026-01-15' })
+  ];
+
+  it('passes every hand through when no filters are given', () => {
+    expect(filterHands(hands, {})).toHaveLength(3);
+    expect(filterHands(hands)).toHaveLength(3);
+  });
+
+  it('filters by stakes alone (exact match)', () => {
+    const result = filterHands(hands, { stakes: '$1/$2' });
+    expect(result).toHaveLength(2);
+    expect(result.every(h => h.stakes === '$1/$2')).toBe(true);
+  });
+
+  it('filters by a from date alone', () => {
+    const result = filterHands(hands, { from: '2026-01-10' });
+    expect(result.map(h => h.datePlayed)).toEqual(['2026-02-01', '2026-01-15']);
+  });
+
+  it('filters by a to date alone', () => {
+    const result = filterHands(hands, { to: '2026-01-20' });
+    expect(result.map(h => h.datePlayed)).toEqual(['2026-01-01', '2026-01-15']);
+  });
+
+  it('combines stakes and a date range', () => {
+    const result = filterHands(hands, { stakes: '$1/$2', from: '2026-01-10', to: '2026-02-28' });
+    expect(result).toHaveLength(1);
+    expect(result[0].datePlayed).toBe('2026-02-01');
+  });
+
+  it('returns an empty array when nothing matches', () => {
+    expect(filterHands(hands, { stakes: '$25/$50' })).toEqual([]);
   });
 });

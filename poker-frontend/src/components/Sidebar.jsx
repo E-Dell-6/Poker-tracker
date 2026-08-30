@@ -11,6 +11,7 @@ import { API_URL } from "../config";
 // hands are opened into it from History/Dashboard/etc instead.
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
+  { icon: Clock, label: "Clock In", to: "/clock" },
   { icon: List, label: "History", to: "/history" },
   { icon: Users, label: "Players", to: "/players" },
   { icon: BarChart2, label: "Study", to: "/study" },

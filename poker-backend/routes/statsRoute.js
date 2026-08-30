@@ -3,6 +3,7 @@ import userAuth from '../middleware/userAuth.js';
 import {
   getHeroStats,
   refreshHeroStats,
+  getFilteredHeroStats,
   getPersonStats,
   refreshPersonStats,
   listPlayerStats,
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.get('/me', userAuth, getHeroStats);
 router.post('/me/recompute', userAuth, refreshHeroStats);
+router.get('/me/filtered', userAuth, getFilteredHeroStats);
 router.get('/me/ev-graph', userAuth, getHeroEvGraphRoute);
 
 router.get('/players', userAuth, listPlayerStats);

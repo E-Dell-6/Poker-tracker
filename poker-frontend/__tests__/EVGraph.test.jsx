@@ -39,6 +39,34 @@ describe('EVGraph', () => {
     );
   });
 
+  it('fetches with no query string when no filter props are given', () => {
+    mockFetchOnce([]);
+    render(<EVGraph />);
+    const url = globalThis.fetch.mock.calls[0][0];
+    expect(url.endsWith('/api/stats/me/ev-graph')).toBe(true);
+  });
+
+  it('appends stakes/from/to as query params when the Study page filter is active', () => {
+    mockFetchOnce([]);
+    render(<EVGraph stakes="$1/$2" from="2026-01-01" to="2026-02-01" />);
+    const url = globalThis.fetch.mock.calls[0][0];
+    expect(url).toContain('stakes=%241%2F%242');
+    expect(url).toContain('from=2026-01-01');
+    expect(url).toContain('to=2026-02-01');
+  });
+
+  it('refetches when the filter props change', () => {
+    // mockFetchOnce uses mockResolvedValue (not -Once), so the same mock
+    // keeps resolving every call - no need to re-arm it before rerender.
+    mockFetchOnce([]);
+    const { rerender } = render(<EVGraph stakes="$1/$2" />);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+    rerender(<EVGraph stakes="$5/$10" />);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch.mock.calls[1][0]).toContain('stakes=%245%2F%2410');
+  });
+
   it('shows a placeholder when there are fewer than 2 hands of data', async () => {
     mockFetchOnce([row(0, 10, 10, 10, 10)]); // only 1 row
     render(<EVGraph />);

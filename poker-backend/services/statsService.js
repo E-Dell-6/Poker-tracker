@@ -2,6 +2,9 @@ import Session from '../model/Session.js';
 import PlayerStats from '../model/PlayerStats.js';
 import { computeStatsForHands, matchByPersonId, matchHero } from '../utils/statsEngine.js';
 import { CENTS_CURRENCIES } from '../utils/blinds.js';
+import { getCached, setCached } from '../utils/statsCache.js';
+
+const FILTERED_STATS_TTL_MS = 60_000;
 
 // Each hand needs to know which currency its dollar amounts (profitLoss,
 // stakes, etc.) are logged in, but that lives on the parent Session, not
@@ -34,6 +37,41 @@ export async function recomputeHeroStats(userId) {
     { ...stats, userId, personId: null, isHero: true, lastComputedAt: new Date() },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
+}
+
+// Pure filter over already-fetched hands: `stakes` exact-matches
+// hand.stakes, `from`/`to` bound hand.datePlayed. Every field is optional -
+// omitting all three is a no-op pass-through. Shared by
+// computeFilteredHeroStats (flattened hands) and getHeroEvGraph (each
+// session's own .hands array) below - it only ever touches
+// .stakes/.datePlayed, so it works on either shape.
+export function filterHands(hands, { stakes, from, to } = {}) {
+  return hands.filter(h => {
+    if (stakes && h.stakes !== stakes) return false;
+    if (from && new Date(h.datePlayed) < new Date(from)) return false;
+    if (to && new Date(h.datePlayed) > new Date(to)) return false;
+    return true;
+  });
+}
+
+// Live-filtered counterpart to recomputeHeroStats, for the Study page's
+// Stakes/Time filter: same query + same computeStatsForHands pipeline (so
+// the response shape is identical to GET /me), just over a narrowed hand
+// set and never persisted to PlayerStats - this is an ephemeral view, not
+// the cached doc /me serves. Filtering can't be pushed down to the Mongo
+// query (hands are embedded sub-documents with no per-hand index), so a
+// repeated filter combo is cached briefly instead of re-scanning every time.
+export async function computeFilteredHeroStats(userId, filters = {}) {
+  const cacheKey = `hero:${userId}:${filters.stakes || ''}:${filters.from || ''}:${filters.to || ''}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const sessions = await Session.find({ userId, 'hands.players.isHero': true }).lean();
+  const hands = filterHands(extractHands(sessions), filters);
+  const stats = computeStatsForHands(hands, matchHero());
+
+  setCached(cacheKey, stats, FILTERED_STATS_TTL_MS);
+  return stats;
 }
 
 // Call this right after a session (a batch of parsed hands) is saved. It
@@ -111,10 +149,23 @@ export function buildEvGraphRows(sessions) {
   return rows;
 }
 
-export async function getHeroEvGraph(userId) {
+// `filters` is the same { stakes, from, to } shape computeFilteredHeroStats
+// takes - applied per-session (buildEvGraphRows expects a `sessions` array
+// with each session's own `.hands`, not a flat hand list) via the same
+// filterHands() so the Board tab's EV graph respects the Study page's
+// Stakes/Time filter too. Same short-TTL cache as computeFilteredHeroStats.
+export async function getHeroEvGraph(userId, filters = {}) {
+  const cacheKey = `ev:${userId}:${filters.stakes || ''}:${filters.from || ''}:${filters.to || ''}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const sessions = await Session.find({ userId, 'hands.players.isHero': true })
     .select('date currency hands')
     .lean();
 
-  return buildEvGraphRows(sessions);
+  const filteredSessions = sessions.map(s => ({ ...s, hands: filterHands(s.hands || [], filters) }));
+  const rows = buildEvGraphRows(filteredSessions);
+
+  setCached(cacheKey, rows, FILTERED_STATS_TTL_MS);
+  return rows;
 }

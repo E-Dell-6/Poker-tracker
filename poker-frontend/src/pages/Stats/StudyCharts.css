@@ -1,3 +1,10 @@
+/* Tighten the gap to the charts grid this row controls, same treatment
+   Stats.css gives its own section-tabs row (leave the space above it as
+   the page's normal rhythm, pull the space below it in). */
+.study-charts-size-tabs {
+  margin-bottom: -8px;
+}
+
 .study-charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

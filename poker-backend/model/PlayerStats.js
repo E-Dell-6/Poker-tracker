@@ -84,6 +84,16 @@ const PlayerStatsSchema = new mongoose.Schema({
   // statsEngine.js's newShowdownBreakdown().
   showdownBreakdown: { type: mongoose.Schema.Types.Mixed, default: {} },
 
+  // Win rate by starting hand - see statsEngine.js's handClass-related
+  // helpers. byHandClassCategory: broad category ('pocketPairs', 'axSuited',
+  // ...) -> {hands, totalProfitLoss, bb100, currency}. byHandClass: specific
+  // 169-hand-class token ("AKs") -> the same profit fields plus `category`
+  // and a `contexts` breakdown (preflop action type -> profit figure -> a
+  // `byPosition` breakdown). Mixed for the same reason as `positional`: the
+  // set of hand classes/contexts/positions present varies per player.
+  byHandClassCategory: { type: mongoose.Schema.Types.Mixed, default: {} },
+  byHandClass: { type: mongoose.Schema.Types.Mixed, default: {} },
+
   lastComputedAt: { type: Date, default: Date.now }
 });
 
