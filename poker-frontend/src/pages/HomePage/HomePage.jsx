@@ -141,7 +141,7 @@ export function HomePage() {
         .catch(() => []),
     ]).then(([onlineData, liveData, heroStatsData, favouritesData]) => {
       setHeroStats(heroStatsData);
-      setFavourites(Array.isArray(favouritesData) ? favouritesData.slice(0, 4) : []);
+      setFavourites(Array.isArray(favouritesData) ? favouritesData.slice(-4).reverse() : []);
       const onlineSessions = Array.isArray(onlineData) ? onlineData : [];
       const liveSessions = Array.isArray(liveData) ? liveData : [];
 
@@ -474,7 +474,16 @@ export function HomePage() {
                       </div>
                       {profit != null && (
                         <span className={`hp-starred-profit ${profit >= 0 ? 'pos' : 'neg'}`}>
-                          {profit >= 0 ? '+' : ''}{formatSignedMajorUnits(profit, hand.currency)}
+                          {/* profit is straight off the hand doc (raw units -
+                              cents for USD/CAD), and hand docs have no
+                              `currency` field - favouriting denormalizes the
+                              parent session's currency as `sessionCurrency`
+                              (see handRoute.js). Normalize before formatting,
+                              same pattern netProfit30d below uses.
+                              formatSignedMajorUnits already prepends its own
+                              sign - no separate '+' here, or positive amounts
+                              doubled up as "++$12.34". */}
+                          {formatSignedMajorUnits(toMajorUnits(profit, hand.sessionCurrency), hand.sessionCurrency)}
                         </span>
                       )}
                     </button>
