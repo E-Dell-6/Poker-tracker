@@ -131,6 +131,14 @@
   white-space: nowrap;
 }
 
+.session-stakes {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ── SESSION PROFIT ─────────────────────────────────────── */
 .session-profit {
   font-family: var(--font-sans);

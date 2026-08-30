@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, X, Star, Plus, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
@@ -6,11 +6,13 @@ import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
 import { Tabs } from "../../components/ui/Tabs";
-import { toMajorUnits, formatSignedMajorUnits } from "../../utils/formatMoney";
+import { Pagination } from "../../components/ui/Pagination";
+import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
 import "./History.css";
 
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
+const PAGE_SIZE = 50;
 
 function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   const [people, setPeople] = useState([]);
@@ -180,6 +182,9 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
 export function History() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState(null);
+  const [page, setPage] = useState(1);
   const [selectedGame, setSelectedGame] = useState("All");
   const [uploadStatus, setUploadStatus] = useState(null);
   const [error, setError] = useState(null);
@@ -192,12 +197,43 @@ export function History() {
   const [showFavourites, setShowFavourites] = useState(false);
   const [favourites, setFavourites] = useState([]);
   const [showStarredSessions, setShowStarredSessions] = useState(false);
+  const [selectedStakes, setSelectedStakes] = useState("All");
+  const [stakesOptions, setStakesOptions] = useState([]);
+
+  // Filtering (game type, stakes, starred-only) is pushed server-side
+  // alongside the pagination itself - both have to happen together in the
+  // same query, or a filter would only ever see whichever page happened to
+  // already be loaded. `summary` (hands/net-profit totals across the
+  // *whole* filtered set, not just this page) backs the header subtitle
+  // below.
+  const fetchSessions = () => {
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    if (selectedGame !== "All") params.set("gameType", selectedGame);
+    if (selectedStakes !== "All") params.set("stakes", selectedStakes);
+    if (showStarredSessions) params.set("starred", "true");
+    return fetch(`${API_URL}/api/sessions?${params.toString()}`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        setSessions(Array.isArray(data.sessions) ? data.sessions : []);
+        setTotal(data.total ?? 0);
+        setSummary(data.summary ?? null);
+      })
+      .catch(() => setError("Server connection failed."));
+  };
 
   useEffect(() => {
-    fetch(`${API_URL}/api/sessions`, { credentials: "include" })
+    fetchSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, selectedGame, selectedStakes, showStarredSessions, uploadStatus]);
+
+  // Options for the stakes filter <select> - fetched once (and again after
+  // an upload, in case it introduced a new stakes level), not per
+  // page/filter change.
+  useEffect(() => {
+    fetch(`${API_URL}/api/sessions/stakes`, { credentials: "include" })
       .then((res) => res.json())
-      .then((data) => setSessions(Array.isArray(data) ? data : []))
-      .catch(() => setError("Server connection failed."));
+      .then((data) => setStakesOptions(Array.isArray(data.stakes) ? data.stakes : []))
+      .catch(() => {});
   }, [uploadStatus]);
 
   useEffect(() => {
@@ -208,12 +244,14 @@ export function History() {
       .catch((err) => console.error("Failed to load favourites", err));
   }, [showFavourites]);
 
-  const filteredSessions = useMemo(() => {
-    let result = sessions;
-    if (selectedGame !== "All") result = result.filter((s) => s.gameType === selectedGame);
-    if (showStarredSessions) result = result.filter((s) => s.starred);
-    return result;
-  }, [selectedGame, sessions, showStarredSessions]);
+  // Changing a filter resets to page 1 - otherwise a search/filter that
+  // narrows the result set could strand you on a page number that no
+  // longer exists. Wraps the raw setters rather than a separate effect, so
+  // the filter change and the page reset land in the same render/fetch
+  // instead of firing two fetches (one with the stale page, one correct).
+  const handleGameChange = (game) => { setPage(1); setSelectedGame(game); };
+  const handleStakesChange = (e) => { setPage(1); setSelectedStakes(e.target.value); };
+  const handleToggleStarredFilter = () => { setPage(1); setShowStarredSessions((prev) => !prev); };
 
   const uploadFiles = async (fileList) => {
     const files = Array.from(fileList || []);
@@ -372,23 +410,23 @@ export function History() {
         body: JSON.stringify({ starred: nextStarred }),
       });
       if (!response.ok) throw new Error("Failed to update session");
-      const updated = await response.json();
-      setSessions((prev) =>
-        prev.map((s) => (s._id === session._id ? { ...s, starred: updated.starred } : s))
-      );
+      // Refetch rather than patch the local array in place - if the
+      // "starred only" filter is active, un-starring a session has to
+      // drop it from the current page (and the total count), which a
+      // simple in-place update can't do correctly across pages.
+      await fetchSessions();
     } catch (err) {
       console.error("Error toggling session star:", err);
     }
   };
 
-  const totalHands = sessions.reduce((sum, s) => sum + (s.totalHands ?? s.hands?.length ?? 0), 0);
-  // Each session's totalProfit is in ITS OWN currency's raw units (cents for
-  // USD/CAD) - normalize before summing across sessions, same as
-  // Profile.jsx's onlineSessionProfit, or a mix of real-money and play-chip
-  // sessions would silently inflate the real-money total ~100x.
-  const netProfit = sessions.reduce((sum, s) => sum + toMajorUnits(s.totalProfit ?? 0, s.currency), 0);
-  const subtitle = sessions.length > 0
-    ? `${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${totalHands.toLocaleString()} hands · ${formatSignedMajorUnits(netProfit, sessions.every(s => s.currency === sessions[0].currency) ? sessions[0].currency : undefined)} net`
+  // Totals across the whole filtered set (not just the current page) come
+  // from the server alongside the paginated rows - see fetchSessions()/
+  // GET /api/sessions's $facet summary, which does the same per-session
+  // currency-normalize-then-sum this subtitle used to do client-side over
+  // a fully-loaded list.
+  const subtitle = total > 0 && summary
+    ? `${total} session${total === 1 ? '' : 's'} · ${summary.totalHands.toLocaleString()} hands · ${formatSignedMajorUnits(summary.netProfit, summary.currency)} net`
     : undefined;
 
   return (
@@ -431,11 +469,26 @@ export function History() {
         )}
 
         <div className="filter-bar">
-          <Tabs options={gameFilters} active={selectedGame} onChange={setSelectedGame} />
+          <div className="filter-bar-primary">
+            <Tabs options={gameFilters} active={selectedGame} onChange={handleGameChange} />
+            {stakesOptions.length > 0 && (
+              <select
+                className="stakes-filter-select"
+                value={selectedStakes}
+                onChange={handleStakesChange}
+                aria-label="Filter by stakes"
+              >
+                <option value="All">All stakes</option>
+                {stakesOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
+          </div>
           <div className="filter-bar-actions">
             <button
               className={`starred-sessions-filter ${showStarredSessions ? "active" : ""}`}
-              onClick={() => setShowStarredSessions((prev) => !prev)}
+              onClick={handleToggleStarredFilter}
               title={showStarredSessions ? "Show all sessions" : "Show starred sessions"}
             >
               <Star size={13} fill={showStarredSessions ? "currentColor" : "none"} /> Starred
@@ -465,17 +518,20 @@ export function History() {
               <p>No sessions found.</p>
             </div>
           ) : (
-            <SessionLog
-              sessions={filteredSessions}
-              onSessionsChange={(updater) => setSessions((prev) => updater(prev))}
-              onHandClick={(hand, session) =>
-                navigate("/hand-replay", { state: { hand, session } })
-              }
-              onRenameRequest={(name, sid) =>
-                setRenamingState({ originalName: name, sessionId: sid })
-              }
-              onToggleStar={handleToggleSessionStar}
-            />
+            <>
+              <SessionLog
+                sessions={sessions}
+                onSessionsChange={() => fetchSessions()}
+                onHandClick={(hand, session) =>
+                  navigate("/hand-replay", { state: { hand, session } })
+                }
+                onRenameRequest={(name, sid) =>
+                  setRenamingState({ originalName: name, sessionId: sid })
+                }
+                onToggleStar={handleToggleSessionStar}
+              />
+              <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} onPageChange={setPage} />
+            </>
           )
         ) : (
           <FavouritesLog

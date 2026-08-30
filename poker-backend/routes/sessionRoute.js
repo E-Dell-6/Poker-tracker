@@ -11,6 +11,7 @@ import { recomputeStatsForNewHands } from '../services/statsService.js';
 import { handMatchesFilter } from '../utils/handFilters.js';
 import { getPositionMap } from '../utils/statsEngine.js';
 import { computeEffectiveStacks } from '../utils/effectiveStackCalculator.js';
+import { CENTS_CURRENCIES, parseBigBlind } from '../utils/blinds.js';
 
 const router = express.Router();
 
@@ -34,9 +35,64 @@ const FORMAT_CURRENCY = {
 // gameType (including the 'Heads-Up' override) is now decided once at
 // upload time (see POST /upload below) instead of being recomputed from
 // `hands` on every read.
+//
+// Paginated (page/limit query params, default 50, capped at 100) with
+// optional gameType/starred filtering pushed into the same $match - both
+// have to happen server-side together, not layered (filter server-side,
+// then paginate client-side, or vice versa), or a filter would only ever
+// see whichever page happened to already be loaded. A $facet computes the
+// current page, the total row count, and a summary (hands/net-profit
+// totals) across the *whole filtered set* in one round trip, so the
+// History page's header subtitle can keep showing exact totals instead of
+// just the current page's - same currency-safe normalize-then-sum
+// History.jsx's subtitle already did client-side (undefined currency, via
+// $addToSet, when a user's sessions mix currencies).
+//
+// Backward compatible: several other callers (HomePage.jsx, Profile.jsx)
+// fetch this route with no query params at all, expecting the plain array
+// of every session they've always gotten - for their own full-history
+// charts/summaries, not a list view. Only switch to the paginated envelope
+// shape when a caller actually asks for pagination/filtering; everyone
+// else keeps getting exactly what they got before this route changed.
 router.get('/sessions', userAuth, async (req, res) => {
     try {
         const userId = req.body.userId;
+        const isPaginated = ['page', 'limit', 'gameType', 'starred', 'stakes'].some(k => req.query[k] !== undefined);
+        if (!isPaginated) {
+            const sessions = await Session.aggregate([
+                { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+                { $addFields: {
+                    totalHands: {
+                        $ifNull: ["$totalHands", { $size: { $ifNull: ["$hands", []] } }]
+                    }
+                }},
+                { $project: { hands: 0 } },
+                { $sort: { uploadDate: -1 } },
+            ]);
+            return res.json(sessions);
+        }
+
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+        const skip = (page - 1) * limit;
+
+        const match = { userId: new mongoose.Types.ObjectId(userId) };
+        if (req.query.gameType && req.query.gameType !== 'All') {
+            match.gameType = req.query.gameType;
+        }
+        if (req.query.starred === 'true') {
+            match.starred = true;
+        }
+
+        // totalProfit is stored in integer cents for USD/CAD sessions, plain
+        // major units for CHIPS (see the Session schema comment) - same
+        // distinction CENTS_CURRENCIES already encodes for bb-size scaling
+        // elsewhere (statsService.js), reused here instead of a second
+        // hardcoded currency list.
+        const normalizedProfit = {
+            $cond: [{ $in: ['$currency', Array.from(CENTS_CURRENCIES)] }, { $divide: ['$totalProfit', 100] }, '$totalProfit']
+        };
+
         // totalHands is only stamped onto sessions created via POST /upload
         // after this field was introduced - older sessions in the DB never
         // got it set. Rather than requiring a one-off backfill migration,
@@ -44,19 +100,72 @@ router.get('/sessions', userAuth, async (req, res) => {
         // so it self-heals for any session regardless of when it was
         // created. hands itself is still dropped before the doc leaves
         // Mongo, so the payload to the client stays small either way.
-        const sessions = await Session.aggregate([
-            { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+        //
+        // Stakes has no stored session-level field (only each individual
+        // hand carries its own `stakes` string) - a session is always one
+        // continuous sit at one stakes level in practice, so the first
+        // hand's stakes stands in for the whole session, same "derive once,
+        // don't require a migration" approach as totalHands above.
+        const stakesFilter = req.query.stakes ? [{ $match: { stakes: req.query.stakes } }] : [];
+        const [result] = await Session.aggregate([
+            { $match: match },
             { $addFields: {
                 totalHands: {
                     $ifNull: ["$totalHands", { $size: { $ifNull: ["$hands", []] } }]
-                }
+                },
+                stakes: { $arrayElemAt: ['$hands.stakes', 0] }
             }},
+            ...stakesFilter,
             { $project: { hands: 0 } },
             { $sort: { uploadDate: -1 } },
+            { $facet: {
+                sessions: [{ $skip: skip }, { $limit: limit }],
+                totalCount: [{ $count: 'count' }],
+                summary: [{ $group: {
+                    _id: null,
+                    totalHands: { $sum: '$totalHands' },
+                    netProfit: { $sum: normalizedProfit },
+                    currencies: { $addToSet: '$currency' }
+                } }]
+            } }
         ]);
-        res.json(sessions);
+
+        const total = result.totalCount[0]?.count ?? 0;
+        const summaryDoc = result.summary[0];
+        const summary = summaryDoc
+            ? {
+                totalHands: summaryDoc.totalHands,
+                netProfit: Math.round(summaryDoc.netProfit * 100) / 100,
+                currency: summaryDoc.currencies.length === 1 ? summaryDoc.currencies[0] : null
+            }
+            : { totalHands: 0, netProfit: 0, currency: null };
+
+        res.json({ sessions: result.sessions, total, page, limit, summary });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch sessions" });
+    }
+});
+
+// Distinct stakes across every one of the user's sessions, for the History
+// page's stakes filter dropdown - same derived-from-the-first-hand stakes
+// concept the paginated /sessions route filters on above. Sorted by
+// big-blind size (parseBigBlind, reused from bb-size scaling elsewhere)
+// rather than alphabetically, or "$10/$20" would sort before "$2/$5".
+router.get('/sessions/stakes', userAuth, async (req, res) => {
+    try {
+        const userId = req.body.userId;
+        const result = await Session.aggregate([
+            { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+            { $addFields: { stakes: { $arrayElemAt: ['$hands.stakes', 0] } } },
+            { $match: { stakes: { $ne: null } } },
+            { $group: { _id: '$stakes' } },
+        ]);
+        const stakes = result
+            .map(r => r._id)
+            .sort((a, b) => (parseBigBlind(a, null) ?? 0) - (parseBigBlind(b, null) ?? 0));
+        res.json({ stakes });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch stakes" });
     }
 });
 

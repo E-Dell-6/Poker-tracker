@@ -5,47 +5,76 @@ import { Star } from "lucide-react";
 import './Players.css';
 import { Table, TableHead, TableBody, TableRow, TableCell } from "../../components/ui/Table";
 import { Tag } from "../../components/ui/Tag";
+import { Pagination } from "../../components/ui/Pagination";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { API_URL } from "../../config";
+
+const PAGE_SIZE = 50;
 
 export function Players() {
   const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [statsByPersonId, setStatsByPersonId] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showStarredOnly, setShowStarredOnly] = useState(false);
 
-  const filteredPlayers = players
-    .filter((player) => !showStarredOnly || player.starred)
-    .filter((player) =>
-      player.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    );
+  const hasActiveFilter = Boolean(debouncedSearch) || showStarredOnly;
+
+  // Search/starred-only filtering is pushed server-side alongside the
+  // pagination itself (see peopleRoute.js's GET /) - otherwise a search
+  // would only ever match whichever page happened to already be loaded.
+  const fetchPlayers = () => {
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (showStarredOnly) params.set('starred', 'true');
+    return fetch(`${API_URL}/api/people?${params.toString()}`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setPlayers(Array.isArray(data.players) ? data.players : []);
+        setTotal(data.total ?? 0);
+      })
+      .catch(error => console.error('Error fetching players:', error));
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Person list (name/image/tags/starred) and per-opponent aggregate
-        // stats (vpip/pfr/threeBet/totalProfitLoss) live in two different
-        // collections - see peopleRoute.js's GET / and statsController.js's
-        // listPlayerStats - fetched in parallel and merged by personId
-        // rather than N+1 fetching stats per row.
-        const [peopleRes, statsRes] = await Promise.all([
-          fetch(`${API_URL}/api/people`, { credentials: "include" }),
-          fetch(`${API_URL}/api/stats/players`, { credentials: "include" }),
-        ]);
-        const peopleData = await peopleRes.json();
-        const statsData = statsRes.ok ? await statsRes.json() : [];
-        setPlayers(Array.isArray(peopleData) ? peopleData : []);
+    fetchPlayers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearch, showStarredOnly]);
+
+  // Debounce the search box so typing doesn't refetch per keystroke -
+  // setPage(1) lands in the same batched update as the debounced value
+  // itself, so the fetch effect above only fires once with the final
+  // (search, page) pair instead of once with a stale page and once correct.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Per-opponent aggregate stats (vpip/pfr/threeBet/totalProfitLoss) live in
+  // a separate collection - see statsController.js's listPlayerStats -
+  // fetched once, in full, and joined to whichever page of players is
+  // currently shown by personId. Left unpaginated: it's a lean,
+  // no-embedded-hands collection, cheap to fetch regardless of roster size,
+  // and pagination here would just mean keeping two paginated fetches in
+  // sync for no real benefit.
+  useEffect(() => {
+    fetch(`${API_URL}/api/stats/players`, { credentials: "include" })
+      .then(res => res.ok ? res.json() : [])
+      .then(statsData => {
         const byId = {};
         (Array.isArray(statsData) ? statsData : []).forEach(s => { byId[String(s.personId)] = s; });
         setStatsByPersonId(byId);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
+      })
+      .catch(error => console.error('Error fetching player stats:', error));
   }, []);
+
+  const handleToggleStarredOnly = () => { setPage(1); setShowStarredOnly(prev => !prev); };
 
   const handleToggleStar = async (e, player) => {
     e.stopPropagation();
@@ -58,21 +87,24 @@ export function Players() {
         body: JSON.stringify({ starred: nextStarred }),
       });
       if (!res.ok) throw new Error('Failed to update star');
-      const updatedPlayer = await res.json();
-      setPlayers(prev => prev.map(p => p._id === updatedPlayer._id ? updatedPlayer : p));
+      // Refetch rather than patch the local array in place - if
+      // "starred only" is active, un-starring a player has to drop them
+      // from the current page (and the total count), which a simple
+      // in-place update can't do correctly across pages.
+      await fetchPlayers();
     } catch (error) {
       console.error('Error toggling star:', error);
     }
   };
 
-  const subtitle = players.length > 0
-    ? `${players.length} tracked opponent${players.length === 1 ? '' : 's'}`
+  const subtitle = total > 0
+    ? `${total} tracked opponent${total === 1 ? '' : 's'}`
     : undefined;
 
   return (
     <Layout title="Players" subtitle={subtitle}>
       <div className="players-container">
-        {players.length === 0 ? (
+        {total === 0 && !hasActiveFilter ? (
           <p className="no-info">
             No players yet. Map a player from the History page to get started.
           </p>
@@ -90,7 +122,7 @@ export function Players() {
                 <button
                   type="button"
                   className={`star-filter-btn ${showStarredOnly ? 'active' : ''}`}
-                  onClick={() => setShowStarredOnly((prev) => !prev)}
+                  onClick={handleToggleStarredOnly}
                   title={showStarredOnly ? 'Show all players' : 'Show starred players'}
                   aria-pressed={showStarredOnly}
                 >
@@ -98,7 +130,7 @@ export function Players() {
                 </button>
               </div>
 
-              {filteredPlayers.length === 0 ? (
+              {players.length === 0 ? (
                 <p className="no-info no-info--inline">
                   {showStarredOnly
                     ? "You haven't starred any players yet."
@@ -117,7 +149,7 @@ export function Players() {
                     <TableCell header align="right"></TableCell>
                   </TableHead>
                   <TableBody>
-                    {filteredPlayers.map((player) => {
+                    {players.map((player) => {
                       const stat = statsByPersonId[String(player._id)];
                       return (
                         <TableRow
@@ -171,6 +203,7 @@ export function Players() {
                   </TableBody>
                 </Table>
               )}
+              <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} onPageChange={setPage} />
             </div>
           </>
         )}

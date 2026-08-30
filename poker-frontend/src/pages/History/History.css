@@ -275,6 +275,39 @@
   flex-wrap: wrap;
 }
 
+/* Groups the game-type tabs and the stakes filter together on the left of
+   the filter row, so .filter-bar's space-between only ever sees two
+   groups (this one, .filter-bar-actions) regardless of whether the stakes
+   select is present. */
+.filter-bar-primary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stakes-filter-select {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.18s ease;
+}
+
+.stakes-filter-select:hover {
+  border-color: var(--color-border-strong);
+}
+
+.stakes-filter-select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* Groups the search and favourites icon buttons together on the right
    of the filter row. */
 .filter-bar-actions {
@@ -317,15 +350,27 @@
   align-items: center;
   gap: 5px;
   margin-left: 8px;
-  padding-left: 18px;
+  padding: 7px 14px 7px 18px;
+  background: transparent;
+  border: none;
   border-left: 1px solid var(--color-border);
+  border-radius: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.starred-sessions-filter:hover {
+  color: var(--color-text);
 }
 
 .starred-sessions-filter.active {
   background: var(--color-accent-dim);
   color: var(--color-accent);
-  border-color: var(--color-accent-border);
-  border-left: 1px solid var(--color-accent-border);
+  border-left-color: var(--color-accent-border);
 }
 
 /* ── FAVOURITES TOGGLE ──────────────────────────────────── */

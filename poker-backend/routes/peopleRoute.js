@@ -20,11 +20,53 @@ function pickEditableFields(body) {
     return updates;
 }
 
+// Escapes regex metacharacters in user-typed search text before it reaches
+// $regex - otherwise a search string containing e.g. `(a+)+$` is passed
+// straight through as a live regex, a ReDoS vector on the user's own query.
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Paginated (page/limit query params, default 50, capped at 100), with
+// optional name search and starred-only filtering pushed into the same
+// query as the pagination - both have to happen server-side together (not
+// layered on top of a paginated fetch client-side), or a search would only
+// ever match whichever page happened to already be loaded. No existing
+// sort order to preserve (the old unpaginated version had none) -
+// alphabetical by name is the natural default for a roster.
+//
+// Backward compatible: several other callers (EditSessionLog.jsx,
+// SessionDetails.jsx, PlayerSeat.jsx, HandCreator.jsx, PlayerProfile.jsx)
+// fetch this route with no query params, expecting the plain array of
+// every tracked person they've always gotten - for small person-picker
+// dropdowns, not a paginated list view. Only switch to the paginated
+// envelope shape when a caller actually asks for pagination/filtering.
 router.get('/', async (req, res) => {
     try {
         const userId = req.body.userId; // query param dropped: was an IDOR
-        const people = await Person.find({ userId });
-        res.json(people);
+        const isPaginated = ['page', 'limit', 'search', 'starred'].some(k => req.query[k] !== undefined);
+        if (!isPaginated) {
+            const people = await Person.find({ userId });
+            return res.json(people);
+        }
+
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+        const skip = (page - 1) * limit;
+
+        const query = { userId };
+        if (req.query.search) {
+            query.name = { $regex: escapeRegex(req.query.search), $options: 'i' };
+        }
+        if (req.query.starred === 'true') {
+            query.starred = true;
+        }
+
+        const [players, total] = await Promise.all([
+            Person.find(query).sort({ name: 1 }).skip(skip).limit(limit),
+            Person.countDocuments(query),
+        ]);
+        res.json({ players, total, page, limit });
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch people" });
     }

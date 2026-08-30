@@ -187,6 +187,7 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
                 <div className="session-left">
                   <span className="session-date">{new Date(session.date).toLocaleDateString()}</span>
                   <Tag variant="neutral" label={session.gameType} />
+                  {session.stakes && <span className="session-stakes">{session.stakes}</span>}
                   <span className="session-players">{session.totalHands ?? hands.length} hands</span>
                 </div>
                 <div className="session-right">
