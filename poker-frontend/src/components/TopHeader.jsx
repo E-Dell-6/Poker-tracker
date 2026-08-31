@@ -32,56 +32,64 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
   }, [searchOpen]);
 
   return (
-    <header className="top-header">
-      <div className="top-header-titles">
-        <h1 className="top-header-title">{title}</h1>
-        {subtitle && <p className="top-header-subtitle">{subtitle}</p>}
-      </div>
+    <>
+      <header className="top-header">
+        <div className="top-header-titles">
+          <h1 className="top-header-title">{title}</h1>
+          {subtitle && <p className="top-header-subtitle">{subtitle}</p>}
+        </div>
 
-      <div className="top-header-actions">
-        <button type="button" className="top-header-search" onClick={() => setSearchOpen(true)} aria-label="Search hands">
-          <Search size={16} className="top-header-search-icon" />
-          <span className="top-header-search-placeholder">Search hands, players...</span>
-          <kbd className="top-header-search-kbd">/</kbd>
-        </button>
-        <HandSearchMenu
-          open={searchOpen}
-          onOpenChange={setSearchOpen}
-          onHandClick={(hand, session) => {
-            setSearchOpen(false);
-            navigate('/hand-replay', { state: { hand, session } });
-          }}
-        />
+        <div className="top-header-actions">
+          <button type="button" className="top-header-search" onClick={() => setSearchOpen(true)} aria-label="Search hands">
+            <Search size={16} className="top-header-search-icon" />
+            <span className="top-header-search-placeholder">Search hands, players...</span>
+            <kbd className="top-header-search-kbd">/</kbd>
+          </button>
 
-        <button
-          type="button"
-          className={`top-header-star-btn ${isStarredPage ? 'active' : ''}`}
-          onClick={() => {
-            if (isStarredPage) {
-              // Return to wherever the star button was clicked *from*
-              // (stashed as router state below) rather than a raw
-              // navigate(-1) - reliable even if the Starred page's own tab
-              // switching or a refresh sits between the two clicks.
-              navigate(location.state?.from || '/dashboard');
-            } else {
-              navigate('/starred', { state: { from: location.pathname + location.search } });
-            }
-          }}
-          title="Starred"
-          aria-label="View starred hands, players, and sessions"
-        >
-          <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
-        </button>
+          <button
+            type="button"
+            className={`top-header-star-btn ${isStarredPage ? 'active' : ''}`}
+            onClick={() => {
+              if (isStarredPage) {
+                // Return to wherever the star button was clicked *from*
+                // (stashed as router state below) rather than a raw
+                // navigate(-1) - reliable even if the Starred page's own tab
+                // switching or a refresh sits between the two clicks.
+                navigate(location.state?.from || '/dashboard');
+              } else {
+                navigate('/starred', { state: { from: location.pathname + location.search } });
+              }
+            }}
+            title="Starred"
+            aria-label="View starred hands, players, and sessions"
+          >
+            <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
+          </button>
 
-        {ctaLabel && (
-          <Button variant="primary" icon={ctaIcon} onClick={onCta}>
-            {ctaLabel}
-          </Button>
-        )}
+          {ctaLabel && (
+            <Button variant="primary" icon={ctaIcon} iconSize={13} onClick={onCta}>
+              {ctaLabel}
+            </Button>
+          )}
 
-        <LoginButton />
-      </div>
-    </header>
+          <LoginButton />
+        </div>
+      </header>
+
+      {/* Rendered outside <header> entirely, not as a flex item of either of
+          its rows - as one it's an empty box even when closed (isControlled
+          hides its own toggle button), which ate an extra flex `gap` and
+          threw off the spacing around it. Its overlay/modal are
+          full-viewport, so its position in the DOM doesn't matter. */}
+      <HandSearchMenu
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onHandClick={(hand, session) => {
+          setSearchOpen(false);
+          navigate('/hand-replay', { state: { hand, session } });
+        }}
+      />
+    </>
   );
 }
 

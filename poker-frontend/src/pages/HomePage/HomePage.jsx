@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Upload } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { useIsLoggedIn } from '../../hooks/useIsLoggedIn';
 import { getMyStats } from '../../api/stats';
@@ -152,6 +152,7 @@ export function HomePage() {
       title="Dashboard"
       subtitle="Last 30 days · All games · All stakes"
       ctaLabel="Import hands"
+      ctaIcon={Upload}
       onCta={() => navigate('/history')}
     >
       <div className="hp-dashboard">

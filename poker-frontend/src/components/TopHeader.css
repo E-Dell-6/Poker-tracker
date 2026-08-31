@@ -74,6 +74,20 @@
   flex-shrink: 0;
 }
 
+/* Every page's primary CTA (Import hands, Recompute Stats, ...) shares
+   this floor so the button's width - and everything to its left, the star
+   button included - stays put across pages instead of shifting with
+   whichever label happens to be longest. Smaller than the base .ui-btn
+   size - at full size, matching the longest label ("Recompute Stats") left
+   the shorter ones looking stretched out with dead space. */
+.top-header-actions .ui-btn--primary {
+  min-width: 148px;
+  padding: 10px 14px;
+  gap: 5px;
+  font-size: 12px;
+  justify-content: center;
+}
+
 .top-header-star-btn {
   display: inline-flex;
   align-items: center;

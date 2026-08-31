@@ -18,11 +18,13 @@ import "./Starred.css";
 // independent paginators.
 const FETCH_LIMIT = 200;
 
-// Pages whose own header carries the "Import hands" CTA - mirrored here so
-// arriving on /starred from one of them keeps the button available instead
-// of it just disappearing. The actual upload UI lives on History, so the
-// button navigates there rather than duplicating the upload flow.
-const IMPORT_CTA_PATHS = ["/", "/dashboard", "/history"];
+// Pages whose own header carries a primary CTA - mirrored here so arriving
+// on /starred from one of them keeps a same-sized button in the header
+// instead of the actions row shrinking and the star shifting sideways. The
+// actual upload UI lives on History, so the button navigates there rather
+// than duplicating the upload flow (also true for Study's "Recompute
+// Stats", which has nothing to recompute on this page).
+const IMPORT_CTA_PATHS = ["/", "/dashboard", "/history", "/study", "/stats"];
 
 export function Starred() {
   const navigate = useNavigate();
