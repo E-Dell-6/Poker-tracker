@@ -10,6 +10,7 @@ import {
   addBuyIn as apiAddBuyIn,
   deleteLiveSession,
 } from "../../api/liveSessions";
+import { useLiveSession } from "../../context/LiveSessionContext";
 import "./Clock.css";
 
 const normalizeSession = (s) => ({
@@ -22,6 +23,7 @@ const normalizeSession = (s) => ({
 });
 
 export function Clock() {
+  const { setActiveSession } = useLiveSession();
   const [isClocked, setIsClocked] = useState(false);
   const [showSessionForm, setShowSessionForm] = useState(false);
   const [showBuyInForm, setShowBuyInForm] = useState(false);
@@ -116,6 +118,7 @@ export function Clock() {
       setSessionId(null);
       setSessionBlinds({ bigBlind: "", smallBlind: "" });
       setActiveBuyIns([]);
+      setActiveSession(null); // sidebar's Live badge disappears immediately
       setShowClockOutForm(false);
       setShowSessionForm(false);
       setShowBuyInForm(false);
@@ -153,6 +156,7 @@ export function Clock() {
         smallBlind: formData.smallBlind
       });
       setActiveBuyIns([buyIn]);
+      setActiveSession(session); // sidebar's Live badge appears immediately
       setShowSessionForm(false);
       setFormData({ bigBlind: "", smallBlind: "", buyIn: "", cashOut: "" });
     } catch (err) {

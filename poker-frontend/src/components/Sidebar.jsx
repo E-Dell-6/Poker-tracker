@@ -2,7 +2,7 @@ import "./Sidebar.css";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LayoutDashboard, List, Users, BarChart2, Spade, ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { getActiveLiveSession } from "../api/liveSessions";
+import { useLiveSession } from "../context/LiveSessionContext";
 
 // Replayer is deliberately NOT a sidebar item - it's a full-screen,
 // distraction-free view (see HandReplayer.jsx/HandReplayer.css), matching
@@ -25,36 +25,24 @@ function formatElapsed(ms) {
   return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
 }
 
-// Polls for an active clocked-in live session the same way Clock.jsx
-// restores one on load - the sidebar just needs to know whether one's
+// Reads the active clocked-in live session from LiveSessionContext (shared
+// with Clock.jsx, which calls setActiveSession() straight after a
+// clock-in/clock-out) - the sidebar just needs to know whether one's
 // running and since when, not the full clock-in/buy-in form state.
 function useActiveLiveSession() {
-  const [session, setSession] = useState(null);
+  const { activeSession } = useLiveSession();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const active = await getActiveLiveSession();
-        if (!cancelled) setSession(active || null);
-      } catch {
-        // no active session / not logged in - sidebar just omits the Live section
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!session) return;
+    if (!activeSession) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [session]);
+  }, [activeSession]);
 
-  if (!session) return null;
+  if (!activeSession) return null;
   return {
-    stakes: `$${session.smallBlind}/$${session.bigBlind}`,
-    elapsedMs: now - new Date(session.clockInTime).getTime()
+    stakes: `$${activeSession.smallBlind}/$${activeSession.bigBlind}`,
+    elapsedMs: now - new Date(activeSession.clockInTime).getTime()
   };
 }
 

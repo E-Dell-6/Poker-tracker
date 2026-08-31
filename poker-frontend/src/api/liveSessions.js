@@ -1,11 +1,24 @@
 import { requestJson } from "./http";
 
+// The userAuth middleware doesn't reject an unauthenticated request with a
+// real HTTP error - it responds 200 with { success: false, message: ... }
+// (see poker-backend/middleware/userAuth.js). A genuine live-sessions
+// response never has a `success` field (it's the raw array/document/null),
+// so this is a safe, unambiguous way to tell "not signed in" apart from
+// real data rather than passing that sentinel object through as if it
+// were a session.
+function isAuthFailure(data) {
+  return !!data && data.success === false;
+}
+
 export async function getLiveSessions() {
-  return requestJson("/api/live-sessions", {}, "Failed to load sessions");
+  const data = await requestJson("/api/live-sessions", {}, "Failed to load sessions");
+  return isAuthFailure(data) ? [] : data;
 }
 
 export async function getActiveLiveSession() {
-  return requestJson("/api/live-sessions/active", {}, "Failed to check active session");
+  const data = await requestJson("/api/live-sessions/active", {}, "Failed to check active session");
+  return isAuthFailure(data) ? null : data;
 }
 
 export async function clockIn({ clockInTime, bigBlind, smallBlind, buyIns, totalBuyIn }) {

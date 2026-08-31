@@ -3,13 +3,18 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Stats } from '../src/pages/Stats/Stats.jsx';
+import { LiveSessionProvider } from '../src/context/LiveSessionContext.jsx';
 
 // Stats.jsx renders inside Layout, which renders Sidebar (uses react-router's
-// Link/useLocation) - needs a Router context to render at all in a test.
+// Link/useLocation, and useLiveSession() - needs LiveSessionProvider as an
+// ancestor, same as the real app's App.jsx) - both are required for this to
+// render at all in a test.
 function renderStats() {
   return render(
     <MemoryRouter>
-      <Stats />
+      <LiveSessionProvider>
+        <Stats />
+      </LiveSessionProvider>
     </MemoryRouter>
   );
 }
