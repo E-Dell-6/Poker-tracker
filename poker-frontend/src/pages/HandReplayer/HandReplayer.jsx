@@ -8,9 +8,28 @@ import PlayerSeat from "./PlayerSeat";
 import Controller from "../../components/Controller";
 
 import { getSharedHand, createShareLink, deleteShareLink } from "../../api/share";
+import { getFavourites } from "../../api/favourites";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
-import { formatAmount } from "../../utils/formatMoney";
+import { formatAmount, formatSignedAmount } from "../../utils/formatMoney";
 import { PublicHandViewerSkeleton } from "./PublicHandViewerSkeleton";
+import { HandleStars } from "../../components/HandleStars";
+
+// Matches SessionLog.jsx's own local copy of this same helper (no shared
+// home for it yet) - renders hole cards as compact suit-colored text
+// (e.g. "A♠") instead of image card graphics, so this panel's hand rows
+// read like the rest of the app's hand summaries.
+const SUIT_SYMBOLS = { s: "♠", h: "♥", d: "♦", c: "♣" };
+const cardLabel = (card) => `${card.slice(0, -1)}${SUIT_SYMBOLS[card.slice(-1)] || card.slice(-1)}`;
+const isRedCard = (card) => "hd".includes(card.slice(-1));
+
+function getHandProfit(hand) {
+  const hero = hand.players?.find((p) => p.isHero);
+  if (!hero) return null;
+  if (typeof hero.profitLoss === "number") return hero.profitLoss;
+  const won = hand.winners?.includes(hero.name);
+  if (won) return hand.finalPotSize ?? 0;
+  return null;
+}
 
 const HAND_FILTERS = [
   { key: "flop",  label: "Saw Flop" },
@@ -261,6 +280,26 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     setShowShareModal(false);
     setActionIndex(0);
   }, [hand?._id]);
+
+  const [favouriteHandIds, setFavouriteHandIds] = useState(new Set());
+  useEffect(() => {
+    if (isPublic) return;
+    getFavourites()
+      .then((favourites) => {
+        const ids = favourites.map((h) => (typeof h === "string" ? h : h._id));
+        setFavouriteHandIds(new Set(ids));
+      })
+      .catch((err) => console.error("Failed to fetch favourites:", err));
+  }, [isPublic]);
+
+  const handleFavouriteToggle = (handId, isFavourited) => {
+    setFavouriteHandIds((prev) => {
+      const next = new Set(prev);
+      if (isFavourited) next.add(handId);
+      else next.delete(handId);
+      return next;
+    });
+  };
 
   const actions = hand?.actions || [];
 
@@ -515,6 +554,7 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
                   {visibleHands.map((h, i) => {
                     const hero = h.players.find((p) => p.isHero);
                     const isActive = h._id === hand?._id;
+                    const handProfit = getHandProfit(h);
                     return (
                       <li
                         key={i}
@@ -524,30 +564,33 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
                           navigate('/hand-replay', { state: { hand: h, session } });
                         }}
                       >
-                        <div className="hand-item-left">
-                          <span className="hand-round-number">#{h.handIndex || i + 1}</span>
-                          <div className="menu-hole-cards">
-                            {hero && hero.holeCards?.length > 0 ? (
-                              hero.holeCards.map((card, ci) => (
-                                <div key={ci} className="menu-card-wrapper">
-                                  <img src={`/images/cards/${card}.png`} alt={card} className="menu-card-img" />
-                                </div>
-                              ))
-                            ) : (
-                              <span style={{ fontSize: 10, color: 'var(--muted)' }}>—</span>
-                            )}
-                          </div>
+                        <span className="hand-index">#{h.handIndex || i + 1}</span>
+                        <div className="hand-cards">
+                          {hero && hero.holeCards?.length > 0 ? (
+                            hero.holeCards.map((card, ci) => (
+                              <span key={ci} className={`hand-card ${isRedCard(card) ? "red" : ""}`}>
+                                {cardLabel(card)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="no-cards">No Cards</span>
+                          )}
                         </div>
-                        <div className="hand-item-right">
-                          <div className="hand-item-winner">
-                            <span className="winner-label">Winner</span>
-                            <span className="winner-name">{h.winners?.join(", ") || "—"}</span>
-                          </div>
-                          <div className="hand-item-pot">
-                            <span className="pot-label">Pot</span>
-                            <span className="pot-value">{formatAmount(h.finalPotSize, currency)}</span>
-                          </div>
+                        <span className="hand-winner">Winner: {h.winners?.join(", ") || "—"}</span>
+                        <div className="hand-pot">
+                          <span className="pot-label">Pot:</span>
+                          <strong>{formatAmount(h.finalPotSize, currency)}</strong>
                         </div>
+                        {handProfit !== null && (
+                          <div className={`hand-profit ${handProfit >= 0 ? "win" : "loss"}`}>
+                            {formatSignedAmount(handProfit, currency)}
+                          </div>
+                        )}
+                        <HandleStars
+                          hand={h}
+                          isStarred={favouriteHandIds.has(h._id)}
+                          onToggle={handleFavouriteToggle}
+                        />
                       </li>
                     );
                   })}
