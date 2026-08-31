@@ -3,6 +3,7 @@ import Session from '../model/Session.js';
 import { handMatchesFilter } from '../utils/handFilters.js';
 import { getPositionMap } from '../utils/statsEngine.js';
 import { CENTS_CURRENCIES, parseBigBlind } from '../utils/blinds.js';
+import { classifyHoleCards } from '../utils/handClass.js';
 
 // List view: deliberately excludes `hands` (each session can carry hundreds
 // of nested hand documents - players/actions/board/etc). The history page
@@ -134,7 +135,8 @@ export async function sessionHands(userId, sessionId) {
 // containment ("hero held these cards"), which works unchanged for PLO's
 // 4-card hands: an NLH hand simply can't match once more than 2 cards are
 // selected, since its holeCards array only ever has 2 entries.
-export async function searchHands(userId, { gameType, result, filter, position, holeCards, limit }) {
+export async function searchHands(userId, { gameType, result, filter, position, holeCards, handClass, limit }) {
+  const wantedClass = handClass ? String(handClass).trim() : null;
   const heroCards = (holeCards || '')
     .split(',')
     .map(c => c.trim())
@@ -174,6 +176,11 @@ export async function searchHands(userId, { gameType, result, filter, position, 
     const hand = row.hands;
     const hero = hand.players?.find(p => p.isHero);
     if (!hero) continue;
+
+    if (wantedClass) {
+      const cls = classifyHoleCards(hero.holeCards);
+      if (!cls || cls.token !== wantedClass) continue;
+    }
 
     if (filter && !handMatchesFilter(hand, filter)) continue;
 

@@ -7,6 +7,7 @@ import { Clock } from './pages/Clock/Clock';
 import { Players } from './pages/Players/Players';
 import { PlayerProfile } from './pages/Players/PlayerProfile';
 import { Starred } from './pages/Starred/Starred';
+import { SearchResults } from './pages/Search/SearchResults';
 import { Stats } from './pages/Stats/Stats';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
@@ -36,6 +37,7 @@ function App() {
         <Route path="/players" element={<Players />} />
         <Route path="/players/:personId" element={<PlayerProfile />} />
         <Route path="/starred" element={<Starred />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/study" element={<Stats />} />
         <Route path="/profile" element={<Profile />} />

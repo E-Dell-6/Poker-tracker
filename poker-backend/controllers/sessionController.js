@@ -55,8 +55,8 @@ export async function getSessionHands(req, res) {
 export async function searchHands(req, res) {
   try {
     const userId = req.body.userId;
-    const { gameType, result, filter, position, holeCards, limit } = req.query;
-    const matches = await sessionService.searchHands(userId, { gameType, result, filter, position, holeCards, limit });
+    const { gameType, result, filter, position, holeCards, handClass, limit } = req.query;
+    const matches = await sessionService.searchHands(userId, { gameType, result, filter, position, holeCards, handClass, limit });
     res.json(matches);
   } catch (error) {
     res.status(500).json({ error: "Failed to search hands", details: error.message });
