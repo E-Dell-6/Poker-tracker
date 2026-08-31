@@ -56,7 +56,17 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
         <button
           type="button"
           className={`top-header-star-btn ${isStarredPage ? 'active' : ''}`}
-          onClick={() => (isStarredPage ? navigate(-1) : navigate('/starred'))}
+          onClick={() => {
+            if (isStarredPage) {
+              // Return to wherever the star button was clicked *from*
+              // (stashed as router state below) rather than a raw
+              // navigate(-1) - reliable even if the Starred page's own tab
+              // switching or a refresh sits between the two clicks.
+              navigate(location.state?.from || '/dashboard');
+            } else {
+              navigate('/starred', { state: { from: location.pathname + location.search } });
+            }
+          }}
           title="Starred"
           aria-label="View starred hands, players, and sessions"
         >

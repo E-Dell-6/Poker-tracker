@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Star } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Star, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
@@ -18,9 +18,19 @@ import "./Starred.css";
 // independent paginators.
 const FETCH_LIMIT = 200;
 
+// Pages whose own header carries the "Import hands" CTA - mirrored here so
+// arriving on /starred from one of them keeps the button available instead
+// of it just disappearing. The actual upload UI lives on History, so the
+// button navigates there rather than duplicating the upload flow.
+const IMPORT_CTA_PATHS = ["/", "/dashboard", "/history"];
+
 export function Starred() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("hands");
+
+  const fromPath = location.state?.from?.split("?")[0];
+  const showImportCta = fromPath ? IMPORT_CTA_PATHS.includes(fromPath) : false;
 
   const [hands, setHands] = useState([]);
   const [handsLoading, setHandsLoading] = useState(true);
@@ -83,7 +93,13 @@ export function Starred() {
   ];
 
   return (
-    <Layout title="Starred" subtitle="Hands, sessions, and players you've starred">
+    <Layout
+      title="Starred"
+      subtitle="Hands, sessions, and players you've starred"
+      ctaLabel={showImportCta ? "Import hands" : undefined}
+      ctaIcon={showImportCta ? Upload : undefined}
+      onCta={showImportCta ? () => navigate("/history") : undefined}
+    >
       <div className="starred-page">
         <Tabs options={tabOptions} active={activeTab} onChange={setActiveTab} />
 
