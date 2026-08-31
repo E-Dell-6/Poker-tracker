@@ -96,16 +96,11 @@
 }
 
 /* ── SESSION CARD ───────────────────────────────────────── */
-/* Matches the elevated list-row card used everywhere else in the app
-   (Players.css's .player-card, HomePage.css's .hp-feed-item) - a lighter
-   background than the page + a soft var(--color-border) outline, instead
-   of this row's previous flat page-color background with a near-black
-   border that barely showed up against the dark theme. */
 .session-card {
   list-style: none;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg-elevated-hover);
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
@@ -154,7 +149,7 @@
 
 .session-stakes {
   color: var(--color-text-muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
