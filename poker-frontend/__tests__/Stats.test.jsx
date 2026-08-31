@@ -77,6 +77,12 @@ function statsFixture() {
 function mockFetch(statsPayload, filteredPayload = null) {
   globalThis.fetch = vi.fn((url) => {
     const u = String(url);
+    if (u.includes('/api/user/data')) {
+      // Stats.jsx gates its real data fetch on being signed in - without
+      // this, useIsLoggedIn() reads the generic []-fallback below as
+      // "not logged in" and every test would hit the signed-out preview.
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ success: true, userData: { name: 'Test User' } }) });
+    }
     if (u.includes('/api/stats/me/filtered')) {
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(filteredPayload ?? statsPayload) });
     }

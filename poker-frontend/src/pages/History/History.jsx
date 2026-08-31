@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, X, Star, Plus, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
+import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
+import { ImportLogCta } from "../../components/ui/ImportLogCta";
 import { SessionLog } from "../../components/SessionLog";
 import { FavouritesLog } from "../../components/FavouritesLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
@@ -165,6 +167,7 @@ function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
 
 export function History() {
   const navigate = useNavigate();
+  const isLoggedIn = useIsLoggedIn();
   const [sessions, setSessions] = useState([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState(null);
@@ -461,6 +464,8 @@ export function History() {
         {!showFavourites ? (
           loading ? (
             <SessionListSkeleton />
+          ) : sessions.length === 0 && isLoggedIn === false ? (
+            <ImportLogCta />
           ) : sessions.length === 0 ? (
             <div className="no-sessions">
               <p>No sessions found.</p>

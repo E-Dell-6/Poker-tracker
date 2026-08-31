@@ -11,11 +11,14 @@ import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { getPlayersStats } from "../../api/stats";
 import { getPeoplePage, updatePerson } from "../../api/people";
 import { API_URL } from "../../config";
+import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
+import { ImportLogCta } from "../../components/ui/ImportLogCta";
 
 const PAGE_SIZE = 50;
 
 export function Players() {
   const navigate = useNavigate();
+  const isLoggedIn = useIsLoggedIn();
   const [players, setPlayers] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -120,6 +123,8 @@ export function Players() {
             </div>
             <PlayersTableSkeleton />
           </div>
+        ) : total === 0 && !hasActiveFilter && isLoggedIn === false ? (
+          <ImportLogCta />
         ) : total === 0 && !hasActiveFilter ? (
           <p className="no-info">
             No players yet. Map a player from the History page to get started.

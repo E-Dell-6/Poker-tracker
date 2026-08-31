@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { getMyStats, getMyFilteredStats, recomputeMyStats } from '../../api/stats';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
+import { useIsLoggedIn } from '../../hooks/useIsLoggedIn';
 import { PositionalStats } from '../../components/PositionalStats';
 import { GroupedStats } from '../../components/GroupedStats';
 import { EVGraph } from '../../components/EVGraph';
 import { StatTile } from '../../components/ui/StatTile';
+import { GhostChart } from '../../components/ui/GhostChart';
 import { Tabs } from '../../components/ui/Tabs';
 import { StudyCharts } from './StudyCharts';
 import { PositionMatrixTables } from './PositionMatrixTables';
@@ -38,6 +40,7 @@ function daysAgoISO(days) {
 }
 
 export function Stats() {
+  const isLoggedIn = useIsLoggedIn();
   // `baseStats` is the cached, unfiltered GET /api/stats/me result - always
   // fetched once on load, and kept around even while a filter is active so
   // the Stakes <select> always has its full option list. `filteredStats` is
@@ -97,7 +100,14 @@ export function Stats() {
     }
   };
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => {
+    if (isLoggedIn === false) {
+      setLoading(false);
+      return;
+    }
+    if (isLoggedIn !== true) return; // still checking auth
+    fetchStats();
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!isFilterActive) return;
@@ -123,6 +133,42 @@ export function Stats() {
             <h2>Couldn't load your stats</h2>
             <p>{error}</p>
             <button className="refresh-btn" onClick={fetchStats}>Retry</button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isLoggedIn === false) {
+    return (
+      <Layout title="Study">
+        <div className="study-page">
+          <div className="study-tiles-grid">
+            <StatTile label="Hands" value="—" />
+            <StatTile label="Win Rate" value="—" />
+            <StatTile label="VPIP / PFR" value="—" />
+            <StatTile label="3-Bet" value="—" />
+          </div>
+
+          <div className="study-ghost-grid">
+            <div className="matrix-table-card">
+              <div className="matrix-table-header">
+                <h3 className="section-title">Win rate by position</h3>
+              </div>
+              <GhostChart type="bar" emptyMessage="Sign in to see your win rate by position." />
+            </div>
+            <div className="matrix-table-card">
+              <div className="matrix-table-header">
+                <h3 className="section-title">Showdown breakdown</h3>
+              </div>
+              <GhostChart type="pie" emptyMessage="Sign in to see your showdown results." />
+            </div>
+            <div className="matrix-table-card">
+              <div className="matrix-table-header">
+                <h3 className="section-title">Profit vs. Expected Value</h3>
+              </div>
+              <GhostChart type="area" emptyMessage="Sign in to see your EV over time." />
+            </div>
           </div>
         </div>
       </Layout>

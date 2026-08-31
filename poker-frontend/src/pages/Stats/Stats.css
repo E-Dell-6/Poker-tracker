@@ -123,6 +123,13 @@
   margin-bottom: 8px;
 }
 
+/* Signed-out preview - 3 GhostChart cards standing in for the real charts */
+.study-ghost-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
 /* ---------- Stakes/Time filter bar ---------- */
 
 .study-filter-bar {
