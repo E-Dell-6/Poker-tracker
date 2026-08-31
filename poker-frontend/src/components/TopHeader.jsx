@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './TopHeader.css';
-import { Search } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
 import { Button } from './ui/Button';
 import { LoginButton } from './LoginButton';
 import { HandSearchMenu } from './HandSearchMenu';
@@ -16,6 +16,8 @@ import { HandSearchMenu } from './HandSearchMenu';
 export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isStarredPage = location.pathname === '/starred';
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -50,6 +52,16 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
             navigate('/hand-replay', { state: { hand, session } });
           }}
         />
+
+        <button
+          type="button"
+          className={`top-header-star-btn ${isStarredPage ? 'active' : ''}`}
+          onClick={() => (isStarredPage ? navigate(-1) : navigate('/starred'))}
+          title="Starred"
+          aria-label="View starred hands, players, and sessions"
+        >
+          <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
+        </button>
 
         {ctaLabel && (
           <Button variant="primary" icon={ctaIcon} onClick={onCta}>

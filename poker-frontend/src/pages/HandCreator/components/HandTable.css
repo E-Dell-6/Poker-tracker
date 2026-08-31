@@ -1,0 +1,125 @@
+/* Forked from HandReplayer/PokerTable.css - same felt/rail treatment,
+   reprefixed ht-* (globally-imported stylesheets, no CSS modules in this
+   app, so distinct prefixes avoid collisions with PokerTable.css). */
+
+.ht-wrap {
+  width: 100%;
+  max-width: 760px;
+  margin: 8px auto 20px;
+}
+
+.ht-table {
+  width: 100%;
+  aspect-ratio: 2.1 / 1;
+  box-sizing: border-box;
+  border-radius: 50%;
+
+  background:
+    radial-gradient(ellipse 110% 70% at 50% 38%, rgba(255, 255, 255, 0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, #1e4d38 0%, #122d21 45%, #0a1e14 100%);
+
+  box-shadow:
+    inset 0 0 80px rgba(18, 45, 33, 0.6),
+    inset 0 0 20px rgba(0, 0, 0, 0.4),
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent),
+    0 0 0 10px rgba(0, 0, 0, 0.3);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+}
+
+.ht-seats {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+
+.ht-seats .sc-seat {
+  position: absolute;
+}
+
+.ht-dealer-chip {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #fffdf6 0%, #f2e9d3 55%, #e2d4ab 100%);
+  border: 2px solid var(--color-accent);
+  font-weight: 800;
+  font-size: 12px;
+  color: #8a1f1f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  z-index: 8;
+}
+
+.ht-pot {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+.ht-pot-center {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ht-pot-above {
+  top: 28%;
+  transform: translate(-50%, -75%);
+}
+
+.ht-pot-img {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+}
+
+.ht-pot-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  background: rgba(10, 14, 18, 0.82);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  padding: 6px 16px;
+  border-radius: 100px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.ht-pot-text-label {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.ht-board {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: rgba(10, 14, 18, 0.55);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+  padding: 10px 14px;
+}
+
+@media (max-width: 768px) {
+  .ht-table { aspect-ratio: 1.5 / 1; }
+  .ht-pot-img { width: 48px; height: 48px; }
+  .ht-pot-text { font-size: 0.8rem; padding: 5px 12px; }
+}

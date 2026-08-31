@@ -5,7 +5,6 @@ import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { ImportLogCta } from "../../components/ui/ImportLogCta";
 import { SessionLog } from "../../components/SessionLog";
-import { FavouritesLog } from "../../components/FavouritesLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
 import { Tabs } from "../../components/ui/Tabs";
 import { Pagination } from "../../components/ui/Pagination";
@@ -14,7 +13,6 @@ import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { uploadImage, uploadSessionCsv } from "../../api/uploads";
 import { getPeople, createPerson } from "../../api/people";
 import { getSessions, getSessionStakes, mapSessionPlayer, updateSession } from "../../api/sessions";
-import { getFavourites } from "../../api/favourites";
 import "./History.css";
 
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
@@ -182,8 +180,6 @@ export function History() {
   const [renamingState, setRenamingState] = useState(null);
   const [usedPersonIds, setUsedPersonIds] = useState([]);
 
-  const [showFavourites, setShowFavourites] = useState(false);
-  const [favourites, setFavourites] = useState([]);
   const [showStarredSessions, setShowStarredSessions] = useState(false);
   const [selectedStakes, setSelectedStakes] = useState("All");
   const [stakesOptions, setStakesOptions] = useState([]);
@@ -218,13 +214,6 @@ export function History() {
       .then((data) => setStakesOptions(Array.isArray(data.stakes) ? data.stakes : []))
       .catch(() => {});
   }, [uploadStatus]);
-
-  useEffect(() => {
-    if (!showFavourites) return;
-    getFavourites()
-      .then((data) => setFavourites(data))
-      .catch((err) => console.error("Failed to load favourites", err));
-  }, [showFavourites]);
 
   // Changing a filter resets to page 1 - otherwise a search/filter that
   // narrows the result set could strand you on a page number that no
@@ -351,10 +340,6 @@ export function History() {
     }
   };
 
-  function HandleFavouriteClick() {
-    setShowFavourites((prev) => !prev);
-  }
-
   const handleToggleSessionStar = async (session) => {
     const nextStarred = !session.starred;
     try {
@@ -436,13 +421,6 @@ export function History() {
           </div>
           <div className="filter-bar-actions">
             <button
-              className={`starred-sessions-filter ${showStarredSessions ? "active" : ""}`}
-              onClick={handleToggleStarredFilter}
-              title={showStarredSessions ? "Show all sessions" : "Show starred sessions"}
-            >
-              <Star size={13} fill={showStarredSessions ? "currentColor" : "none"} /> Starred
-            </button>
-            <button
               className="create-button"
               onClick={() => navigate("/hand-creator")}
             ><Plus size={15} /> Create Hand </button>
@@ -452,47 +430,38 @@ export function History() {
               }
             />
             <button
-              className={`favourites-toggle ${showFavourites ? "active" : ""}`}
-              onClick={HandleFavouriteClick}
-              title={showFavourites ? "Show All Sessions" : "Show Favourites"}
+              className={`favourites-toggle ${showStarredSessions ? "active" : ""}`}
+              onClick={handleToggleStarredFilter}
+              title={showStarredSessions ? "Show all sessions" : "Show starred sessions"}
             >
-              <Star size={16} fill={showFavourites ? "currentColor" : "none"} />
+              <Star size={16} fill={showStarredSessions ? "currentColor" : "none"} />
             </button>
           </div>
         </div>
         <hr />
-        {!showFavourites ? (
-          loading ? (
-            <SessionListSkeleton />
-          ) : sessions.length === 0 && isLoggedIn === false ? (
-            <ImportLogCta />
-          ) : sessions.length === 0 ? (
-            <div className="no-sessions">
-              <p>No sessions found.</p>
-            </div>
-          ) : (
-            <>
-              <SessionLog
-                sessions={sessions}
-                onSessionsChange={() => fetchSessions()}
-                onHandClick={(hand, session) =>
-                  navigate("/hand-replay", { state: { hand, session } })
-                }
-                onRenameRequest={(name, sid) =>
-                  setRenamingState({ originalName: name, sessionId: sid })
-                }
-                onToggleStar={handleToggleSessionStar}
-              />
-              <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} onPageChange={setPage} />
-            </>
-          )
+        {loading ? (
+          <SessionListSkeleton />
+        ) : sessions.length === 0 && isLoggedIn === false ? (
+          <ImportLogCta />
+        ) : sessions.length === 0 ? (
+          <div className="no-sessions">
+            <p>No sessions found.</p>
+          </div>
         ) : (
-          <FavouritesLog
-            hands={favourites}
-            onHandClick={(hand, session) =>
-              navigate("/hand-replay", { state: { hand, session } })
-            }
-          />
+          <>
+            <SessionLog
+              sessions={sessions}
+              onSessionsChange={() => fetchSessions()}
+              onHandClick={(hand, session) =>
+                navigate("/hand-replay", { state: { hand, session } })
+              }
+              onRenameRequest={(name, sid) =>
+                setRenamingState({ originalName: name, sessionId: sid })
+              }
+              onToggleStar={handleToggleSessionStar}
+            />
+            <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} onPageChange={setPage} />
+          </>
         )}
       </div>
     </Layout>

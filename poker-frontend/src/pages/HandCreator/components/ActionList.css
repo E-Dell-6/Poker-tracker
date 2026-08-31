@@ -1,0 +1,264 @@
+/* -- ActionList wrapper --------------------------------------------- */
+
+.al-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 16px 0 24px;
+}
+
+.al-done {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+}
+
+.al-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.al-manual-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+.al-manual-btn:hover {
+  color: var(--color-text-muted);
+}
+
+/* -- ActionComposer ---------------------------------------------------- */
+
+.ac-composer {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-accent-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 0 0 1px var(--color-accent-dim);
+}
+
+.ac-acting-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  margin-bottom: 10px;
+}
+
+.ac-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.ac-btn {
+  border-radius: 10px;
+  padding: 12px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ac-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ac-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ac-btn-fold {
+  color: var(--color-negative);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.ac-btn-fold:hover:not(:disabled) {
+  background: var(--color-negative-dim);
+}
+
+.ac-btn-check {
+  color: #5dade2;
+  border-color: rgba(93, 173, 226, 0.35);
+}
+
+.ac-btn-check:hover:not(:disabled) {
+  background: rgba(93, 173, 226, 0.12);
+}
+
+.ac-btn-bet {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.ac-btn-bet:hover:not(:disabled) {
+  background: var(--color-accent-dim);
+}
+
+.ac-btn-allin {
+  color: #9b59b6;
+  border-color: rgba(155, 89, 182, 0.35);
+}
+
+.ac-btn-allin:hover:not(:disabled) {
+  background: rgba(155, 89, 182, 0.12);
+}
+
+.ac-bet-panel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ac-chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ac-chip {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ac-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.ac-amount-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ac-amount-row input {
+  flex: 1;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.ac-amount-row input:focus {
+  border-color: var(--color-accent);
+}
+
+.ac-confirm {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ac-confirm:hover {
+  background: var(--color-accent-hover);
+}
+
+/* -- ActionRow ----------------------------------------------------------- */
+
+.ar-wrapper {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ar-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 100px 40px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.ar-player {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.ar-row select,
+.ar-row input {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.ar-row select:focus,
+.ar-row input:focus {
+  border-color: var(--color-accent);
+}
+
+.ar-dash {
+  text-align: center;
+  color: var(--color-text-faint);
+}
+
+.ar-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--color-negative);
+}
+
+.ar-delete:hover {
+  background: var(--color-negative-dim);
+}
+
+.ar-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 0 12px 10px;
+}
+
+.ar-hint-warning {
+  color: var(--color-negative);
+}
+
+@media (max-width: 640px) {
+  .ar-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'player player' 'type amount' 'delete delete';
+  }
+  .ac-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

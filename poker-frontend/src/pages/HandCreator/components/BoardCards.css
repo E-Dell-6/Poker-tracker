@@ -1,0 +1,12 @@
+.bc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.bc-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
