@@ -31,10 +31,62 @@
   margin-top: 16px;
 }
 
-.hcb-row--category { background: rgba(255, 255, 255, 0.015); }
+/* Category rows anchor each group: bold, roomier, and separated from the
+   group above by a hairline so a long expanded list still reads as
+   distinct chunks instead of one undifferentiated wall of rows. */
+.hcb-row--category .ui-table-cell {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+.hcb-row--category:not(:first-child) .ui-table-cell {
+  border-top: 1px solid var(--color-border);
+}
+.hcb-row--category strong {
+  font-size: 14px;
+}
+
+/* Each deeper level gets denser padding, a smaller/quieter typeface, and a
+   progressively fainter accent-colored gutter on the label cell - the
+   gutter gives every nested row a consistent "this belongs to a parent"
+   cue that plain indentation alone doesn't provide at a glance. */
+.hcb-row--hand .ui-table-cell {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 13px;
+}
+.hcb-row--hand .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent-border);
+}
+
+.hcb-row--context .ui-table-cell {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.012);
+}
+.hcb-row--context .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 rgba(249, 115, 22, 0.22);
+}
+
+.hcb-row--position .ui-table-cell {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  font-size: 12px;
+  color: var(--color-text-faint);
+  background: rgba(0, 0, 0, 0.12);
+}
+.hcb-row--position .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 rgba(249, 115, 22, 0.1);
+}
+
 .hcb-row--hand:hover .ui-table-cell,
 .hcb-row--context:hover .ui-table-cell {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.045);
+}
+.hcb-row--position:hover .ui-table-cell {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .hcb-toggle {
@@ -46,6 +98,7 @@
 
 .hcb-toggle--expanded {
   transform: rotate(90deg);
+  color: var(--color-accent);
 }
 
 .hcb-toggle-spacer {
@@ -53,9 +106,9 @@
   width: 20px;
 }
 
-.hcb-indent-1 { padding-left: 16px; }
-.hcb-indent-2 { padding-left: 32px; }
-.hcb-indent-3 { padding-left: 48px; color: var(--color-text-muted); }
+.hcb-indent-1 { padding-left: 18px; }
+.hcb-indent-2 { padding-left: 38px; }
+.hcb-indent-3 { padding-left: 58px; color: var(--color-text-faint); }
 
 .hcb-value-mono {
   font-family: var(--font-mono);
