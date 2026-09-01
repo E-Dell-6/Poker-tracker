@@ -16,7 +16,7 @@ const menuItems = [
   { icon: Users, label: "Players", to: "/players" },
   {
     icon: BarChart2, label: "Study", to: "/study",
-    subItems: [{ label: "Range Matrix", to: "/study/range-matrix" }]
+    subItems: [{ label: "Preflop", to: "/study/range-matrix" }]
   },
 ];
 
@@ -76,8 +76,8 @@ export function Sidebar() {
               {!collapsed && <span className="sidebar-label">{item.label}</span>}
             </Link>
             {/* Contextual sub-nav: only shown while inside this section
-                (e.g. Study's "Range Matrix"), and hidden when collapsed
-                since there's no room to show sub-labels. */}
+                (e.g. Study's "Preflop"), and hidden when collapsed since
+                there's no room to show sub-labels. */}
             {item.subItems && !collapsed && location.pathname.startsWith(item.to) && (
               <div className="sidebar-subnav">
                 {item.subItems.map(sub => (

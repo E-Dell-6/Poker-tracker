@@ -79,7 +79,7 @@ export function PreflopMatrixPage() {
 
   if (loading || (isFilterActive && !stats)) {
     return (
-      <Layout title="Range Matrix">
+      <Layout title="Preflop">
         <div className="study-page">
           <StudyPageSkeleton />
         </div>
@@ -89,7 +89,7 @@ export function PreflopMatrixPage() {
 
   if (error) {
     return (
-      <Layout title="Range Matrix">
+      <Layout title="Preflop">
         <div className="study-page">
           <div className="study-status-container study-status-container--error">
             <h2>Couldn't load your stats</h2>
@@ -103,7 +103,7 @@ export function PreflopMatrixPage() {
 
   if (isLoggedIn === false || !baseStats || baseStats.totalHands === 0) {
     return (
-      <Layout title="Range Matrix">
+      <Layout title="Preflop">
         <div className="study-page">
           <div className="study-status-container">
             <h2>No data yet</h2>
@@ -119,7 +119,7 @@ export function PreflopMatrixPage() {
   }
 
   return (
-    <Layout title="Range Matrix" subtitle="Walk any preflop line - every card is hero's own history for that seat">
+    <Layout title="Preflop" subtitle="Walk any preflop line - every card is hero's own history for that seat">
       <div className="study-page">
         <div className="pfm-page">
           <PreflopMatrixControls

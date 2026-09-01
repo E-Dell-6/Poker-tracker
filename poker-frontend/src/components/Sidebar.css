@@ -110,7 +110,7 @@
   transition: opacity 0.2s ease;
 }
 
-/* ── CONTEXTUAL SUB-NAV (e.g. Study > Range Matrix) ────────── */
+/* ── CONTEXTUAL SUB-NAV (e.g. Study > Preflop) ────────── */
 .sidebar-subnav {
   display: flex;
   flex-direction: column;
