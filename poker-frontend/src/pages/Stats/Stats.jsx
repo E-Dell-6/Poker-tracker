@@ -1,9 +1,8 @@
 import { Layout } from '../../components/Layout';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { getMyStats, getMyFilteredStats, recomputeMyStats } from '../../api/stats';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
-import { useIsLoggedIn } from '../../hooks/useIsLoggedIn';
+import { useHeroStats, TIME_FILTERS } from '../../hooks/useHeroStats';
 import { PositionalStats } from '../../components/PositionalStats';
 import { GroupedStats } from '../../components/GroupedStats';
 import { EVGraph } from '../../components/EVGraph';
@@ -22,100 +21,18 @@ const SECTION_TABS = [
   { key: 'board', label: 'Board' }
 ];
 
-// Same presets/convention as Profile.jsx's TIME_FILTERS (plain component
-// state, no URL sync) - reused here rather than inventing a second "time
-// range" UI. Keys are strings (not the day-count/null itself) since Tabs
-// uses `key` as both the React key and the active-comparison identity.
-const TIME_FILTERS = [
-  { key: '30', label: '30D' },
-  { key: '90', label: '90D' },
-  { key: '365', label: '365D' },
-  { key: 'all', label: 'All Time' }
-];
-
-function daysAgoISO(days) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
 export function Stats() {
-  const isLoggedIn = useIsLoggedIn();
-  // `baseStats` is the cached, unfiltered GET /api/stats/me result - always
-  // fetched once on load, and kept around even while a filter is active so
-  // the Stakes <select> always has its full option list. `filteredStats` is
-  // the live GET /api/stats/me/filtered result, only populated when a
-  // filter is actually active. `stats` (derived below) is whichever of the
-  // two the page should actually render.
-  const [baseStats, setBaseStats] = useState(null);
-  const [filteredStats, setFilteredStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [filterLoading, setFilterLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const {
+    isLoggedIn, baseStats, stats,
+    isFilterActive, fromISO,
+    loading, filterLoading, refreshing, error,
+    stakesFilter, setStakesFilter,
+    daysFilter, setDaysFilter,
+    fetchStats, refreshStats
+  } = useHeroStats();
   const [section, setSection] = useState('hands');
-  const [stakesFilter, setStakesFilter] = useState('');
-  const [daysFilter, setDaysFilter] = useState('all');
 
-  const isFilterActive = stakesFilter !== '' || daysFilter !== 'all';
-  const fromISO = daysFilter !== 'all' ? daysAgoISO(Number(daysFilter)) : null;
-  const stats = isFilterActive ? filteredStats : baseStats;
-
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      setBaseStats(await getMyStats());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFilteredStats = async () => {
-    try {
-      setFilterLoading(true);
-      setError(null);
-      setFilteredStats(await getMyFilteredStats({ stakes: stakesFilter, from: fromISO }));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setFilterLoading(false);
-    }
-  };
-
-  const refreshStats = async () => {
-    try {
-      setRefreshing(true);
-      setBaseStats(await recomputeMyStats());
-      // Recompute always refreshes the unfiltered cached doc - if a filter
-      // is active, re-run it too so the visible (filtered) view reflects
-      // the fresh data instead of silently going stale.
-      if (isFilterActive) await fetchFilteredStats();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isLoggedIn === false) {
-      setLoading(false);
-      return;
-    }
-    if (isLoggedIn !== true) return; // still checking auth
-    fetchStats();
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    if (!isFilterActive) return;
-    fetchFilteredStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stakesFilter, daysFilter]);
-
-  if (loading || (isFilterActive && !filteredStats)) {
+  if (loading || (isFilterActive && !stats)) {
     return (
       <Layout title="Study">
         <div className="study-page">
@@ -212,7 +129,7 @@ export function Stats() {
                 ))}
               </select>
               <Tabs options={TIME_FILTERS} active={daysFilter} onChange={setDaysFilter} />
-              {filterLoading && filteredStats && <span className="study-filter-updating">Updating…</span>}
+              {filterLoading && stats && <span className="study-filter-updating">Updating…</span>}
             </div>
 
             {stats.totalHands === 0 ? (

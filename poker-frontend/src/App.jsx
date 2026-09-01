@@ -9,6 +9,7 @@ import { PlayerProfile } from './pages/Players/PlayerProfile';
 import { Starred } from './pages/Starred/Starred';
 import { SearchResults } from './pages/Search/SearchResults';
 import { Stats } from './pages/Stats/Stats';
+import { PreflopMatrixPage } from './pages/Stats/PreflopMatrix/PreflopMatrixPage';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
 import HandCreator from './pages/HandCreator/HandCreator';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/study" element={<Stats />} />
+        <Route path="/study/range-matrix" element={<PreflopMatrixPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path='/hand-creator' element={<HandCreator />}/>

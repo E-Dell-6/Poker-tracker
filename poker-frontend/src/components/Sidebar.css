@@ -110,6 +110,37 @@
   transition: opacity 0.2s ease;
 }
 
+/* ── CONTEXTUAL SUB-NAV (e.g. Study > Range Matrix) ────────── */
+.sidebar-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 6px 34px;
+}
+
+.sidebar-sublink {
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-sublink:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.sidebar-sublink.active {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+}
+
 /* ── COLLAPSED NAV ──────────────────────────────────────── */
 .sidebar.collapsed .sidebar-link {
   justify-content: center;

@@ -14,7 +14,10 @@ const menuItems = [
   { icon: Clock, label: "Clock In", to: "/clock" },
   { icon: List, label: "History", to: "/history" },
   { icon: Users, label: "Players", to: "/players" },
-  { icon: BarChart2, label: "Study", to: "/study" },
+  {
+    icon: BarChart2, label: "Study", to: "/study",
+    subItems: [{ label: "Range Matrix", to: "/study/range-matrix" }]
+  },
 ];
 
 function formatElapsed(ms) {
@@ -63,15 +66,32 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="sidebar-nav">
         {menuItems.map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            className={`sidebar-link ${location.pathname === item.to ? 'active' : ''}`}
-            title={collapsed ? item.label : ''}
-          >
-            <item.icon className="sidebar-icon" size={18} />
-            {!collapsed && <span className="sidebar-label">{item.label}</span>}
-          </Link>
+          <div key={item.label}>
+            <Link
+              to={item.to}
+              className={`sidebar-link ${location.pathname === item.to ? 'active' : ''}`}
+              title={collapsed ? item.label : ''}
+            >
+              <item.icon className="sidebar-icon" size={18} />
+              {!collapsed && <span className="sidebar-label">{item.label}</span>}
+            </Link>
+            {/* Contextual sub-nav: only shown while inside this section
+                (e.g. Study's "Range Matrix"), and hidden when collapsed
+                since there's no room to show sub-labels. */}
+            {item.subItems && !collapsed && location.pathname.startsWith(item.to) && (
+              <div className="sidebar-subnav">
+                {item.subItems.map(sub => (
+                  <Link
+                    key={sub.to}
+                    to={sub.to}
+                    className={`sidebar-sublink ${location.pathname === sub.to ? 'active' : ''}`}
+                  >
+                    {sub.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </nav>
 

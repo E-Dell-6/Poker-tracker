@@ -94,6 +94,16 @@ const PlayerStatsSchema = new mongoose.Schema({
   byHandClassCategory: { type: mongoose.Schema.Types.Mixed, default: {} },
   byHandClass: { type: mongoose.Schema.Types.Mixed, default: {} },
 
+  // Range-matrix grid for the Study page's "Range Matrix" subpage - see
+  // statsEngine.js's classifyHeroPreflopMatrixDecision/ensurePreflopMatrixCell.
+  // { "<tableSize>" (only "6" populated today): { rfi: { "<heroPos>":
+  // { "<token>": {fold,call,raise,total,foldPct,callPct,raisePct,confidence} } },
+  // vsOpen: { "<heroPos>": { "<facingPos>": { "<token>": {...} } } },
+  // vs3Bet: same shape as vsOpen } }. Mixed for the same reason as
+  // `positional`/`byHandClass`: the set of hands/positions present varies
+  // per player.
+  preflopMatrix: { type: mongoose.Schema.Types.Mixed, default: {} },
+
   lastComputedAt: { type: Date, default: Date.now }
 });
 

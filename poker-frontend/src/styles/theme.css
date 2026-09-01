@@ -33,6 +33,14 @@
   --color-negative: #f87171;
   --color-negative-dim: rgba(248, 113, 113, 0.12);
 
+  /* Preflop range-matrix action colors (fold/call/raise) - deliberately
+     distinct from --color-positive/--color-negative (profit semantics
+     elsewhere in Study) and --color-accent (brand), since this grid encodes
+     three side-by-side actions, not a win/loss binary. */
+  --color-action-fold: #6b7280;
+  --color-action-call: #38bdf8;
+  --color-action-raise: #f472b6;
+
   /* Player-tag colors (TagMenu.jsx / players table) */
   --color-tag-fish: #4ade80;
   --color-tag-reg: #8b8b90;
