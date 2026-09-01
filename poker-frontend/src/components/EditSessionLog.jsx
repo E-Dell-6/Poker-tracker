@@ -1,15 +1,16 @@
 import { uploadImage } from "../api/uploads";
-import { getPeople, createPerson } from "../api/people";
+import { getPeoplePage, createPerson } from "../api/people";
 import { updateSession } from "../api/sessions";
-import React, { useState, useEffect } from "react";
-import { Check, X, Camera } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, X } from "lucide-react";
+import PersonPicker from "../pages/HandCreator/components/PersonPicker";
 import './EditSessionLog.css';
 
-export function EditSessionLog({ 
-  isOpen, 
-  onClose, 
-  sessionData, 
-  onSave 
+export function EditSessionLog({
+  isOpen,
+  onClose,
+  sessionData,
+  onSave
 }) {
   const [editFormData, setEditFormData] = useState({
     id: "",
@@ -18,14 +19,12 @@ export function EditSessionLog({
     opponents: [],
     totalProfit: ""
   });
+  // Starred players only - see api/people.js's createPerson comment and
+  // peopleController.js's createPerson: a person made from this modal is
+  // created with starred: true specifically so they show up here.
   const [people, setPeople] = useState([]);
-  const [isCreatingNewPerson, setIsCreatingNewPerson] = useState(false);
-  const [newPersonName, setNewPersonName] = useState("");
-  const [newPersonImage, setNewPersonImage] = useState("");
-  const [imagePreview, setImagePreview] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null); 
+  const [peopleLoading, setPeopleLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(null);
 
   const showStatus = (type, text) => {
     setStatusMessage({ type, text });
@@ -34,21 +33,22 @@ export function EditSessionLog({
 
   useEffect(() => {
     if (!isOpen) return;
-    getPeople()
-      .then(data => setPeople(data))
-      .catch(err => console.error("Failed to fetch people:", err));
+    setPeopleLoading(true);
+    getPeoplePage({ page: 1, limit: 200, starred: true })
+      .then(data => setPeople(Array.isArray(data?.players) ? data.players : []))
+      .catch(err => console.error("Failed to fetch starred people:", err))
+      .finally(() => setPeopleLoading(false));
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === "Enter" && !isCreatingNewPerson && !isUploading) {
-        handleSaveChanges();
-      }
+      if (e.key === "Enter") handleSaveChanges();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isCreatingNewPerson, isUploading, editFormData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editFormData]);
 
   useEffect(() => {
     if (isOpen && sessionData) {
@@ -61,10 +61,10 @@ export function EditSessionLog({
         id: sessionData._id,
         gameType: sessionData.gameType || "NLH",
         date: dateStr,
-        opponents: sessionData.opponents.map(name => ({ 
-          original: name, 
+        opponents: sessionData.opponents.map(name => ({
+          original: name,
           current: name,
-          personId: null 
+          personId: null
         })),
         totalProfit: sessionData.totalProfit || 0
       });
@@ -72,46 +72,43 @@ export function EditSessionLog({
     }
   }, [isOpen, sessionData]);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showStatus('error', 'Image size should be less than 5MB'); return; }
-    if (!file.type.startsWith('image/')) { showStatus('error', 'Please select an image file'); return; }
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-    setSelectedFile(file);
+  // Links opponent row `index` to an existing starred person (`personId`),
+  // or back to its original session name when the picker is cleared
+  // (PersonPicker's "— not linked —" option, id === null).
+  const handleLink = (index, personId) => {
+    const newOpponents = [...editFormData.opponents];
+    const person = people.find(p => p._id === personId);
+    newOpponents[index] = {
+      ...newOpponents[index],
+      current: person ? person.name : newOpponents[index].original,
+      personId: person ? person._id : null
+    };
+    setEditFormData({ ...editFormData, opponents: newOpponents });
   };
 
-  const handleCreateNewPerson = async () => {
-    if (!newPersonName.trim()) { showStatus('error', 'Please enter a name'); return; }
-    setIsUploading(true);
+  // Creates a new starred person from opponent row `index`'s picker, then
+  // links that row to it - mirrors HandCreator's createAndLinkPerson.
+  // Links directly off `created` rather than delegating to handleLink
+  // (which looks the person up in `people`): the setPeople call just above
+  // hasn't re-rendered yet, so `people` here would still be the pre-create
+  // array and the lookup would silently miss.
+  const handleCreatePersonForRow = async (index, name, file) => {
     try {
       let imageUrl = "";
-      if (selectedFile) imageUrl = await uploadImage(selectedFile);
+      if (file) imageUrl = await uploadImage(file);
 
-      const newPerson = await createPerson({ name: newPersonName, image: imageUrl });
-      setPeople(prev => [...prev, newPerson]);
-      setNewPersonName("");
-      setNewPersonImage("");
-      setImagePreview(null);
-      setSelectedFile(null);
-      setIsCreatingNewPerson(false);
-      showStatus('success', `"${newPerson.name}" created successfully`);
+      const created = await createPerson({ name, image: imageUrl, starred: true });
+      setPeople(prev => [...prev, created]);
+      setEditFormData(prev => {
+        const newOpponents = [...prev.opponents];
+        newOpponents[index] = { ...newOpponents[index], current: created.name, personId: created._id };
+        return { ...prev, opponents: newOpponents };
+      });
+      showStatus('success', `"${created.name}" created and starred`);
     } catch (error) {
       console.error("Error creating person:", error);
       showStatus('error', 'Failed to create person. Name might already exist.');
-    } finally {
-      setIsUploading(false);
     }
-  };
-
-  const handleOpponentChange = (index, selectedPersonName) => {
-    const newOpponents = [...editFormData.opponents];
-    const selectedPerson = people.find(p => p.name === selectedPersonName);
-    newOpponents[index].current = selectedPersonName;
-    newOpponents[index].personId = selectedPerson ? selectedPerson._id : null;
-    setEditFormData({ ...editFormData, opponents: newOpponents });
   };
 
   const handleSaveChanges = async () => {
@@ -138,149 +135,74 @@ export function EditSessionLog({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Edit Session</h3>
+    <div className="esl-overlay" onClick={onClose}>
+      <div className="esl-modal" onClick={(e) => e.stopPropagation()}>
+        <h3 className="esl-heading">Edit Session</h3>
 
-        {/* Inline status message */}
         {statusMessage && (
-          <div style={{
-            padding: '10px 14px',
-            borderRadius: '6px',
-            marginBottom: '12px',
-            fontSize: '14px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: statusMessage.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-            color: statusMessage.type === 'success' ? '#22c55e' : '#ef4444',
-            border: `1px solid ${statusMessage.type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-          }}>
+          <div className={`esl-status esl-status--${statusMessage.type}`}>
             {statusMessage.type === 'success' ? <Check size={14} /> : <X size={14} />} {statusMessage.text}
           </div>
         )}
 
-        <label className="modal-label">Date:</label>
-        <input
-          type="date"
-          className="modal-input"
-          value={editFormData.date}
-          onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-        />
+        <div className="esl-field">
+          <label className="esl-label">Date</label>
+          <input
+            type="date"
+            className="esl-input"
+            value={editFormData.date}
+            onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+          />
+        </div>
 
-        <label className="modal-label">Game Type:</label>
-        <select
-          className="modal-input"
-          value={editFormData.gameType}
-          onChange={(e) => setEditFormData({ ...editFormData, gameType: e.target.value })}
-        >
-          <option value="NLH">No Limit Hold'em (NLH)</option>
-          <option value="PLO">Pot Limit Omaha (PLO)</option>
-          <option value="Heads-Up">Heads-Up</option>
-        </select>
+        <div className="esl-field">
+          <label className="esl-label">Game Type</label>
+          <select
+            className="esl-input"
+            value={editFormData.gameType}
+            onChange={(e) => setEditFormData({ ...editFormData, gameType: e.target.value })}
+          >
+            <option value="NLH">No Limit Hold'em (NLH)</option>
+            <option value="PLO">Pot Limit Omaha (PLO)</option>
+            <option value="Heads-Up">Heads-Up</option>
+          </select>
+        </div>
 
-        <label className="modal-label">Total Profit:</label>
-        <input
-          type="number"
-          className="modal-input"
-          value={editFormData.totalProfit}
-          onChange={(e) => setEditFormData({ ...editFormData, totalProfit: e.target.value })}
-        />
+        <div className="esl-field">
+          <label className="esl-label">Total Profit</label>
+          <input
+            type="number"
+            className="esl-input"
+            value={editFormData.totalProfit}
+            onChange={(e) => setEditFormData({ ...editFormData, totalProfit: e.target.value })}
+          />
+        </div>
 
         {editFormData.opponents && editFormData.opponents.length > 0 && (
-          <div className="opponents-section">
-            <label className="modal-label">Edit Opponents:</label>
-            <div className="opponents-scroll-container">
+          <div className="esl-field">
+            <label className="esl-label">Opponents</label>
+            <p className="esl-hint">Link each name to one of your starred players, or create a new one.</p>
+            <div className="esl-opponents">
               {editFormData.opponents.map((opp, index) => (
-                <div key={index} className="opponent-row">
-                  <span className="opponent-original-name">Original: {opp.original}</span>
-                  <select
-                    className="opponent-name-input"
-                    value={opp.current}
-                    onChange={(e) => handleOpponentChange(index, e.target.value)}
-                  >
-                    <option value={opp.original}>{opp.original} (Keep Original)</option>
-                    {people.map((person) => (
-                      <option key={person._id} value={person.name}>{person.name}</option>
-                    ))}
-                  </select>
+                <div key={index} className="esl-opponent-row">
+                  <span className="esl-opponent-original">{opp.original}</span>
+                  <PersonPicker
+                    people={people}
+                    peopleLoading={peopleLoading}
+                    selectedId={opp.personId}
+                    defaultName={opp.original}
+                    onLink={(personId) => handleLink(index, personId)}
+                    onCreate={(name, file) => handleCreatePersonForRow(index, name, file)}
+                  />
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="create-person-section">
-          {!isCreatingNewPerson ? (
-            <button className="create-person-btn" onClick={() => setIsCreatingNewPerson(true)}>
-              + Create New Person
-            </button>
-          ) : (
-            <div className="new-person-form">
-              <h4>Create New Person</h4>
-              <label className="modal-label">Name:</label>
-              <input
-                type="text"
-                className="modal-input"
-                value={newPersonName}
-                onChange={(e) => setNewPersonName(e.target.value)}
-                placeholder="Enter person's name"
-              />
-              <label className="modal-label">Profile Image:</label>
-              <div className="image-upload-section">
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                />
-                <button
-                  type="button"
-                  className="upload-image-btn"
-                  onClick={() => document.getElementById('image-upload').click()}
-                  disabled={isUploading}
-                >
-                  <Camera size={14} /> Choose Image
-                </button>
-                {imagePreview && (
-                  <div className="image-preview">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }}
-                    />
-                    <button
-                      type="button"
-                      className="remove-image-btn"
-                      onClick={() => { setNewPersonImage(""); setImagePreview(null); setSelectedFile(null); }}
-                      style={{ marginLeft: '10px' }}
-                      disabled={isUploading}
-                    >
-                      <X size={14} /> Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="new-person-actions">
-                <button
-                  onClick={() => { setIsCreatingNewPerson(false); setNewPersonName(""); setNewPersonImage(""); setImagePreview(null); setSelectedFile(null); }}
-                  disabled={isUploading}
-                >
-                  Cancel
-                </button>
-                <button className="save-btn" onClick={handleCreateNewPerson} disabled={isUploading}>
-                  {isUploading ? "Uploading..." : "Create"}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-actions">
-          <button onClick={onClose}>Cancel</button>
-          <button className="save-btn" onClick={handleSaveChanges}>Save</button>
+        <div className="esl-actions">
+          <button className="esl-btn" onClick={onClose}>Cancel</button>
+          <button className="esl-btn esl-btn--primary" onClick={handleSaveChanges}>Save</button>
         </div>
       </div>
     </div>

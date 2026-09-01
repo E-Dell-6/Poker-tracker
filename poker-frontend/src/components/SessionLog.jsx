@@ -99,7 +99,13 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
   const handleContextMenu = (e, session) => {
     e.preventDefault();
     e.stopPropagation();
-    setContextMenu({ x: e.pageX, y: e.pageY, session });
+    // clientX/Y (viewport-relative), paired with .context-menu's
+    // position: fixed below - pageX/Y (document-relative) would only line
+    // up with the cursor if .context-menu's nearest positioned ancestor
+    // were the document itself, which it isn't (.history-container is
+    // position: relative), so the menu used to render wherever that
+    // ancestor happened to sit on the page instead of at the cursor.
+    setContextMenu({ x: e.clientX, y: e.clientY, session });
   };
 
   const handleDeleteSession = async () => {

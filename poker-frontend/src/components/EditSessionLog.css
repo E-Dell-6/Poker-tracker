@@ -1,5 +1,9 @@
-/* Overlay */
-.modal-overlay {
+/* Scoped to this component (esl- prefix) - .modal-overlay/.modal-content
+   etc are plain global class names also used by SessionLog.css,
+   PlayerSeat.css and Clock.css, so reusing them here would leak styling
+   across unrelated modals depending on CSS import order. */
+
+.esl-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
@@ -9,226 +13,146 @@
   z-index: 1000;
 }
 
-/* Modal box — scrollable */
-.modal-content {
-  background: #1e1e2e;
-  border: 1px solid #2e2e3e;
-  border-radius: 12px;
+.esl-modal {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
   padding: 24px;
   width: 100%;
   max-width: 480px;
-  max-height: 90vh;       /* prevents overflow off screen */
-  overflow-y: auto;       /* enables scrolling */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: #e0e0e0;
-}
-
-.modal-content h3 {
-  margin: 0 0 12px 0;
-  font-size: 1.2rem;
-  color: #ffffff;
-}
-
-/* Labels */
-.modal-label {
-  font-size: 0.85rem;
-  color: #a0a0b0;
-  margin-top: 8px;
-}
-
-/* Inputs & selects */
-.modal-input {
-  width: 100%;
-  padding: 9px 12px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 0.95rem;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.modal-input:focus {
-  border-color: var(--color-accent);
-}
-
-/* Opponents section */
-.opponents-section {
-  margin-top: 8px;
-}
-
-.opponents-scroll-container {
-  max-height: 180px;
+  max-height: 90vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.esl-heading {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.esl-status {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.esl-status--success {
+  background: var(--color-positive-dim);
+  color: var(--color-positive);
+  border: 1px solid color-mix(in srgb, var(--color-positive) 30%, transparent);
+}
+
+.esl-status--error {
+  background: var(--color-negative-dim);
+  color: var(--color-negative);
+  border: 1px solid color-mix(in srgb, var(--color-negative) 30%, transparent);
+}
+
+.esl-field {
+  margin-top: 10px;
+}
+
+.esl-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.esl-hint {
+  margin: -2px 0 8px;
+  font-size: 12px;
+  color: var(--color-text-faint);
+}
+
+.esl-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.esl-input:focus {
+  border-color: var(--color-accent);
+}
+
+.esl-opponents {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding-right: 4px;
 }
 
-.opponent-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.opponent-original-name {
-  font-size: 0.78rem;
-  color: #888;
-}
-
-.opponent-name-input {
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.opponent-name-input:focus {
-  border-color: var(--color-accent);
-}
-
-/* Create person section */
-.create-person-section {
-  margin-top: 12px;
-}
-
-.create-person-btn {
-  background: transparent;
-  border: 1px dashed var(--color-accent);
-  color: var(--color-accent);
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  width: 100%;
-  transition: background 0.2s;
-}
-
-.create-person-btn:hover {
-  background: rgba(108, 99, 255, 0.1);
-}
-
-.new-person-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.new-person-form h4 {
-  margin: 0;
-  color: #ffffff;
-  font-size: 1rem;
-}
-
-/* Image upload */
-.image-upload-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.upload-image-btn {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  color: #e0e0e0;
-  border-radius: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  text-align: left;
-  transition: border-color 0.2s;
-}
-
-.upload-image-btn:hover:not(:disabled) {
-  border-color: var(--color-accent);
-}
-
-.image-preview {
+.esl-opponent-row {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.remove-image-btn {
-  background: transparent;
-  border: 1px solid var(--color-negative);
-  color: var(--color-negative);
-  border-radius: 6px;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.remove-image-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-/* New person action buttons */
-.new-person-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 4px;
-}
-
-.new-person-actions button {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  color: #e0e0e0;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
 }
 
-.new-person-actions button:hover:not(:disabled) {
-  background: var(--color-border-strong);
+.esl-opponent-original {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 72px;
 }
 
-/* Modal action buttons (Cancel / Save) */
-.modal-actions {
+.esl-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
-.modal-actions button {
-  background: var(--color-bg-elevated);
+.esl-btn {
+  background: var(--color-bg);
   border: 1px solid var(--color-border-strong);
-  color: #e0e0e0;
+  color: var(--color-text);
   border-radius: 8px;
   padding: 9px 18px;
   cursor: pointer;
   font-size: 0.95rem;
-  transition: background 0.2s;
+  font-family: inherit;
+  transition: background 0.18s ease;
 }
 
-.modal-actions button:hover {
-  background: var(--color-border-strong);
+.esl-btn:hover {
+  background: var(--color-bg-elevated-hover);
 }
 
-.save-btn {
-  background: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
-  color: #fff !important;
+.esl-btn--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
 }
 
-.save-btn:hover:not(:disabled) {
-  background: #5a52e0 !important;
-}
-
-.save-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.esl-btn--primary:hover {
+  background: var(--color-accent-hover);
 }

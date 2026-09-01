@@ -373,7 +373,12 @@
 
 /* ── CONTEXT MENU ───────────────────────────────────────── */
 .context-menu {
-  position: absolute;
+  /* Viewport-relative (paired with SessionLog.jsx's clientX/Y), not
+     positioned relative to the nearest positioned ancestor - this menu is
+     rendered outside .sessions-list, at the top of a page whose container
+     (.history-container) is itself position: relative, so absolute here
+     used to anchor to that container's box instead of the cursor. */
+  position: fixed;
   z-index: 1000;
   background: var(--color-bg-elevated-hover);
   border: 1px solid var(--color-border);

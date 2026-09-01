@@ -22,12 +22,13 @@ function pickEditableFields(body) {
 // sort order to preserve (the old unpaginated version had none) -
 // alphabetical by name is the natural default for a roster.
 //
-// Backward compatible: several other callers (EditSessionLog.jsx,
-// PlayerSeat.jsx, HandCreator.jsx, PlayerProfile.jsx) fetch this route with
-// no query params, expecting the plain array of every tracked person they've
-// always gotten - for small person-picker dropdowns, not a paginated list
-// view. Only switch to the paginated envelope shape when a caller actually
-// asks for pagination/filtering.
+// Backward compatible: several other callers (PlayerSeat.jsx,
+// HandCreator.jsx, PlayerProfile.jsx) fetch this route with no query
+// params, expecting the plain array of every tracked person they've always
+// gotten - for small person-picker dropdowns, not a paginated list view.
+// Only switch to the paginated envelope shape when a caller actually asks
+// for pagination/filtering (EditSessionLog.jsx does, via
+// getPeoplePage({starred: true}) - its picker only offers starred players).
 export async function listPeople(req, res) {
   try {
     const userId = req.body.userId; // query param dropped: was an IDOR
@@ -65,7 +66,13 @@ export async function createPerson(req, res) {
       userId: req.body.userId,
       name: req.body.name,
       image: req.body.image || "",
-      tags: []
+      tags: [],
+      // Opt-in only - existing create-person call sites (PlayerSeat.jsx,
+      // HandCreator, History.jsx) never send this, so they keep defaulting
+      // to false via the schema. EditSessionLog.jsx sends true: its player
+      // picker only shows starred players, so a person created there has
+      // to be starred immediately or it would vanish from that list.
+      starred: req.body.starred === true
     });
     const saved = await newPerson.save();
     res.status(201).json(saved);

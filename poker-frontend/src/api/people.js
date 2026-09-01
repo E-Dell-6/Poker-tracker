@@ -19,8 +19,11 @@ export async function getPeoplePage({ page, limit, search, starred }) {
   return res.json();
 }
 
-export async function createPerson({ name, image }) {
-  return requestJson("/api/people", { method: "POST", body: { name, image } }, "Failed to create person");
+// `starred` is opt-in (omit or pass false for the default unstarred
+// person) - EditSessionLog.jsx passes true, since its player picker only
+// shows starred players and a freshly created one needs to appear there.
+export async function createPerson({ name, image, starred }) {
+  return requestJson("/api/people", { method: "POST", body: { name, image, starred } }, "Failed to create person");
 }
 
 export async function updatePerson(id, patch) {
