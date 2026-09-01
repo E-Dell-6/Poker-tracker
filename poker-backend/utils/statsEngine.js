@@ -265,10 +265,14 @@ function newMatrixCell() {
 // (unlike ensureVsOpen/ensureVs3Bet's attacker-first vsOpen/vs3Bet above),
 // since the range-matrix UI's primary selector is always "hero position" -
 // this avoids re-keying the data client-side. `rfi` has no facing position
-// (nobody's opened yet); `vsOpen`/`vs3Bet` nest one level deeper by
-// facingPos (the opener, or the 3-bettor respectively - see
-// classifyHeroPreflopMatrixDecision below). Only ever populated for
-// tableSize === 6 - see that gate at its call site in computeStatsForHands.
+// (nobody's opened yet); every other scenario (`vsOpen`, `vs3Bet`,
+// `vs4Bet`, ... - unbounded, see matrixScenarioForLevel below) nests one
+// level deeper by facingPos, the position of whoever made the raise hero is
+// directly responding to. Only populated for tableSize 6-9 - the UI lets
+// hero switch between 6/7/8/9-handed views (see that gate at its call site
+// in computeStatsForHands); smaller sizes (heads-up, 3-5 handed) aren't
+// wired into the range-matrix UI so accumulating them would just bloat the
+// doc.
 function ensurePreflopMatrixCell(acc, tableSize, scenario, heroPos, facingPos, token) {
   if (!heroPos || !token) return null;
   if (!acc.preflopMatrix[tableSize]) acc.preflopMatrix[tableSize] = {};
@@ -381,10 +385,11 @@ function newAccumulator() {
     // hand carries no hand-class signal, just blind-loss noise.
     byHandClass: {},
     byHandClassCategory: {},
-    // tableSize -> scenario ('rfi'|'vsOpen'|'vs3Bet') -> heroPos -> (token,
-    // for rfi) or facingPos -> token (for vsOpen/vs3Bet) -> newMatrixCell().
-    // See ensurePreflopMatrixCell above. Only ever populated for tableSize
-    // === 6 (the range-matrix UI is 6-max only).
+    // tableSize -> scenario ('rfi'|'vsOpen'|'vs3Bet'|'vs4Bet'|... - see
+    // matrixScenarioForLevel, unbounded) -> heroPos -> (token, for rfi) or
+    // facingPos -> token (every other scenario) -> newMatrixCell(). See
+    // ensurePreflopMatrixCell above. Only populated for tableSize 6-9 (the
+    // range-matrix UI's table-size filter).
     preflopMatrix: {},
     // Won/lost x with/without showdown, hand-wide (not per-position) - the
     // "Showdown breakdown" donut on the Study page. See
@@ -595,18 +600,33 @@ function classifyHeroPreflopContext(hand, name) {
 // range-matrix's vsOpen/vs3Bet scenarios need to know exactly which
 // position hero is facing).
 //
+// Scenario name for facing the raise that put the action at `level`
+// (level 0 = nobody's raised yet). Matches standard poker naming: the
+// opening raise is "the open" (not "the 2-bet", even though it's
+// technically the second aggressive action after the blind); a re-raise
+// over that is a 3-bet, the next a 4-bet, and so on - so raiserPositionAtLevel[L]
+// (L>=2) made the "(L+1)-bet", while L===1 is special-cased to 'vsOpen'
+// instead of the technically-consistent-but-never-said-aloud 'vs2Bet'.
+// Unbounded - a hand can 5-bet, 6-bet, 7-bet jam, etc., and each still
+// gets its own scenario key rather than being folded into a catch-all.
+function matrixScenarioForLevel(level) {
+  if (level === 0) return 'rfi';
+  if (level === 1) return 'vsOpen';
+  return `vs${level + 1}Bet`;
+}
+
 // Returns an array of { scenario, action, facingPosition } entries, one per
-// distinct preflop decision hero faces at levels 0-2 (rfi / vsOpen /
-// vs3Bet) - usually just one (hero's entry into the pot), but up to two:
-// e.g. hero opens (rfi:raise at level 0) and later faces a squeeze 3-bet
-// (vs3Bet at level 2), or hero cold-calls an open (vsOpen:call at level 1)
-// and later faces a 3-bet over that call (vs3Bet at level 2). Levels 3+
-// (facing a 4-bet or deeper) are out of scope for v1 and produce no entry.
-// facingPosition is null for `rfi` (nobody's opened yet); for `vsOpen` it's
-// the opener's position, for `vs3Bet` it's the 3-bettor's position - note
-// "facing a 3-bet" here means whoever is responding to that 3-bet, which is
-// usually but not always the original opener (a cold-caller of the open,
-// squeezed by a later 3-bet, also lands in vs3Bet).
+// distinct preflop decision hero faces, at any depth (rfi / vsOpen /
+// vs3Bet / vs4Bet / vs5Bet / ...) - usually just one (hero's entry into the
+// pot), but more when hero re-enters the hand at a deeper level: e.g. hero
+// opens (rfi:raise at level 0) and later faces a squeeze 3-bet (vs3Bet at
+// level 2), or hero cold-calls an open (vsOpen:call at level 1), the pot
+// gets 3-bet and 4-bet by others, and hero faces the 4-bet (vs4Bet at level
+// 3). facingPosition is null for `rfi` (nobody's opened yet); for every
+// other scenario it's whoever made the raise hero is directly responding
+// to - note this does NOT capture the full action history before that (a
+// vs4Bet cell mixes hands with different 3-bettors, since we only track the
+// immediate facing position at each level, not the whole preceding chain).
 function classifyHeroPreflopMatrixDecision(hand, name, positionMap) {
   const real = (hand.actions || []).filter(
     a => a.street === 'PREFLOP' && a.actionType !== 'POST_SB' && a.actionType !== 'POST_BB'
@@ -618,24 +638,14 @@ function classifyHeroPreflopMatrixDecision(hand, name, positionMap) {
   const decisions = [];
 
   for (const a of real) {
-    if (a.player === name && !facedAtLevel.has(level) && level <= 2) {
+    if (a.player === name && !facedAtLevel.has(level)) {
       facedAtLevel.add(level);
+      const scenario = matrixScenarioForLevel(level);
+      const facingPosition = level === 0 ? null : (raiserPositionAtLevel[level] || null);
 
-      if (level === 0) {
-        if (a.actionType === 'RAISE' || a.actionType === 'BET') decisions.push({ scenario: 'rfi', action: 'raise', facingPosition: null });
-        else if (a.actionType === 'CALL' || a.actionType === 'CHECK') decisions.push({ scenario: 'rfi', action: 'call', facingPosition: null });
-        else if (a.actionType === 'FOLD') decisions.push({ scenario: 'rfi', action: 'fold', facingPosition: null });
-      } else if (level === 1) {
-        const openerPos = raiserPositionAtLevel[1] || null;
-        if (a.actionType === 'RAISE') decisions.push({ scenario: 'vsOpen', action: 'raise', facingPosition: openerPos });
-        else if (a.actionType === 'CALL') decisions.push({ scenario: 'vsOpen', action: 'call', facingPosition: openerPos });
-        else if (a.actionType === 'FOLD') decisions.push({ scenario: 'vsOpen', action: 'fold', facingPosition: openerPos });
-      } else if (level === 2) {
-        const threeBetterPos = raiserPositionAtLevel[2] || null;
-        if (a.actionType === 'RAISE') decisions.push({ scenario: 'vs3Bet', action: 'raise', facingPosition: threeBetterPos });
-        else if (a.actionType === 'CALL') decisions.push({ scenario: 'vs3Bet', action: 'call', facingPosition: threeBetterPos });
-        else if (a.actionType === 'FOLD') decisions.push({ scenario: 'vs3Bet', action: 'fold', facingPosition: threeBetterPos });
-      }
+      if (a.actionType === 'RAISE' || a.actionType === 'BET') decisions.push({ scenario, action: 'raise', facingPosition });
+      else if (a.actionType === 'CALL' || (level === 0 && a.actionType === 'CHECK')) decisions.push({ scenario, action: 'call', facingPosition });
+      else if (a.actionType === 'FOLD') decisions.push({ scenario, action: 'fold', facingPosition });
     }
 
     if (a.actionType === 'RAISE' || a.actionType === 'BET') {
@@ -911,8 +921,9 @@ export function computeStatsForHands(hands, matchPlayer) {
     // Range-matrix grid (acc.preflopMatrix) - see classifyHeroPreflopMatrixDecision
     // above for why this is a separate pass from preflopContext (it needs
     // level-0 folds that preflopContext deliberately excludes). Gated to
-    // tableSize === 6 - see ensurePreflopMatrixCell's comment for why.
-    if (classInfo && tableSize === 6 && position) {
+    // 6-9 handed - see ensurePreflopMatrixCell's comment for why the range
+    // stops there rather than covering every size POSITIONS_BY_SIZE knows.
+    if (classInfo && tableSize >= 6 && tableSize <= 9 && position) {
       const decisions = classifyHeroPreflopMatrixDecision(hand, name, positionMap);
       for (const decision of decisions) {
         const cell = ensurePreflopMatrixCell(acc, tableSize, decision.scenario, position, decision.facingPosition, classInfo.token);
@@ -1015,8 +1026,8 @@ function finalizeMatrixCell(cell) {
 }
 
 // preflopMatrix[tableSize].rfi[heroPos][token] or
-// preflopMatrix[tableSize].{vsOpen,vs3Bet}[heroPos][facingPos][token] - see
-// ensurePreflopMatrixCell above for the shape this mirrors.
+// preflopMatrix[tableSize].<anyOtherScenario>[heroPos][facingPos][token] -
+// see ensurePreflopMatrixCell above for the shape this mirrors.
 function finalizePreflopMatrix(preflopMatrix) {
   const out = {};
   for (const tableSize of Object.keys(preflopMatrix)) {

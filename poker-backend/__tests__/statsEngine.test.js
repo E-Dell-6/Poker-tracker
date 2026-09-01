@@ -466,7 +466,35 @@ describe('computeStatsForHands: preflopMatrix (range-matrix grid)', () => {
     expect(stats.preflopMatrix['6'].vs3Bet.UTG.CO.QQ).toEqual(expect.objectContaining({ fold: 1, total: 1 }));
   });
 
-  it('does not populate preflopMatrix for table sizes other than 6', () => {
+  it('supports unbounded depth: an RFI raise, a vs3Bet 4-bet, and a vs5Bet fold, all from one hand', () => {
+    // Hero (UTG) opens, SB 3-bets, Hero 4-bets, SB 5-bet jams, Hero folds.
+    // Exercises matrixScenarioForLevel beyond the old hardcoded level<=2 cap
+    // - hero's own 4-bet doesn't produce a "vs4Bet" entry (that scenario
+    // belongs to whoever responds to hero's 4-bet, not hero), but hero's
+    // next decision (facing the 5-bet) correctly lands in vs5Bet.
+    const players = sixMaxPlayers(4, ['Qc', 'Qd']); // Hero UTG, QQ
+    const actions = [
+      { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+      { street: 'PREFLOP', actionType: 'POST_BB', player: 'BBPlayer', amount: 200, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'HJPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'COPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BTNPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'SBPlayer', amount: 1800, potSizeAfter: 2700 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BBPlayer', amount: 0, potSizeAfter: 2700 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 5400, potSizeAfter: 8100 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'SBPlayer', amount: 20000, potSizeAfter: 28100 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'Hero', amount: 0, potSizeAfter: 28100 },
+    ];
+    const stats = computeStatsForHands([{ handIndex: 1, stakes: '$1/$2', currency: 'USD', players, actions, board: { flop: [], turn: [], river: [] }, winners: ['SBPlayer'] }], matchHero());
+
+    expect(stats.preflopMatrix['6'].rfi.UTG.QQ).toEqual(expect.objectContaining({ raise: 1, total: 1 }));
+    expect(stats.preflopMatrix['6'].vs3Bet.UTG.SB.QQ).toEqual(expect.objectContaining({ raise: 1, total: 1 }));
+    expect(stats.preflopMatrix['6'].vs4Bet).toBeUndefined();
+    expect(stats.preflopMatrix['6'].vs5Bet.UTG.SB.QQ).toEqual(expect.objectContaining({ fold: 1, total: 1 }));
+  });
+
+  it('does not populate preflopMatrix for table sizes outside 6-9', () => {
     const players = [
       { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 100, holeCards: ['Ah', 'Kh'] },
       { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -100 },
@@ -480,5 +508,73 @@ describe('computeStatsForHands: preflopMatrix (range-matrix grid)', () => {
     const stats = computeStatsForHands([{ handIndex: 1, stakes: '$1/$2', currency: 'USD', players, actions, board: { flop: [], turn: [], river: [] }, winners: ['Hero'] }], matchHero());
 
     expect(stats.preflopMatrix['2']).toBeUndefined();
+  });
+
+  it('populates preflopMatrix for 8-handed tables too, with the extra UTG+1/UTG+2 positions', () => {
+    // Seat 1 = dealer = BTN, then SB/BB/UTG/UTG+1/UTG+2/HJ/CO in seat order
+    // (POSITIONS_BY_SIZE[8], same seat-offset-from-dealer assignment as the
+    // 6-max helper above).
+    const names = { 1: 'BTNPlayer', 2: 'SBPlayer', 3: 'BBPlayer', 4: 'UTGPlayer', 5: 'UTG1Player', 6: 'UTG2Player', 7: 'HJPlayer', 8: 'COPlayer' };
+    const heroSeat = 6; // UTG+2
+    const players = [1, 2, 3, 4, 5, 6, 7, 8].map(seat => ({
+      seat,
+      name: seat === heroSeat ? 'Hero' : names[seat],
+      stack: 40000,
+      isDealer: seat === 1,
+      isHero: seat === heroSeat,
+      isSittingOut: false,
+      effectiveStackBB: 100,
+      profitLoss: seat === heroSeat ? -100 : 20,
+      holeCards: seat === heroSeat ? ['Jc', 'Jd'] : [],
+    }));
+    const actions = [
+      { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+      { street: 'PREFLOP', actionType: 'POST_BB', player: 'BBPlayer', amount: 200, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'UTGPlayer', amount: 600, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'UTG1Player', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 600, potSizeAfter: 1500 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'HJPlayer', amount: 0, potSizeAfter: 1500 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'COPlayer', amount: 0, potSizeAfter: 1500 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BTNPlayer', amount: 0, potSizeAfter: 1500 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'SBPlayer', amount: 0, potSizeAfter: 1500 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BBPlayer', amount: 0, potSizeAfter: 1500 },
+    ];
+    const stats = computeStatsForHands([{ handIndex: 1, stakes: '$1/$2', currency: 'USD', players, actions, board: { flop: [], turn: [], river: [] }, winners: ['Hero'] }], matchHero());
+
+    expect(stats.preflopMatrix['8'].vsOpen['UTG+2'].UTG.JJ).toEqual(expect.objectContaining({ call: 1, total: 1 }));
+  });
+
+  it('populates preflopMatrix for 9-handed tables too, with the LJ position', () => {
+    // Seat 1 = dealer = BTN, then SB/BB/UTG/UTG+1/UTG+2/LJ/HJ/CO in seat
+    // order (POSITIONS_BY_SIZE[9]).
+    const names = { 1: 'BTNPlayer', 2: 'SBPlayer', 3: 'BBPlayer', 4: 'UTGPlayer', 5: 'UTG1Player', 6: 'UTG2Player', 7: 'LJPlayer', 8: 'HJPlayer', 9: 'COPlayer' };
+    const heroSeat = 7; // LJ
+    const players = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(seat => ({
+      seat,
+      name: seat === heroSeat ? 'Hero' : names[seat],
+      stack: 40000,
+      isDealer: seat === 1,
+      isHero: seat === heroSeat,
+      isSittingOut: false,
+      effectiveStackBB: 100,
+      profitLoss: seat === heroSeat ? 300 : -30,
+      holeCards: seat === heroSeat ? ['Tc', 'Td'] : [],
+    }));
+    const actions = [
+      { street: 'PREFLOP', actionType: 'POST_SB', player: 'SBPlayer', amount: 100, potSizeAfter: 100 },
+      { street: 'PREFLOP', actionType: 'POST_BB', player: 'BBPlayer', amount: 200, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'UTGPlayer', amount: 0, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'UTG1Player', amount: 0, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'UTG2Player', amount: 0, potSizeAfter: 300 },
+      { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'HJPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'COPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BTNPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'SBPlayer', amount: 0, potSizeAfter: 900 },
+      { street: 'PREFLOP', actionType: 'FOLD', player: 'BBPlayer', amount: 0, potSizeAfter: 900 },
+    ];
+    const stats = computeStatsForHands([{ handIndex: 1, stakes: '$1/$2', currency: 'USD', players, actions, board: { flop: [], turn: [], river: [] }, winners: ['Hero'] }], matchHero());
+
+    expect(stats.preflopMatrix['9'].rfi.LJ.TT).toEqual(expect.objectContaining({ raise: 1, total: 1 }));
   });
 });

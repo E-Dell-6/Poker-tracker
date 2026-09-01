@@ -96,12 +96,13 @@ const PlayerStatsSchema = new mongoose.Schema({
 
   // Range-matrix grid for the Study page's "Range Matrix" subpage - see
   // statsEngine.js's classifyHeroPreflopMatrixDecision/ensurePreflopMatrixCell.
-  // { "<tableSize>" (only "6" populated today): { rfi: { "<heroPos>":
+  // { "<tableSize>" ("6"/"7"/"8"/"9" populated today): { rfi: { "<heroPos>":
   // { "<token>": {fold,call,raise,total,foldPct,callPct,raisePct,confidence} } },
   // vsOpen: { "<heroPos>": { "<facingPos>": { "<token>": {...} } } },
-  // vs3Bet: same shape as vsOpen } }. Mixed for the same reason as
-  // `positional`/`byHandClass`: the set of hands/positions present varies
-  // per player.
+  // vs3Bet/vs4Bet/vs5Bet/...: same shape as vsOpen, one key per bet level
+  // actually present in the data (unbounded - see matrixScenarioForLevel) }
+  // }. Mixed for the same reason as `positional`/`byHandClass`: the set of
+  // hands/positions/scenarios present varies per player.
   preflopMatrix: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   lastComputedAt: { type: Date, default: Date.now }

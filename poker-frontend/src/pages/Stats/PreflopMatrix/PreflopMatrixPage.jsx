@@ -1,24 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Layout } from '../../../components/Layout';
 import { useHeroStats } from '../../../hooks/useHeroStats';
 import { StudyPageSkeleton } from '../StudyPageSkeleton';
 import { HandMatrix } from './HandMatrix';
 import { PreflopMatrixControls } from './PreflopMatrixControls';
-import { HERO_POSITIONS } from '../../../utils/handGrid';
+import { computeWalk, getMatrixBucket } from '../../../utils/preflopWalk';
+import { SEATS_BY_SIZE } from '../../../utils/handGrid';
 import '../Stats.css';
 import './PreflopMatrixPage.css';
-
-function sortByHeroPositionOrder(positions) {
-  return [...positions].sort((a, b) => HERO_POSITIONS.indexOf(a) - HERO_POSITIONS.indexOf(b));
-}
-
-// Total hands across every hand token in a facing-position bucket - used to
-// pick the default facing position (whichever one hero has the most data
-// against), same "most-populous" idea PositionMatrixTables.jsx's
-// mostPopulousSize already uses for table-size selection.
-function facingBucketHandCount(tokens) {
-  return Object.values(tokens || {}).reduce((sum, c) => sum + (c.total || 0), 0);
-}
 
 export function PreflopMatrixPage() {
   const {
@@ -30,43 +19,63 @@ export function PreflopMatrixPage() {
     fetchStats
   } = useHeroStats();
 
-  const [scenario, setScenario] = useState('rfi');
-  const [heroPosition, setHeroPosition] = useState('UTG');
-  const [facingPosition, setFacingPosition] = useState(null);
+  // Every seat is hero: since hero's tracked hands cover every position,
+  // `path` walks the whole hand in real action order (see preflopWalk.js),
+  // and at each step we're looking up hero's own real fold/call/raise
+  // split for having been in that seat facing that exact situation - not a
+  // fixed "hero position" with opponents faked in around it.
+  const [path, setPath] = useState([]);
+  const [tableSize, setTableSize] = useState(6);
   const [minSampleSize, setMinSampleSize] = useState(0);
 
-  // Table size is always "6" - the range-matrix is only ever aggregated
-  // for 6-max (see statsEngine.js's tableSize === 6 gate).
-  const matrixRoot = stats?.preflopMatrix?.['6'];
+  // The backend aggregates preflopMatrix for 6/7/8-handed tables (see
+  // statsEngine.js's tableSize gate) - switching sizes changes the whole
+  // acting order (UTG+1/UTG+2 appear at 7/8-handed), so the in-progress
+  // walk can't carry over and gets reset.
+  const matrixRoot = stats?.preflopMatrix?.[String(tableSize)];
+  const seats = SEATS_BY_SIZE[tableSize];
+  const walk = computeWalk(path, seats);
 
-  const facingOptions = scenario === 'rfi'
-    ? []
-    : sortByHeroPositionOrder(Object.keys(matrixRoot?.[scenario]?.[heroPosition] || {}));
+  function setTableSizeAndReset(size) {
+    setTableSize(size);
+    setPath([]);
+  }
 
-  useEffect(() => {
-    if (scenario === 'rfi') {
-      setFacingPosition(null);
-      return;
-    }
-    if (facingOptions.includes(facingPosition)) return;
-    if (facingOptions.length === 0) {
-      setFacingPosition(null);
-      return;
-    }
-    const scenarioBucket = matrixRoot?.[scenario]?.[heroPosition] || {};
-    let best = facingOptions[0];
-    let bestTotal = -1;
-    for (const opt of facingOptions) {
-      const total = facingBucketHandCount(scenarioBucket[opt]);
-      if (total > bestTotal) { bestTotal = total; best = opt; }
-    }
-    setFacingPosition(best);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenario, heroPosition, matrixRoot]);
+  // Re-decides an already-committed step at `index`: truncates the path to
+  // just before it and re-commits with the new action. Always operates on
+  // that round's very first open seat (by construction - nothing before
+  // `index` changed, so replaying up to it reproduces the same round), so
+  // no auto-fold is needed here the way commitOpenSeat below needs it.
+  function redoStep(index, action) {
+    const truncated = path.slice(0, index);
+    const w = computeWalk(truncated, seats);
+    if (w.complete) return;
+    setPath([...truncated, { ...w.openSeats[0], action }]);
+  }
 
-  const gridData = scenario === 'rfi'
-    ? matrixRoot?.rfi?.[heroPosition]
-    : matrixRoot?.[scenario]?.[heroPosition]?.[facingPosition];
+  // Commits `action` for `position`, one of the CURRENT round's openSeats -
+  // every position UTG->BB in that round is shown and clickable at once
+  // (see PreflopMatrixControls), so picking one that isn't the very next
+  // seat (e.g. clicking BTN's Raise while UTG/HJ/CO are still undecided)
+  // auto-fills fold for whichever open seats come before it, exactly as if
+  // hero had clicked each one individually.
+  function commitOpenSeat(position, action) {
+    const idx = walk.openSeats.findIndex(s => s.position === position);
+    if (idx === -1) return;
+    const autoFolds = walk.openSeats.slice(0, idx).map(s => ({ ...s, action: 'fold' }));
+    const chosen = { ...walk.openSeats[idx], action };
+    setPath([...path, ...autoFolds, chosen]);
+  }
+
+  function resetWalk() {
+    setPath([]);
+  }
+
+  // The node currently being displayed in the grid above: the nearest open
+  // decision if the hand isn't settled yet, otherwise whatever was decided
+  // last.
+  const displayNode = !walk.complete ? walk.openSeats[0] : path[path.length - 1];
+  const gridData = displayNode ? getMatrixBucket(matrixRoot, displayNode.scenario, displayNode.position, displayNode.facingPosition) : null;
 
   if (loading || (isFilterActive && !stats)) {
     return (
@@ -110,28 +119,33 @@ export function PreflopMatrixPage() {
   }
 
   return (
-    <Layout title="Range Matrix" subtitle="Hero's own fold/call/raise split, by starting hand">
+    <Layout title="Range Matrix" subtitle="Walk any preflop line - every card is hero's own history for that seat">
       <div className="study-page">
         <div className="pfm-page">
           <PreflopMatrixControls
-            scenario={scenario} setScenario={setScenario}
-            heroPosition={heroPosition} setHeroPosition={setHeroPosition}
-            facingPosition={facingPosition} setFacingPosition={setFacingPosition}
-            facingOptions={facingOptions}
+            path={path}
+            openSeats={!walk.complete ? walk.openSeats : []}
+            complete={walk.complete}
+            onRedoStep={redoStep}
+            onCommitOpenSeat={commitOpenSeat}
+            onReset={resetWalk}
+            tableSize={tableSize} setTableSize={setTableSizeAndReset}
             stakesFilter={stakesFilter} setStakesFilter={setStakesFilter}
             stakesOptions={Object.keys(baseStats.byStakes || {})}
             daysFilter={daysFilter} setDaysFilter={setDaysFilter}
             minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
           />
 
-          {!gridData || Object.keys(gridData).length === 0 ? (
-            <div className="study-status-container">
-              <h2>No hands recorded</h2>
-              <p>Hero has no tracked hands for this position/scenario combination yet.</p>
-            </div>
-          ) : (
-            <HandMatrix data={gridData} minSampleSize={minSampleSize} />
-          )}
+          <div className="pfm-grid-wrap">
+            {!gridData || Object.keys(gridData).length === 0 ? (
+              <div className="study-status-container">
+                <h2>No hands recorded</h2>
+                <p>Hero has no tracked hands for this seat/situation yet.</p>
+              </div>
+            ) : (
+              <HandMatrix data={gridData} minSampleSize={minSampleSize} />
+            )}
+          </div>
         </div>
       </div>
     </Layout>

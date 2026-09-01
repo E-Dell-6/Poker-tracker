@@ -2,6 +2,14 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /* Wider than the grid below (see .pfm-grid-wrap) - the sequence bar
+     wants the room, the 13-column grid doesn't need it. */
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.pfm-grid-wrap {
   max-width: 900px;
+  width: 100%;
   margin: 0 auto;
 }

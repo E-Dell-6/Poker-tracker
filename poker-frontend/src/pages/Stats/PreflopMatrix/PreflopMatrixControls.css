@@ -38,32 +38,143 @@
   background: var(--color-accent-dim);
 }
 
-.pfm-facing-row {
+/* ---------- node cards (reference-mockup style: bordered block, header
+   row, vertical action list with the dominant action as a highlighted
+   pill) ---------- */
+
+.pfm-scroll-wrap {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
-.pfm-facing-label {
+.pfm-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  scroll-behavior: smooth;
+  /* Room for the focus ring / hover lift without clipping. */
+  padding: 2px;
+}
+
+/* Only rendered when the row actually overflows (see ScrollableRow's
+   canLeft/canRight state) - a fading gradient over the row's edge plus a
+   small round chevron button, so it reads as "more content this way"
+   rather than a floating disconnected control. */
+.pfm-scroll-btn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text);
+  z-index: 2;
+}
+
+.pfm-scroll-btn--left {
+  left: 0;
+  background: linear-gradient(to right, var(--color-bg-elevated) 40%, transparent);
+  justify-content: flex-start;
+}
+
+.pfm-scroll-btn--right {
+  right: 0;
+  background: linear-gradient(to left, var(--color-bg-elevated) 40%, transparent);
+  justify-content: flex-end;
+}
+
+.pfm-node-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 128px;
+  font-family: var(--font-sans);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+/* The open/undecided node - awaiting a click on one of its 3 actions. */
+.pfm-node-card.active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.pfm-node-card--done {
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  color: var(--color-text-faint);
   font-size: 11px;
+  font-style: italic;
+}
+
+.pfm-node-header {
+  display: flex;
+  align-items: baseline;
+}
+
+.pfm-node-title {
+  font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-faint);
+  color: var(--color-text);
 }
 
-.pfm-facing-empty {
-  font-size: 12px;
-  color: var(--color-text-faint);
-  font-style: italic;
+.pfm-node-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.pfm-caption {
-  margin: 0;
-  font-size: 12px;
+/* Every action row is a real button - clicking any of the 3 (not just the
+   already-chosen one) commits/re-commits that decision, since whichever
+   one gets picked is itself backed by real hero hands. */
+.pfm-node-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 11px;
   color: var(--color-text-muted);
-  font-style: italic;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pfm-node-action:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.pfm-node-action--chosen {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.pfm-node-action-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .pfm-settings-panel {
