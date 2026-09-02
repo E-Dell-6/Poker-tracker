@@ -1,0 +1,183 @@
+.board-texture {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin: 24px 0;
+}
+
+.board-texture .matrix-table-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.board-texture .matrix-table-header .section-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  margin: 0;
+}
+
+.board-texture .matrix-table-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.board-texture .ui-table-wrap {
+  margin-top: 16px;
+}
+
+.bt-mix-cell {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Tag rows anchor each group, same visual weight as HandClassBreakdown's
+   category rows. */
+.bt-row--tag .ui-table-cell {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+.bt-row--tag:not(:first-child) .ui-table-cell {
+  border-top: 1px solid var(--color-border);
+}
+.bt-row--tag strong {
+  font-size: 14px;
+}
+
+.bt-row--context .ui-table-cell {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 13px;
+}
+.bt-row--context .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent-border);
+}
+.bt-row--context:hover .ui-table-cell {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.bt-row--context--selected .ui-table-cell {
+  background: var(--color-accent-dim);
+}
+.bt-row--context--selected .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.bt-indent-1 { padding-left: 18px; }
+
+/* ---------- detail panel ---------- */
+
+.bt-detail-panel {
+  margin-top: 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated-hover);
+  padding: 16px;
+}
+
+.bt-detail-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bt-detail-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bt-detail-tag {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.bt-detail-context {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.bt-detail-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.bt-detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.bt-detail-close:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.bt-detail-mix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.bt-detail-mix-item strong {
+  color: var(--color-text);
+}
+
+.bt-detail-mix-count {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--color-text-faint);
+}
+
+.bt-detail-empty {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  font-style: italic;
+  margin: 12px 2px 0;
+}
+
+.bt-detail-table {
+  margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .bt-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bt-detail-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+  .bt-detail-panel {
+    position: relative;
+  }
+  .bt-detail-summary {
+    margin-left: 0;
+  }
+}

@@ -78,6 +78,20 @@ const PlayerStatsSchema = new mongoose.Schema({
   // 'dry'|'semi-wet'|'wet' -> { hands, cbFlop, foldToCbFlop, checkRaise } -
   // see flopTexture.js/statsEngine.js's newTextureStats().
   byFlopTexture: { type: mongoose.Schema.Types.Mixed, default: {} },
+  // Flop-texture-tag breakdown ('monotone'|'twoTone'|'rainbow'|'paired'|
+  // 'trips'|'connected'|'acehigh' - see flopTexture.js's classifyFlopTexture,
+  // NOT the mutually-exclusive wetness above): a flop can carry multiple
+  // tags at once, so a hand's data is mirrored into every tag it matches.
+  // tag -> { hands, totalProfitLoss, bb100, currency, actionMix: {bet,
+  // check, raise, call, fold, total - hero's first flop-street action},
+  // sizing: {avgPotPct, sampleSize - bet/raise sizing as % of pot},
+  // contexts: { <preflop context, see classifyHeroPreflopContext> -> same
+  // shape one level deeper, plus handClasses: { <169-hand-class token> ->
+  // {hands, totalProfitLoss, bb100, currency} } } }. See statsEngine.js's
+  // byBoardTexture-related helpers. Mixed for the same reason as
+  // byHandClass: the set of tags/contexts/hand classes present varies per
+  // player.
+  byBoardTexture: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   // { wonNoShowdown, wonAtShowdown, lostNoShowdown, lostAtShowdown } - raw
   // hand counts, hand-wide (not per-position) - see

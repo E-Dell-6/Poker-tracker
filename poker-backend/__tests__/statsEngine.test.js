@@ -452,6 +452,120 @@ describe('computeStatsForHands: win rate by hand class', () => {
   });
 });
 
+describe('computeStatsForHands: byBoardTexture', () => {
+  it('mirrors a hand into every matching texture tag, whole-hand profit attributed (not flop-only)', () => {
+    // 2-handed: Hero (BTN/SB) opens AKs, Villain calls, both check a
+    // monotone+ace-high flop. The flop matches two independent tags
+    // (monotone AND acehigh) - both should get the full subtree.
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 500, holeCards: ['Ah', 'Kh'] },
+        { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -500 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Hero', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Villain', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Villain', amount: 400, potSizeAfter: 1300 },
+        { street: 'FLOP', actionType: 'CHECK', player: 'Hero', amount: 0, potSizeAfter: 1300 },
+        { street: 'FLOP', actionType: 'CHECK', player: 'Villain', amount: 0, potSizeAfter: 1300 },
+      ],
+      board: { flop: ['Ah', '7h', '2h'], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byBoardTexture.monotone.hands).toBe(1);
+    expect(stats.byBoardTexture.acehigh.hands).toBe(1);
+    expect(stats.byBoardTexture.monotone.contexts.open.handClasses.AKs).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byBoardTexture.monotone.actionMix.check).toEqual(expect.objectContaining({ count: 1 }));
+    // 500 cents (USD) -> $5.00 major units - the hand's FULL result, not a
+    // flop-street-only figure, same whole-hand attribution byHandClass uses.
+    expect(stats.byBoardTexture.monotone.totalProfitLoss).toBe(5);
+    expect(stats.byBoardTexture.acehigh.totalProfitLoss).toBe(5);
+    // Not a suited-connector/paired/rainbow board - shouldn't appear at all.
+    expect(stats.byBoardTexture.connected).toBeUndefined();
+    expect(stats.byBoardTexture.paired).toBeUndefined();
+  });
+
+  it('computes bet sizing as a % of the pot before the bet', () => {
+    // 2-handed: Hero opens, Villain calls, Hero bets a rainbow/disconnected
+    // flop for exactly half pot, Villain folds.
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 1300, holeCards: ['Qc', 'Qd'] },
+        { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -1300 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Hero', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Villain', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Villain', amount: 400, potSizeAfter: 1300 },
+        { street: 'FLOP', actionType: 'BET', player: 'Hero', amount: 650, potSizeAfter: 1950 },
+        { street: 'FLOP', actionType: 'FOLD', player: 'Villain', amount: 0, potSizeAfter: 1950 },
+      ],
+      board: { flop: ['9h', '4c', '2d'], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byBoardTexture.rainbow.actionMix.bet).toEqual(expect.objectContaining({ count: 1 }));
+    // 650 / 1300 = 50% of pot.
+    expect(stats.byBoardTexture.rainbow.sizing).toEqual({ avgPotPct: 50, sampleSize: 1 });
+  });
+
+  it('a trips flop bumps both the paired and trips tags', () => {
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 0, holeCards: ['9c', '8d'] },
+        { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 0 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Hero', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Villain', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 100, potSizeAfter: 400 },
+        { street: 'PREFLOP', actionType: 'CHECK', player: 'Villain', amount: 0, potSizeAfter: 400 },
+        { street: 'FLOP', actionType: 'CHECK', player: 'Hero', amount: 0, potSizeAfter: 400 },
+        { street: 'FLOP', actionType: 'CHECK', player: 'Villain', amount: 0, potSizeAfter: 400 },
+      ],
+      board: { flop: ['Kh', 'Kc', 'Kd'], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byBoardTexture.paired.hands).toBe(1);
+    expect(stats.byBoardTexture.trips.hands).toBe(1);
+  });
+
+  it('records no byBoardTexture data for a hand hero folded before seeing a flop', () => {
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 200 },
+        { seat: 2, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -200, holeCards: ['2c', '7d'] },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Villain', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Hero', amount: 0, potSizeAfter: 900 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(Object.keys(stats.byBoardTexture)).toHaveLength(0);
+  });
+});
+
 describe('computeStatsForHands: preflopMatrix (range-matrix grid)', () => {
   // 6-max seating with seat 1 as dealer: seat1=BTN, seat2=SB, seat3=BB,
   // seat4=UTG, seat5=HJ, seat6=CO (getPositionMap's seat-offset-from-dealer

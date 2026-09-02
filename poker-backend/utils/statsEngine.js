@@ -205,6 +205,36 @@ function newHandClassContextBucket() {
   return { ...newProfitOnlyBucket(), byPosition: {} };
 }
 
+// hero's flop-street action mix (byBoardTexture) - counts of hero's FIRST
+// flop action by type, plus `total` (the sample size behind the mix) so a
+// consumer doesn't have to sum the five counters itself.
+function newActionMixCounters() {
+  return { bet: 0, check: 0, raise: 0, call: 0, fold: 0, total: 0 };
+}
+
+// Running sum for bet/raise sizing as a fraction of the pot before the
+// action (byBoardTexture) - kept as a sum+count pair rather than an array
+// so finalizing is a single division, same shape as bbUnitsWon/handsWithBbData.
+function newSizingAccumulator() {
+  return { sizingSum: 0, sizingCount: 0 };
+}
+
+// One per flop-texture tag ('monotone'|'twoTone'|'rainbow'|'paired'|
+// 'trips'|'connected'|'acehigh' - see flopTexture.js). Unlike every other
+// grouping dimension in this file, a single flop can match several tags at
+// once (see boardTextureTagsFor/accumulateBoardTextureTag below), so each
+// tag gets its own independent bucket rather than the hand picking one key.
+function newBoardTextureTagBucket() {
+  return { ...newProfitOnlyBucket(), actionMix: newActionMixCounters(), sizing: newSizingAccumulator(), contexts: {} };
+}
+
+// One per preflop context within a texture tag - same profit/actionMix/
+// sizing fields as the tag bucket, plus a further hand-class breakdown
+// ("what hands was I doing this with").
+function newBoardTextureContextBucket() {
+  return { ...newProfitOnlyBucket(), actionMix: newActionMixCounters(), sizing: newSizingAccumulator(), handClasses: {} };
+}
+
 // acc.positional is keyed by table size (number of active players in the
 // hand, matching POSITIONS_BY_SIZE) so 6-handed and 9-handed tendencies -
 // which differ structurally, not just by sample size - are never blended
@@ -377,6 +407,12 @@ function newAccumulator() {
     byStakesAndStackDepth: {},
     // 'dry'|'semi-wet'|'wet' -> newTextureStats() - see flopTexture.js.
     byFlopTexture: {},
+    // Flop-texture-tag breakdown - see newBoardTextureTagBucket() and
+    // accumulateBoardTextureTag() below. Independent from byFlopTexture
+    // above (mutually-exclusive wetness): a flop can match several tags at
+    // once (e.g. monotone AND acehigh), so a hand is mirrored into every
+    // tag it qualifies for.
+    byBoardTexture: {},
     // 169-hand-class token (e.g. "AKs") -> newHandClassBucket(); broad
     // display category (e.g. 'pocketPairs') -> newProfitOnlyBucket() - see
     // handClass.js/classifyHeroPreflopContext above. Only accumulated for
@@ -592,6 +628,72 @@ function classifyHeroPreflopContext(hand, name) {
   }
 
   return context;
+}
+
+// Every independent flop-texture facet a board can carry (see
+// classifyFlopTexture in flopTexture.js) - unlike `wetness` (exactly one of
+// dry/semi-wet/wet per board), a board can match several of these at once
+// (e.g. monotone AND acehigh), so this is a facet list, not a partition.
+const TEXTURE_TAG_KEYS = ['monotone', 'twoTone', 'rainbow', 'paired', 'trips', 'connected', 'acehigh'];
+
+// Which of TEXTURE_TAG_KEYS this flop actually matches.
+function boardTextureTagsFor(textureInfo) {
+  return TEXTURE_TAG_KEYS.filter(key => textureInfo[key]);
+}
+
+// Hero's first FLOP-street action, plus the pot size immediately before it
+// (the previous action's potSizeAfter in the hand's whole chronological
+// action log, or 0 if it's the very first action of the hand) - needed for
+// both the byBoardTexture action-mix and bet/raise sizing figures. Returns
+// null if hero never acted on the flop (e.g. everyone else was already
+// all-in before action reached hero).
+function extractHeroFirstFlopAction(hand, name) {
+  const actions = hand.actions || [];
+  const idx = actions.findIndex(a => a.street === 'FLOP' && a.player === name);
+  if (idx === -1) return null;
+  const action = actions[idx];
+  return { actionType: action.actionType, amount: action.amount, potBefore: idx > 0 ? actions[idx - 1].potSizeAfter : 0 };
+}
+
+function bumpActionMix(mix, firstFlopAction) {
+  if (!firstFlopAction) return;
+  mix.total++;
+  const key = { BET: 'bet', CHECK: 'check', RAISE: 'raise', CALL: 'call', FOLD: 'fold' }[firstFlopAction.actionType];
+  if (key) mix[key]++;
+}
+
+// Sizing is only meaningful for hero's own bet/raise (a call/check/fold has
+// no "size hero chose"), and only when a real pot-before figure exists.
+function bumpSizing(sizing, firstFlopAction) {
+  if (!firstFlopAction) return;
+  if (firstFlopAction.actionType !== 'BET' && firstFlopAction.actionType !== 'RAISE') return;
+  if (!firstFlopAction.potBefore || firstFlopAction.potBefore <= 0) return;
+  sizing.sizingSum += firstFlopAction.amount / firstFlopAction.potBefore;
+  sizing.sizingCount++;
+}
+
+// Bumps one texture tag's full tag -> context -> handClass subtree for this
+// hand. Called once per applicable tag (see boardTextureTagsFor) - a
+// deliberate deviation from every other ensureGroup() call site in this
+// file, which picks a single bucket key per hand; a flop's texture tags
+// aren't mutually exclusive, so a hand can (and often does) get mirrored
+// into more than one tag's bucket.
+function accumulateBoardTextureTag(byBoardTexture, tag, hand, player, preflopContext, classInfo, firstFlopAction) {
+  const tagBucket = ensureGroup(byBoardTexture, tag, newBoardTextureTagBucket);
+  tagBucket.hands++;
+  bumpProfit(tagBucket, hand, player);
+  bumpActionMix(tagBucket.actionMix, firstFlopAction);
+  bumpSizing(tagBucket.sizing, firstFlopAction);
+
+  const ctxBucket = ensureGroup(tagBucket.contexts, preflopContext, newBoardTextureContextBucket);
+  ctxBucket.hands++;
+  bumpProfit(ctxBucket, hand, player);
+  bumpActionMix(ctxBucket.actionMix, firstFlopAction);
+  bumpSizing(ctxBucket.sizing, firstFlopAction);
+
+  const handClassBucket = ensureGroup(ctxBucket.handClasses, classInfo.token, newProfitOnlyBucket);
+  handClassBucket.hands++;
+  bumpProfit(handClassBucket, hand, player);
 }
 
 // Standalone counterpart to classifyHeroPreflopContext, for the range-matrix
@@ -872,6 +974,12 @@ export function computeStatsForHands(hands, matchPlayer) {
     const { sawFlop } = accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats, groupBuckets);
 
     let stillIn = true;
+    // Hoisted out of the `if` below so the byBoardTexture accumulation
+    // further down (which needs the FULL classifyFlopTexture() result, not
+    // just wetness) can reuse it instead of re-parsing/re-classifying the
+    // same board a second time.
+    let textureInfo = null;
+    let heroFirstFlopAction = null;
     if (sawFlop && hand.board?.flop?.length) {
       const wasPreflopAggressor = (hand.actions || [])
         .filter(a => a.street === 'PREFLOP' && (a.actionType === 'RAISE' || a.actionType === 'BET'))
@@ -882,9 +990,10 @@ export function computeStatsForHands(hands, matchPlayer) {
       // bucket for this hand, not a thrown error.
       let textureBucket = null;
       if (hand.board.flop.length === 3) {
-        const wetness = classifyFlopTexture(parseBoard(hand.board.flop)).wetness;
-        textureBucket = ensureGroup(acc.byFlopTexture, wetness, newTextureStats);
+        textureInfo = classifyFlopTexture(parseBoard(hand.board.flop));
+        textureBucket = ensureGroup(acc.byFlopTexture, textureInfo.wetness, newTextureStats);
         if (textureBucket) textureBucket.hands++;
+        heroFirstFlopAction = extractHeroFirstFlopAction(hand, name);
       }
 
       stillIn = accumulatePostflop(hand, name, wasPreflopAggressor, acc, posStats, groupBuckets, textureBucket);
@@ -923,6 +1032,17 @@ export function computeStatsForHands(hands, matchPlayer) {
         const posInContext = ensureGroup(contextBucket.byPosition, position, newProfitOnlyBucket);
         posInContext.hands++;
         bumpProfit(posInContext, hand, player);
+      }
+
+      // Board-texture breakdown: one hand can match several texture tags
+      // at once (see boardTextureTagsFor) - only reachable here, same
+      // classInfo/preflopContext gate as byHandClass above, since a texture
+      // slice without a resolved hand class or preflop context carries the
+      // same "no signal" problem byHandClass already avoids.
+      if (textureInfo) {
+        for (const tag of boardTextureTagsFor(textureInfo)) {
+          accumulateBoardTextureTag(acc.byBoardTexture, tag, hand, player, preflopContext, classInfo, heroFirstFlopAction);
+        }
       }
     }
 
@@ -1166,6 +1286,63 @@ function finalizeHandClassMap(map) {
   return out;
 }
 
+// byBoardTexture's per-bucket action-mix (hero's first-flop-street action
+// type) -> {count, pct} per type, plus the raw `total` sample size.
+function finalizeActionMix(mix) {
+  const out = { total: mix.total };
+  for (const key of ['bet', 'check', 'raise', 'call', 'fold']) {
+    out[key] = { count: mix[key], pct: pct(mix[key], mix.total) };
+  }
+  return out;
+}
+
+// byBoardTexture's bet/raise sizing, as an average fraction of the pot
+// (expressed as a percent) - null (not 0) when hero never bet/raised in
+// this bucket, same "no data" convention as bb100/currency elsewhere.
+function finalizeSizing(sizing) {
+  return {
+    avgPotPct: sizing.sizingCount > 0 ? Math.round((sizing.sizingSum / sizing.sizingCount) * 1000) / 10 : null,
+    sampleSize: sizing.sizingCount
+  };
+}
+
+// byBoardTexture: one entry per flop-texture tag (see TEXTURE_TAG_KEYS),
+// each carrying its own overall profit/action-mix/sizing figures plus a
+// `contexts` breakdown (preflop action -> same figures -> a `handClasses`
+// breakdown of which starting hands hero was doing this with) - the
+// three-level drill-down the Study page's Board Texture table renders.
+// Structurally mirrors finalizeHandClassMap above, reshuffled (tag is the
+// top level here instead of hand-class token).
+function finalizeBoardTextureMap(map) {
+  const out = {};
+  for (const tag of Object.keys(map)) {
+    const bucket = map[tag];
+    const contexts = {};
+    for (const ctxKey of Object.keys(bucket.contexts)) {
+      const ctxBucket = bucket.contexts[ctxKey];
+      const handClasses = {};
+      for (const token of Object.keys(ctxBucket.handClasses)) {
+        handClasses[token] = { hands: ctxBucket.handClasses[token].hands, ...finalizeProfitLoss(ctxBucket.handClasses[token]) };
+      }
+      contexts[ctxKey] = {
+        hands: ctxBucket.hands,
+        ...finalizeProfitLoss(ctxBucket),
+        actionMix: finalizeActionMix(ctxBucket.actionMix),
+        sizing: finalizeSizing(ctxBucket.sizing),
+        handClasses
+      };
+    }
+    out[tag] = {
+      hands: bucket.hands,
+      ...finalizeProfitLoss(bucket),
+      actionMix: finalizeActionMix(bucket.actionMix),
+      sizing: finalizeSizing(bucket.sizing),
+      contexts
+    };
+  }
+  return out;
+}
+
 // Every top-level rate-stat key, in display order. Looping over this
 // (rather than repeating each key twice as `key: finalizeRate(acc.key)`)
 // is what makes finalizeRate's statKey argument (-> confidence profile)
@@ -1213,6 +1390,13 @@ function finalize(acc) {
     // - only the flop-street stats that depend on board texture. See
     // flopTexture.js for the wetness heuristic.
     byFlopTexture: finalizeGroupMap(acc.byFlopTexture),
+    // Flop-texture-tag breakdown - tag ('monotone'|'twoTone'|'rainbow'|
+    // 'paired'|'trips'|'connected'|'acehigh') -> { hands, totalProfitLoss,
+    // bb100, currency, actionMix, sizing, contexts: { <preflop context> ->
+    // same shape one level deeper, plus handClasses: { <169-hand-class
+    // token> -> {hands, totalProfitLoss, bb100, currency} } } }. See
+    // finalizeBoardTextureMap above and flopTexture.js's classifyFlopTexture.
+    byBoardTexture: finalizeBoardTextureMap(acc.byBoardTexture),
     // { wonNoShowdown, wonAtShowdown, lostNoShowdown, lostAtShowdown } -
     // hand-wide counts (see newShowdownBreakdown() above), raw counts not
     // percentages since the Study page donut wants relative slice sizes.

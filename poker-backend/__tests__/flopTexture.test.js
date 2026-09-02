@@ -41,11 +41,24 @@ describe('classifyFlopTexture', () => {
     const t = texture(['Kh', 'Kc', '2d']);
     expect(t.wetness).toBe('semi-wet');
     expect(t.paired).toBe(true);
+    expect(t.trips).toBe(false);
+  });
+
+  it('distinguishes trips from a plain pair', () => {
+    const t = texture(['Kh', 'Kc', 'Kd']);
+    expect(t.trips).toBe(true);
+    expect(t.paired).toBe(true);
+    expect(t.wetness).toBe('semi-wet');
   });
 
   it('reports the flop high card', () => {
     expect(texture(['Kh', '7c', '2d']).highCard).toBe(13);
     expect(texture(['Ah', '7c', '2d']).highCard).toBe(14);
+  });
+
+  it('flags an ace-high flop independent of suit/connectivity', () => {
+    expect(texture(['Ah', '7c', '2d']).acehigh).toBe(true);
+    expect(texture(['Kh', '7c', '2d']).acehigh).toBe(false);
   });
 
   it('throws for a board that is not exactly 3 cards', () => {

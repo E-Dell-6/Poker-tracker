@@ -12,6 +12,7 @@ import { Tabs } from '../../components/ui/Tabs';
 import { StudyCharts } from './StudyCharts';
 import { PositionMatrixTables } from './PositionMatrixTables';
 import { HandClassBreakdown } from './HandClassBreakdown';
+import { BoardTexture } from './BoardTexture';
 import { StudyPageSkeleton } from './StudyPageSkeleton';
 import './Stats.css';
 
@@ -167,7 +168,8 @@ export function Stats() {
                 )}
                 {section === 'board' && (
                   <>
-                    <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} byFlopTexture={stats.byFlopTexture} />
+                    <BoardTexture byBoardTexture={stats.byBoardTexture} />
+                    <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} />
                     <EVGraph stakes={stakesFilter || undefined} from={fromISO || undefined} />
                   </>
                 )}

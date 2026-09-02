@@ -75,7 +75,8 @@ function statsFixture() {
     },
     byStakes: { '$1/$2': groupBucket() },
     byStackDepth: {},
-    byFlopTexture: {}
+    byFlopTexture: {},
+    byBoardTexture: {}
   };
 }
 
@@ -135,7 +136,7 @@ describe('Stats page: section tabs', () => {
 
     await user.click(screen.getByRole('button', { name: 'Board' }));
 
-    expect(screen.getByText('By Stakes / Stack Depth / Texture')).toBeInTheDocument();
+    expect(screen.getByText('By Stakes / Stack Depth')).toBeInTheDocument();
     expect(screen.queryByText('Preflop matrix by position')).not.toBeInTheDocument();
   });
 

@@ -17,24 +17,12 @@ const GROUP_STAT_COLUMNS = [
   ['wwsf', 'WWSF']
 ];
 
-// newTextureStats() only tracks these three - the stats that actually
-// depend on flop texture (see statsEngine.js/flopTexture.js).
-const TEXTURE_STAT_COLUMNS = [
-  ['cbFlop', 'C-Bet Flop'],
-  ['foldToCbFlop', 'Fold to CB'],
-  ['checkRaise', 'Check-Raise']
-];
-
 const STACK_DEPTH_ORDER = ['short', 'mid', 'deep'];
 const STACK_DEPTH_LABELS = { short: 'Short (<40bb)', mid: 'Mid (40-100bb)', deep: 'Deep (>100bb)' };
 
-const TEXTURE_ORDER = ['dry', 'semi-wet', 'wet'];
-const TEXTURE_LABELS = { dry: 'Dry', 'semi-wet': 'Semi-Wet', wet: 'Wet' };
-
 const DIMENSIONS = [
   { key: 'stakes', label: 'Stakes' },
-  { key: 'stackDepth', label: 'Stack Depth' },
-  { key: 'flopTexture', label: 'Flop Texture' }
+  { key: 'stackDepth', label: 'Stack Depth' }
 ];
 
 function RateCell({ label, rate }) {
@@ -59,24 +47,23 @@ function RateCell({ label, rate }) {
 
 function labelForKey(dimension, key) {
   if (dimension === 'stackDepth') return STACK_DEPTH_LABELS[key] ?? key;
-  if (dimension === 'flopTexture') return TEXTURE_LABELS[key] ?? key;
   return key;
 }
 
-// `byStakes`/`byStackDepth`/`byFlopTexture` are the objects statsEngine.js's
-// finalize() produces (see newGroupStats()/newTextureStats()/
-// finalizeGroupMap()). Lets the viewer flip between slicing by stakes,
-// effective-stack depth, or flop texture - one tab bar for the dimension
-// and a second for which value within it - reuses PositionalStats.css's
-// tab/table styling rather than introducing a new visual language for
-// what's structurally the same kind of "pick a bucket, see its stat line" UI.
-export function GroupedStats({ byStakes, byStackDepth, byFlopTexture }) {
+// `byStakes`/`byStackDepth` are the objects statsEngine.js's finalize()
+// produces (see newGroupStats()/finalizeGroupMap()). Lets the viewer flip
+// between slicing by stakes or effective-stack depth - one tab bar for the
+// dimension and a second for which value within it - reuses
+// PositionalStats.css's tab/table styling rather than introducing a new
+// visual language for what's structurally the same kind of "pick a bucket,
+// see its stat line" UI. (Flop-texture slicing lives in BoardTexture.jsx
+// now, with a far more detailed breakdown than this component ever had.)
+export function GroupedStats({ byStakes, byStackDepth }) {
   const keysByDimension = {
     stakes: Object.keys(byStakes || {}),
-    stackDepth: STACK_DEPTH_ORDER.filter(k => byStackDepth?.[k]),
-    flopTexture: TEXTURE_ORDER.filter(k => byFlopTexture?.[k])
+    stackDepth: STACK_DEPTH_ORDER.filter(k => byStackDepth?.[k])
   };
-  const mapByDimension = { stakes: byStakes, stackDepth: byStackDepth, flopTexture: byFlopTexture };
+  const mapByDimension = { stakes: byStakes, stackDepth: byStackDepth };
 
   const availableDimensions = DIMENSIONS.filter(d => keysByDimension[d.key].length > 0);
 
@@ -93,17 +80,12 @@ export function GroupedStats({ byStakes, byStackDepth, byFlopTexture }) {
   if (availableDimensions.length === 0) return null;
 
   const bucket = activeKey != null ? mapByDimension[dimension]?.[activeKey] : null;
-  // Only stakes/stack-depth buckets track profitability - see
-  // finalizeGroupStats' hasProfitFields check in statsEngine.js. A flop-
-  // texture slice doesn't attribute a whole hand's profit to one street.
-  const showsProfit = bucket && dimension !== 'flopTexture';
-  const columns = dimension === 'flopTexture' ? TEXTURE_STAT_COLUMNS : GROUP_STAT_COLUMNS;
 
   return (
     <div className="positional-stats-section">
       <div className="pos-section-header">
         <span className="pos-glyph" aria-hidden="true">♣</span>
-        <h3 className="section-title">By Stakes / Stack Depth / Texture</h3>
+        <h3 className="section-title">By Stakes / Stack Depth</h3>
         <span className="pos-rule" />
       </div>
 
@@ -136,24 +118,20 @@ export function GroupedStats({ byStakes, byStackDepth, byFlopTexture }) {
 
       {bucket && (
         <div className="stats-grid" style={{ marginTop: '0.75rem' }}>
-          {showsProfit && (
-            <>
-              <div className="stat-box">
-                <div className="stat-label">Net Won</div>
-                <div className="stat-value">
-                  {bucket.currency
-                    ? formatSignedMajorUnits(bucket.totalProfitLoss, bucket.currency)
-                    : `${bucket.totalProfitLoss >= 0 ? '+' : ''}${bucket.totalProfitLoss} (mixed currencies)`}
-                </div>
-                <div className="stat-sample">{bucket.handsWithProfitData} hands w/ data</div>
-              </div>
-              <div className="stat-box">
-                <div className="stat-label">BB/100</div>
-                <div className="stat-value">{bucket.bb100 ?? '—'}</div>
-              </div>
-            </>
-          )}
-          {columns.map(([key, label]) => (
+          <div className="stat-box">
+            <div className="stat-label">Net Won</div>
+            <div className="stat-value">
+              {bucket.currency
+                ? formatSignedMajorUnits(bucket.totalProfitLoss, bucket.currency)
+                : `${bucket.totalProfitLoss >= 0 ? '+' : ''}${bucket.totalProfitLoss} (mixed currencies)`}
+            </div>
+            <div className="stat-sample">{bucket.handsWithProfitData} hands w/ data</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-label">BB/100</div>
+            <div className="stat-value">{bucket.bb100 ?? '—'}</div>
+          </div>
+          {GROUP_STAT_COLUMNS.map(([key, label]) => (
             <RateCell key={key} label={label} rate={bucket[key]} />
           ))}
         </div>
