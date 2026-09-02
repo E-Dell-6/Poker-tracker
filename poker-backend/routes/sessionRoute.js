@@ -10,6 +10,7 @@ import {
   uploadSessions,
   resetSessions,
   updateSession,
+  updateHandNotes,
   deleteSession,
 } from '../controllers/sessionController.js';
 
@@ -30,6 +31,7 @@ router.post('/sessions', userAuth, createLegacySession);
 router.post('/upload', userAuth, upload.array('csvFile', 20), uploadSessions);
 router.delete('/reset', userAuth, resetSessions);
 router.put('/sessions/:id', userAuth, updateSession);
+router.patch('/sessions/:sessionId/hands/:handId/notes', userAuth, updateHandNotes);
 router.delete('/sessions/:id', userAuth, deleteSession);
 
 export default router;

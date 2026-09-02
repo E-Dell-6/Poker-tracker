@@ -13,6 +13,14 @@ export async function updateSession(id, patch) {
   return requestJson(`/api/sessions/${id}`, { method: "PUT", body: patch }, "Failed to update session");
 }
 
+export async function updateHandNotes(sessionId, handId, notes) {
+  return requestJson(
+    `/api/sessions/${sessionId}/hands/${handId}/notes`,
+    { method: "PATCH", body: { notes } },
+    "Failed to update hand notes"
+  );
+}
+
 export async function mapSessionPlayer(sessionId, { pokerNowName, personId }) {
   return requestJson(
     `/api/sessions/${sessionId}/map-player`,

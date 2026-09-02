@@ -225,6 +225,18 @@ export async function updateSession(userId, sessionId, { date, gameType, opponen
   return session.save();
 }
 
+// Returns null if the session or hand doesn't exist (or isn't this user's).
+export async function updateHandNotes(userId, sessionId, handId, notes) {
+  const session = await Session.findOne({ _id: sessionId, userId });
+  if (!session) return null;
+  const hand = session.hands.id(handId);
+  if (!hand) return null;
+  hand.notes = notes || '';
+  session.markModified('hands');
+  await session.save();
+  return hand;
+}
+
 // Returns null if the session doesn't exist (or isn't this user's).
 export async function deleteSession(userId, sessionId) {
   return Session.findOneAndDelete({ _id: sessionId, userId });

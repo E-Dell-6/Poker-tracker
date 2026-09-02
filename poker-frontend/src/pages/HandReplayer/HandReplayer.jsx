@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye, ArrowLeft } from "lucide-react";
+import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye, ArrowLeft, StickyNote } from "lucide-react";
 import "./HandReplayer.css";
 
 import PokerTable from "./PokerTable";
@@ -8,6 +8,7 @@ import PlayerSeat from "./PlayerSeat";
 import Controller from "../../components/Controller";
 
 import { getSharedHand, createShareLink, deleteShareLink } from "../../api/share";
+import { updateHandNotes } from "../../api/sessions";
 import { getFavourites } from "../../api/favourites";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 import { formatAmount, formatSignedAmount } from "../../utils/formatMoney";
@@ -256,10 +257,67 @@ function ShareModal({ hand, session, onClose }) {
   );
 }
 
+function NotesModal({ hand, sessionId, onClose, onSaved }) {
+  const [notes, setNotes] = useState(hand?.notes || "");
+  const [saving, setSaving] = useState(false);
+  const overlayRef = useRef(null);
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const updatedHand = await updateHandNotes(sessionId, hand._id, notes);
+      onSaved(updatedHand.notes ?? notes);
+      onClose();
+    } catch (e) {
+      console.error("Failed to save hand notes:", e);
+      alert("Failed to save notes. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="notes-modal-overlay"
+      ref={overlayRef}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+    >
+      <div className="notes-modal">
+        <div className="notes-modal-header">
+          <h3 className="notes-modal-title">Hand Notes</h3>
+          <button className="notes-modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="notes-modal-body">
+          <textarea
+            className="notes-textarea"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add notes about this hand..."
+            rows={6}
+            autoFocus
+          />
+          <div className="notes-actions">
+            <button className="cancel-notes-btn" onClick={onClose} disabled={saving}>
+              Cancel
+            </button>
+            <button className="save-notes-btn" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HandReplayerCore({ hand, session, isPublic, navigate }) {
   const [actionIndex, setActionIndex] = useState(0);
   const [historyCollapse, setHistoryCollapse] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [currentHandNotes, setCurrentHandNotes] = useState(hand?.notes || "");
   const [activeFilter, setActiveFilter] = useState(null);
 
   const allHands = session?.hands ?? [];
@@ -278,6 +336,8 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     if (!hand?._id) return;
     setIsHandShared(Boolean(localStorage.getItem(`share:${hand._id}`)));
     setShowShareModal(false);
+    setShowNotesModal(false);
+    setCurrentHandNotes(hand.notes || "");
     setActionIndex(0);
   }, [hand?._id]);
 
@@ -504,6 +564,29 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
           onClose={() => {
             setShowShareModal(false);
             setIsHandShared(Boolean(localStorage.getItem(`share:${hand._id}`)));
+          }}
+        />
+      )}
+
+      {/* Notes button — private mode only */}
+      {!isPublic && (
+        <button
+          className={`notes-button ${currentHandNotes ? "notes-button--has-notes" : ""}`}
+          onClick={() => setShowNotesModal(true)}
+          title="Add notes to this hand"
+        >
+          <StickyNote size={14} /> {currentHandNotes ? "Notes" : "Add Notes"}
+        </button>
+      )}
+
+      {showNotesModal && !isPublic && (
+        <NotesModal
+          hand={hand}
+          sessionId={session?._id}
+          onClose={() => setShowNotesModal(false)}
+          onSaved={(notes) => {
+            hand.notes = notes;
+            setCurrentHandNotes(notes);
           }}
         />
       )}

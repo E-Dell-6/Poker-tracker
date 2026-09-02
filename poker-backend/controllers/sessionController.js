@@ -122,6 +122,17 @@ export async function updateSession(req, res) {
   }
 }
 
+export async function updateHandNotes(req, res) {
+  try {
+    const { userId, notes } = req.body;
+    const hand = await sessionService.updateHandNotes(userId, req.params.sessionId, req.params.handId, notes);
+    if (!hand) return res.status(404).json({ error: "Hand not found" });
+    res.json(hand);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update hand notes", details: error.message });
+  }
+}
+
 export async function deleteSession(req, res) {
   try {
     const deleted = await sessionService.deleteSession(req.body.userId, req.params.id);

@@ -315,6 +315,165 @@
   background: var(--color-bg-elevated-hover);
 }
 
+/* ── NOTES BUTTON ───────────────────────────────────────── */
+.notes-button {
+  position: fixed;
+  top: 14px;
+  right: 190px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  white-space: nowrap;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notes-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.notes-button--has-notes {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-accent);
+}
+
+/* ── NOTES MODAL ────────────────────────────────────────── */
+.notes-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.notes-modal {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.notes-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notes-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.notes-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.notes-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text);
+}
+
+.notes-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notes-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.notes-textarea:focus {
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.notes-textarea::placeholder { color: var(--color-text-muted); }
+
+.notes-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.notes-actions button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cancel-notes-btn {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-text);
+}
+
+.cancel-notes-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.cancel-notes-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.save-notes-btn {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+  color: var(--color-bg);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.save-notes-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 20px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.save-notes-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ── HISTORY PANEL ──────────────────────────────────────── */
 .history {
   position: fixed;
@@ -675,6 +834,11 @@
   .share-button {
     left: 20px;
     right: auto;
+    top: 60px;
+  }
+
+  .notes-button {
+    right: 20px;
     top: 60px;
   }
 
