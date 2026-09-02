@@ -532,7 +532,12 @@ function accumulatePreflop(hand, positionMap, name, acc, posBucket, posStats, gr
 // hands like that would just dilute every hand class's win rate with a
 // trivial small loss and add no signal (same reasoning real HUD tools use
 // for "hand class" stats: only played hands count).
-const CONTEXT_ORDER = ['open', 'threeBet', 'fourBet', 'coldCall', 'limp', 'checkedOption', 'foldTo3Bet', 'foldTo4Bet', 'foldPreflop'];
+const CONTEXT_ORDER = [
+  'open', 'threeBet', 'fourBet', 'fiveBet',
+  'coldCall', 'callVs3Bet', 'callVs4Bet',
+  'limp', 'checkedOption',
+  'foldTo3Bet', 'foldTo4Bet', 'foldPreflop'
+];
 
 function classifyHeroPreflopContext(hand, name) {
   const real = (hand.actions || []).filter(
@@ -562,17 +567,20 @@ function classifyHeroPreflopContext(hand, name) {
       } else if (level === 2) {
         // Facing a 3-bet.
         if (a.actionType === 'RAISE') context = 'fourBet';
-        else if (a.actionType === 'CALL') context = 'coldCall';
+        else if (a.actionType === 'CALL') context = 'callVs3Bet';
         else if (a.actionType === 'FOLD' && playerHasVpipd) context = 'foldTo3Bet';
-      } else if (level === 3) {
-        // Facing a 4-bet.
-        if (a.actionType === 'FOLD' && playerHasVpipd) context = 'foldTo4Bet';
-        else if (a.actionType === 'CALL') context = 'coldCall';
-        // 5-bet+ jams are rare enough to fold into the same "made a big
-        // raise facing 3+ bets" bucket as a 4-bet, rather than a fifth label.
-        else if (a.actionType === 'RAISE') context = 'fourBet';
-      } else if (a.actionType === 'FOLD' && playerHasVpipd) {
-        context = 'foldPreflop';
+      } else {
+        // Facing a 4-bet or deeper (level >= 3). A 5-bet+ jam and a call
+        // facing any of these get one label apiece rather than a label per
+        // level - deep re-raises are rare enough that splitting further
+        // adds noise, not signal (same reasoning fourBet used to apply one
+        // level shallower, before 5-Bet got its own bucket). Folding still
+        // only gets its own 'foldTo4Bet' label at exactly level 3 (facing a
+        // 4-bet); anything deeper falls into the generic foldPreflop
+        // catch-all, unchanged from before this level was split out.
+        if (a.actionType === 'FOLD' && playerHasVpipd) context = level === 3 ? 'foldTo4Bet' : 'foldPreflop';
+        else if (a.actionType === 'CALL') context = 'callVs4Bet';
+        else if (a.actionType === 'RAISE') context = 'fiveBet';
       }
 
       if (a.actionType === 'CALL' || a.actionType === 'RAISE' || a.actionType === 'BET') {

@@ -46,7 +46,17 @@ export function classifyFlopTexture(flop) {
   const dry = rainbow && !connected && !paired;
   const wetness = wet ? 'wet' : dry ? 'dry' : 'semi-wet';
 
+  // trips = all 3 ranks equal - a strict subset of `paired` above (which
+  // stays true for both a plain pair and trips, unchanged, so `wetness`'s
+  // formula doesn't need to know the difference). Split out separately for
+  // callers (byBoardTexture) that DO want to distinguish "one pair on
+  // board" from "trips on board".
+  const trips = distinctRanks.length === 1;
+  // Whether an Ace is present on the flop - independent of every other
+  // facet above (a board can be ace-high AND monotone AND connected, etc).
+  const acehigh = ranks.includes(14);
+
   const highCard = Math.max(...ranks);
 
-  return { wetness, paired, monotone, twoTone, rainbow, connected, highCard, highCardName: rankName(highCard) };
+  return { wetness, paired, monotone, twoTone, rainbow, connected, trips, acehigh, highCard, highCardName: rankName(highCard) };
 }

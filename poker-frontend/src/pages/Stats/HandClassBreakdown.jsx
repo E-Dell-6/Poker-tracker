@@ -1,52 +1,13 @@
-import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { Table, TableHead, TableBody, TableRow, TableCell } from '../../components/ui/Table';
-import { formatSignedMajorUnits } from '../../utils/formatMoney';
+import {
+  CATEGORY_ORDER, CATEGORY_LABEL, CONTEXT_ORDER,
+  sortHandEntries, ProfitValue, RateValue, PositionBadges, Toggle, toggleInSet
+} from './handClassShared';
+import { HandClassLeaks } from './HandClassLeaks';
 import './HandClassBreakdown.css';
-
-const CATEGORY_ORDER = [
-  ['pocketPairs', 'Pocket pairs'],
-  ['axSuited', 'Ax suited'],
-  ['suitedBroadway', 'Suited broadway'],
-  ['suitedConnectors', 'Suited connectors'],
-  ['offsuitBroadway', 'Offsuit broadway'],
-  ['offsuitGappers', 'Offsuit gappers'],
-  ['other', 'Other']
-];
-
-const CONTEXT_ORDER = [
-  ['open', 'Open'],
-  ['threeBet', '3-Bet'],
-  ['fourBet', '4-Bet'],
-  ['coldCall', 'Cold Call'],
-  ['limp', 'Limp'],
-  ['checkedOption', 'Checked Option'],
-  ['foldTo3Bet', 'Fold to 3-Bet'],
-  ['foldTo4Bet', 'Fold to 4-Bet'],
-  ['foldPreflop', 'Fold Preflop']
-];
-
-const POSITION_ORDER = ['BTN', 'BTN/SB', 'SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO'];
-function sortPositions(positions) {
-  return [...positions].sort((a, b) => {
-    const ia = POSITION_ORDER.indexOf(a);
-    const ib = POSITION_ORDER.indexOf(b);
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-  });
-}
-
-// Matches handClass.js's RANK_LABELS token format ("22".."AA").
-const RANK_VALUE = { 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, T: 10, J: 11, Q: 12, K: 13, A: 14 };
-
-// Pocket pairs read naturally low-to-high (22 -> AA); every other category
-// keeps the existing most-played-first ordering.
-function sortHandEntries(catKey, entries) {
-  if (catKey === 'pocketPairs') {
-    return [...entries].sort((a, b) => RANK_VALUE[a[0][0]] - RANK_VALUE[b[0][0]]);
-  }
-  return [...entries].sort((a, b) => b[1].hands - a[1].hands);
-}
 
 const AXIS_TICK = { fontSize: 11, fill: 'var(--color-text-muted)' };
 const TOOLTIP_STYLE = {
@@ -65,47 +26,85 @@ const TOOLTIP_TEXT_STYLE = { color: 'var(--color-text)' };
 // wider/taller than the bar and visually disconnected from its shape.
 const ACTIVE_BAR = { stroke: 'var(--color-accent)', strokeWidth: 2, fillOpacity: 0.9 };
 
-function ProfitValue({ bucket }) {
-  if (!bucket || bucket.hands === 0) return <span className="hcb-value-empty">—</span>;
-  // Unlike bb100 (null when a bucket mixes currencies or has no bb-size
-  // data), totalProfitLoss is always a real number - it's already
-  // normalized to major units per-hand before summing (see
-  // statsEngine.js's bumpProfit). The only genuine "nothing to show" case
-  // left is a bucket with hands but literally no profit data recorded.
-  if (bucket.handsWithProfitData === 0) return <span className="hcb-value-empty">n/a</span>;
+// Detail panel for one specific hand - shows its preflop-context breakdown,
+// with every position shown as an inline badge (see handClassShared's
+// PositionBadges) instead of a further click-to-expand level.
+function HandDetailPanel({ token, handData, onClose }) {
+  const contexts = CONTEXT_ORDER
+    .map(([key, label]) => [key, label, handData.contexts?.[key]])
+    .filter(([, , ctxData]) => ctxData && ctxData.hands > 0);
+
   return (
-    <span className={`hcb-value-mono ${bucket.totalProfitLoss >= 0 ? 'hcb-value-pos' : 'hcb-value-neg'}`}>
-      {formatSignedMajorUnits(bucket.totalProfitLoss, bucket.currency)}
-    </span>
+    <div className="hcb-detail-panel">
+      <div className="hcb-detail-header">
+        <div className="hcb-detail-title">
+          <span className="hcb-detail-token">{token}</span>
+          <span className="hcb-detail-category">{CATEGORY_LABEL[handData.category]}</span>
+        </div>
+        <div className="hcb-detail-summary">
+          <span>{handData.hands} hands</span>
+          <RateValue bucket={handData} />
+          <ProfitValue bucket={handData} />
+        </div>
+        <button type="button" className="hcb-detail-close" onClick={onClose} aria-label="Close">
+          <X size={16} />
+        </button>
+      </div>
+
+      {contexts.length === 0 ? (
+        <p className="hcb-detail-empty">No preflop-action breakdown recorded for this hand.</p>
+      ) : (
+        <div className="hcb-detail-contexts">
+          {contexts.map(([ctxKey, ctxLabel, ctxData]) => (
+            <div key={ctxKey} className="hcb-detail-context">
+              <div className="hcb-detail-context-row">
+                <span className="hcb-detail-context-label">{ctxLabel}</span>
+                <span className="hcb-detail-context-hands">{ctxData.hands}h</span>
+                <RateValue bucket={ctxData} />
+                <ProfitValue bucket={ctxData} />
+              </div>
+              <PositionBadges ctxData={ctxData} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-function Toggle({ expanded }) {
-  return <ChevronRight size={14} className={`hcb-toggle ${expanded ? 'hcb-toggle--expanded' : ''}`} />;
-}
-
-function toggleInSet(set, key) {
-  const next = new Set(set);
-  if (next.has(key)) next.delete(key); else next.add(key);
-  return next;
-}
-
-// Three-level drill-down over stats.byHandClass/byHandClassCategory (see
-// statsEngine.js's handClass-related helpers): category -> specific hand
-// -> preflop context -> position, each carrying its own net $ won/lost figure.
-// Rows are built as one flat list (not real nested <table>s, which can't
-// live inside a <tbody> row) with expand state kept as three Sets of keys.
+// Two-level table over stats.byHandClass/byHandClassCategory (see
+// statsEngine.js's handClass-related helpers): category -> specific hand,
+// each carrying its own bb/100 win rate and net $ figure. Clicking a hand
+// (here or in the Biggest Leaks list above) opens a detail panel below the
+// table with its preflop-context/position breakdown, instead of drilling
+// further into the table itself.
 export function HandClassBreakdown({ byHandClass, byHandClassCategory }) {
   const [expandedCategories, setExpandedCategories] = useState(new Set());
-  const [expandedHands, setExpandedHands] = useState(new Set());
-  const [expandedContexts, setExpandedContexts] = useState(new Set());
+  const [selectedHand, setSelectedHand] = useState(null);
+  const detailPanelRef = useRef(null);
 
   const categoriesWithData = CATEGORY_ORDER.filter(([key]) => (byHandClassCategory?.[key]?.hands ?? 0) > 0);
+
+  const selectedHandData = selectedHand ? byHandClass?.[selectedHand] : null;
+
+  // Brings the detail panel into view when it's (re)opened - matters most
+  // when it was triggered from a Biggest Leaks row, which can be far above
+  // the table the panel renders below.
+  useEffect(() => {
+    if (selectedHandData) detailPanelRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  }, [selectedHand, selectedHandData]);
+
   if (categoriesWithData.length === 0) return null;
+
+  function handleSelectHand(token) {
+    const handData = byHandClass?.[token];
+    if (handData) setExpandedCategories(prev => new Set(prev).add(handData.category));
+    setSelectedHand(token);
+  }
 
   const chartData = categoriesWithData.map(([key, label]) => ({
     key, label,
-    totalProfitLoss: byHandClassCategory[key].totalProfitLoss ?? 0,
+    bb100: byHandClassCategory[key].bb100 ?? 0,
     currency: byHandClassCategory[key].currency
   }));
 
@@ -121,6 +120,7 @@ export function HandClassBreakdown({ byHandClass, byHandClassCategory }) {
       >
         <TableCell><Toggle expanded={catExpanded} /><strong>{catLabel}</strong></TableCell>
         <TableCell align="right"><span className="hcb-value-mono">{catData.hands}</span></TableCell>
+        <TableCell align="right"><RateValue bucket={catData} /></TableCell>
         <TableCell align="right"><ProfitValue bucket={catData} /></TableCell>
       </TableRow>
     );
@@ -133,96 +133,66 @@ export function HandClassBreakdown({ byHandClass, byHandClassCategory }) {
     );
 
     for (const [token, handData] of handEntries) {
-      const handExpanded = expandedHands.has(token);
       rows.push(
         <TableRow
           key={token}
-          className="hcb-row hcb-row--hand"
-          onClick={() => setExpandedHands(toggleInSet(expandedHands, token))}
+          className={`hcb-row hcb-row--hand ${token === selectedHand ? 'hcb-row--hand--selected' : ''}`}
+          onClick={() => setSelectedHand(token === selectedHand ? null : token)}
         >
-          <TableCell><span className="hcb-indent-1"><Toggle expanded={handExpanded} />{token}</span></TableCell>
+          <TableCell><span className="hcb-indent-1">{token}</span></TableCell>
           <TableCell align="right"><span className="hcb-value-mono">{handData.hands}</span></TableCell>
+          <TableCell align="right"><RateValue bucket={handData} /></TableCell>
           <TableCell align="right"><ProfitValue bucket={handData} /></TableCell>
         </TableRow>
       );
-
-      if (!handExpanded) continue;
-
-      for (const [ctxKey, ctxLabel] of CONTEXT_ORDER) {
-        const ctxData = handData.contexts?.[ctxKey];
-        if (!ctxData || ctxData.hands === 0) continue;
-        const ctxRowKey = `${token}::${ctxKey}`;
-        const ctxExpanded = expandedContexts.has(ctxRowKey);
-        const positions = sortPositions(Object.keys(ctxData.byPosition || {}));
-        rows.push(
-          <TableRow
-            key={ctxRowKey}
-            className="hcb-row hcb-row--context"
-            onClick={() => positions.length > 0 && setExpandedContexts(toggleInSet(expandedContexts, ctxRowKey))}
-          >
-            <TableCell>
-              <span className="hcb-indent-2">
-                {positions.length > 0 ? <Toggle expanded={ctxExpanded} /> : <span className="hcb-toggle-spacer" />}
-                {ctxLabel}
-              </span>
-            </TableCell>
-            <TableCell align="right"><span className="hcb-value-mono">{ctxData.hands}</span></TableCell>
-            <TableCell align="right"><ProfitValue bucket={ctxData} /></TableCell>
-          </TableRow>
-        );
-
-        if (!ctxExpanded) continue;
-
-        for (const pos of positions) {
-          const posData = ctxData.byPosition[pos];
-          rows.push(
-            <TableRow key={`${ctxRowKey}::${pos}`} className="hcb-row hcb-row--position">
-              <TableCell><span className="hcb-indent-3">{pos}</span></TableCell>
-              <TableCell align="right"><span className="hcb-value-mono">{posData.hands}</span></TableCell>
-              <TableCell align="right"><ProfitValue bucket={posData} /></TableCell>
-            </TableRow>
-          );
-        }
-      }
     }
   }
 
   return (
-    <div className="matrix-table-card hand-class-breakdown">
-      <div className="matrix-table-header">
-        <h3 className="section-title">Win rate by hand class</h3>
-        <span className="matrix-table-sub">Net $ won/lost · played hands only</span>
+    <>
+      <HandClassLeaks byHandClass={byHandClass} onSelectHand={handleSelectHand} />
+
+      <div className="matrix-table-card hand-class-breakdown">
+        <div className="matrix-table-header">
+          <h3 className="section-title">Win rate by hand class</h3>
+          <span className="matrix-table-sub">bb/100 · played hands only</span>
+        </div>
+
+        <ResponsiveContainer width="100%" height={Math.max(140, categoriesWithData.length * 36)}>
+          <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 24 }}>
+            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="label" tick={AXIS_TICK} axisLine={false} tickLine={false} width={110} />
+            <Tooltip
+              contentStyle={TOOLTIP_STYLE}
+              itemStyle={TOOLTIP_TEXT_STYLE}
+              labelStyle={TOOLTIP_TEXT_STYLE}
+              cursor={false}
+              formatter={v => [`${v >= 0 ? '+' : ''}${v.toFixed(1)} bb/100`, 'Win rate']}
+            />
+            <Bar dataKey="bb100" radius={[0, 4, 4, 0]} activeBar={ACTIVE_BAR}>
+              {chartData.map(d => <Cell key={d.key} fill={d.bb100 >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+
+        <Table>
+          <TableHead>
+            <TableCell header>Hand class</TableCell>
+            <TableCell header align="right">Hands</TableCell>
+            <TableCell header align="right">bb/100</TableCell>
+            <TableCell header align="right">Net $</TableCell>
+          </TableHead>
+          <TableBody>{rows}</TableBody>
+        </Table>
+        <p className="hcb-note">Click a category for individual hands, a hand for its preflop-action and position breakdown.</p>
+
+        {selectedHandData && (
+          <div ref={detailPanelRef}>
+            <HandDetailPanel token={selectedHand} handData={selectedHandData} onClose={() => setSelectedHand(null)} />
+          </div>
+        )}
       </div>
-
-      <ResponsiveContainer width="100%" height={Math.max(140, categoriesWithData.length * 36)}>
-        <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 24 }}>
-          <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="label" tick={AXIS_TICK} axisLine={false} tickLine={false} width={110} />
-          <Tooltip
-            contentStyle={TOOLTIP_STYLE}
-            itemStyle={TOOLTIP_TEXT_STYLE}
-            labelStyle={TOOLTIP_TEXT_STYLE}
-            cursor={false}
-            formatter={(v, name, props) => [formatSignedMajorUnits(v, props?.payload?.currency), 'Net won/lost']}
-          />
-          <Bar dataKey="totalProfitLoss" radius={[0, 4, 4, 0]} activeBar={ACTIVE_BAR}>
-            {chartData.map(d => <Cell key={d.key} fill={d.totalProfitLoss >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'} />)}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-
-      <Table>
-        <TableHead>
-          <TableCell header>Hand class</TableCell>
-          <TableCell header align="right">Hands</TableCell>
-          <TableCell header align="right">Net $</TableCell>
-        </TableHead>
-        <TableBody>{rows}</TableBody>
-      </Table>
-      <p className="hcb-note">
-        Click a category for individual hands, a hand for its preflop actions, an action for its position split.
-      </p>
-    </div>
+    </>
   );
 }
 

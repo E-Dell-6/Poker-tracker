@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HandClassBreakdown } from '../src/pages/Stats/HandClassBreakdown.jsx';
 
@@ -7,7 +7,7 @@ import { HandClassBreakdown } from '../src/pages/Stats/HandClassBreakdown.jsx';
 // shapes (category bucket has no `contexts`; a specific-hand bucket does,
 // each context bucket carrying its own `byPosition`).
 function profitBucket(overrides) {
-  return { hands: 10, totalProfitLoss: 50, handsWithProfitData: 10, currency: 'USD', ...overrides };
+  return { hands: 10, totalProfitLoss: 50, handsWithProfitData: 10, bb100: 12.3, currency: 'USD', ...overrides };
 }
 
 function byHandClassCategoryFixture() {
@@ -21,21 +21,32 @@ function byHandClassFixture() {
       category: 'axSuited',
       contexts: {
         open: {
-          ...profitBucket({ hands: 8, totalProfitLoss: 40, handsWithProfitData: 8 }),
+          ...profitBucket({ hands: 8, totalProfitLoss: 40, handsWithProfitData: 8, bb100: 18 }),
           byPosition: {
-            BTN: profitBucket({ hands: 5, totalProfitLoss: 25, handsWithProfitData: 5 }),
-            CO: profitBucket({ hands: 3, totalProfitLoss: 15, handsWithProfitData: 3 })
+            BTN: profitBucket({ hands: 5, totalProfitLoss: 25, handsWithProfitData: 5, bb100: 2.5 }),
+            CO: profitBucket({ hands: 3, totalProfitLoss: 15, handsWithProfitData: 3, bb100: 5 })
           }
         },
         fourBet: {
-          ...profitBucket({ hands: 2, totalProfitLoss: 10, handsWithProfitData: 2 }),
+          ...profitBucket({ hands: 2, totalProfitLoss: 10, handsWithProfitData: 2, bb100: 40 }),
           byPosition: {
-            BTN: profitBucket({ hands: 2, totalProfitLoss: 10, handsWithProfitData: 2 })
+            BTN: profitBucket({ hands: 2, totalProfitLoss: 10, handsWithProfitData: 2, bb100: 40 })
           }
         }
       }
     }
   };
+}
+
+// The Biggest Leaks card above the table always renders a context <select>
+// with an <option> per CONTEXT_ORDER entry ("Open", "4-Bet", ...) - the
+// same text that appears in the table/detail panel once a hand is
+// selected. Scope queries to the panel instead of a bare global getByText
+// to avoid colliding with those options (every fixture here stays well
+// under HandClassLeaks' 30-hand floor, so the leaks list itself is always
+// empty - this is purely about the filter dropdown's static option list).
+function detailPanel() {
+  return document.querySelector('.hcb-detail-panel');
 }
 
 describe('HandClassBreakdown', () => {
@@ -69,29 +80,40 @@ describe('HandClassBreakdown', () => {
     await user.click(screen.getByText('Ax suited'));
 
     expect(screen.getByText('AKs')).toBeInTheDocument();
-    expect(screen.queryByText('Open')).not.toBeInTheDocument();
+    expect(detailPanel()).not.toBeInTheDocument();
   });
 
-  it('expands a hand to show its preflop contexts, then a context to show its positions', async () => {
+  it('clicking a hand opens its detail panel with preflop contexts and position badges', async () => {
+    const user = userEvent.setup();
+    render(<HandClassBreakdown byHandClass={byHandClassFixture()} byHandClassCategory={byHandClassCategoryFixture()} />);
+
+    await user.click(screen.getByText('Ax suited'));
+    expect(detailPanel()).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('AKs'));
+
+    const panel = within(detailPanel());
+    expect(panel.getByText('Open')).toBeInTheDocument();
+    expect(panel.getByText('4-Bet')).toBeInTheDocument();
+    expect(panel.getByText('BTN +2.5')).toBeInTheDocument();
+    expect(panel.getByText('CO +5.0')).toBeInTheDocument();
+  });
+
+  it('closes the detail panel when clicking the same hand again', async () => {
     const user = userEvent.setup();
     render(<HandClassBreakdown byHandClass={byHandClassFixture()} byHandClassCategory={byHandClassCategoryFixture()} />);
 
     await user.click(screen.getByText('Ax suited'));
     await user.click(screen.getByText('AKs'));
+    expect(detailPanel()).toBeInTheDocument();
 
-    expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.getByText('4-Bet')).toBeInTheDocument();
-    expect(screen.queryByText('BTN')).not.toBeInTheDocument();
-
-    await user.click(screen.getByText('Open'));
-
-    expect(screen.getByText('BTN')).toBeInTheDocument();
-    expect(screen.getByText('CO')).toBeInTheDocument();
-    // The 4-Bet context's own position rows stay collapsed independently.
-    expect(screen.getAllByText('BTN')).toHaveLength(1);
+    // Once the panel is open, "AKs" also appears in its header - the table
+    // row (the clickable toggle) is always the first match.
+    await user.click(screen.getAllByText('AKs')[0]);
+    expect(detailPanel()).not.toBeInTheDocument();
   });
 
-  it('omits a context with no context data from the drill-down', async () => {
+  it('omits a context with no context data from the detail panel', async () => {
     const user = userEvent.setup();
     const byHandClass = byHandClassFixture();
     delete byHandClass.AKs.contexts.fourBet;
@@ -100,7 +122,8 @@ describe('HandClassBreakdown', () => {
     await user.click(screen.getByText('Ax suited'));
     await user.click(screen.getByText('AKs'));
 
-    expect(screen.getByText('Open')).toBeInTheDocument();
-    expect(screen.queryByText('4-Bet')).not.toBeInTheDocument();
+    const panel = within(detailPanel());
+    expect(panel.getByText('Open')).toBeInTheDocument();
+    expect(panel.queryByText('4-Bet')).not.toBeInTheDocument();
   });
 });

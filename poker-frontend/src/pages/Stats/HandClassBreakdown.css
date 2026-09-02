@@ -46,10 +46,9 @@
   font-size: 14px;
 }
 
-/* Each deeper level gets denser padding, a smaller/quieter typeface, and a
-   progressively fainter accent-colored gutter on the label cell - the
-   gutter gives every nested row a consistent "this belongs to a parent"
-   cue that plain indentation alone doesn't provide at a glance. */
+/* The one remaining nested level (specific hand) gets denser padding, a
+   smaller/quieter typeface, and an accent-colored gutter on the label cell
+   as the "belongs to a parent category" cue. */
 .hcb-row--hand .ui-table-cell {
   padding-top: 10px;
   padding-bottom: 10px;
@@ -58,70 +57,147 @@
 .hcb-row--hand .ui-table-cell:first-child {
   box-shadow: inset 3px 0 0 var(--color-accent-border);
 }
-
-.hcb-row--context .ui-table-cell {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  font-size: 12.5px;
-  color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.012);
-}
-.hcb-row--context .ui-table-cell:first-child {
-  box-shadow: inset 3px 0 0 rgba(249, 115, 22, 0.22);
-}
-
-.hcb-row--position .ui-table-cell {
-  padding-top: 7px;
-  padding-bottom: 7px;
-  font-size: 12px;
-  color: var(--color-text-faint);
-  background: rgba(0, 0, 0, 0.12);
-}
-.hcb-row--position .ui-table-cell:first-child {
-  box-shadow: inset 3px 0 0 rgba(249, 115, 22, 0.1);
-}
-
-.hcb-row--hand:hover .ui-table-cell,
-.hcb-row--context:hover .ui-table-cell {
+.hcb-row--hand:hover .ui-table-cell {
   background: rgba(255, 255, 255, 0.045);
 }
-.hcb-row--position:hover .ui-table-cell {
-  background: rgba(255, 255, 255, 0.02);
-}
 
-.hcb-toggle {
-  vertical-align: -2px;
-  margin-right: 6px;
-  color: var(--color-text-muted);
-  transition: transform 0.15s ease;
+/* The selected hand row (whose detail panel is open below the table) gets
+   a persistent accent highlight, not just a hover state, so it stays
+   obvious which hand the panel refers to. */
+.hcb-row--hand--selected .ui-table-cell {
+  background: var(--color-accent-dim);
 }
-
-.hcb-toggle--expanded {
-  transform: rotate(90deg);
-  color: var(--color-accent);
-}
-
-.hcb-toggle-spacer {
-  display: inline-block;
-  width: 20px;
+.hcb-row--hand--selected .ui-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 .hcb-indent-1 { padding-left: 18px; }
-.hcb-indent-2 { padding-left: 38px; }
-.hcb-indent-3 { padding-left: 58px; color: var(--color-text-faint); }
-
-.hcb-value-mono {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.hcb-value-pos { color: var(--color-positive); }
-.hcb-value-neg { color: var(--color-negative); }
-.hcb-value-empty { color: var(--color-text-faint); }
 
 .hcb-note {
   font-size: 11px;
   color: var(--color-text-faint);
   font-style: italic;
   margin: 10px 2px 0;
+}
+
+/* ---------- detail panel ---------- */
+
+.hcb-detail-panel {
+  margin-top: 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated-hover);
+  padding: 16px;
+}
+
+.hcb-detail-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hcb-detail-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hcb-detail-token {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+}
+
+.hcb-detail-category {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.hcb-detail-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.hcb-detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.hcb-detail-close:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.hcb-detail-empty {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  font-style: italic;
+  margin: 12px 2px 0;
+}
+
+.hcb-detail-contexts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.hcb-detail-context {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.hcb-detail-context-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.hcb-detail-context-label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.hcb-detail-context-hands {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  margin-right: auto;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 640px) {
+  .hcb-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hcb-detail-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+  .hcb-detail-panel {
+    position: relative;
+  }
+  .hcb-detail-summary {
+    margin-left: 0;
+  }
 }

@@ -1,0 +1,45 @@
+/* Shared visual language for hand-class value cells, sample-size dimming,
+   and position badges - used by both HandClassBreakdown.css and
+   HandClassLeaks.css. */
+
+.hcb-value-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hcb-rate { margin-right: 14px; }
+
+.hcb-value-pos { color: var(--color-positive); }
+.hcb-value-neg { color: var(--color-negative); }
+.hcb-value-empty { color: var(--color-text-faint); }
+
+/* Same convention as PositionMatrixTables.css's .matrix-cell-pct--low-
+   confidence / PositionalStats.css's .pos-cell--low-confidence: dim a
+   value when its sample size is too small to trust, rather than hiding it
+   or (worse) rendering it with the same visual weight as a solid sample. */
+.hcb-rate--low-confidence { opacity: 0.5; }
+.hcb-rate--medium-confidence { opacity: 0.75; }
+
+.hcb-toggle {
+  vertical-align: -2px;
+  margin-right: 6px;
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.hcb-toggle--expanded {
+  transform: rotate(90deg);
+  color: var(--color-accent);
+}
+
+.hcb-detail-positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hcb-detail-positions .ui-tag {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

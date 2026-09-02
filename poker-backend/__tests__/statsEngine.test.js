@@ -370,6 +370,86 @@ describe('computeStatsForHands: win rate by hand class', () => {
 
     expect(stats.byHandClass['72o']).toBeUndefined();
   });
+
+  it('classifies calling a 3-bet as the original opener', () => {
+    // 2-handed: Hero (BTN/SB) opens KQs, Villain 3-bets, Hero calls.
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -1200, holeCards: ['Ks', 'Qs'] },
+        { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 1200 },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Hero', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Villain', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 1800, potSizeAfter: 2700 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 1200, potSizeAfter: 3900 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byHandClass.KQs.contexts.callVs3Bet).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass.KQs.contexts.threeBet).toBeUndefined();
+  });
+
+  it('classifies calling a 4-bet, superseding the earlier 3-bet label for the same hand', () => {
+    // 2-handed: Villain opens, Hero (BB) 3-bets JJ, Villain 4-bets, Hero calls.
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: 3600 },
+        { seat: 2, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: -3600, holeCards: ['Jh', 'Jd'] },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Villain', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 1800, potSizeAfter: 2700 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 5400, potSizeAfter: 8100 },
+        { street: 'PREFLOP', actionType: 'CALL', player: 'Hero', amount: 3600, potSizeAfter: 11700 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Villain'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byHandClass.JJ.contexts.callVs4Bet).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass.JJ.contexts.threeBet).toBeUndefined();
+  });
+
+  it('classifies a 5-bet jam facing a 4-bet', () => {
+    // 2-handed: Villain opens, Hero (BB) 3-bets 99, Villain 4-bets, Hero
+    // 5-bet-jams - a raise this deep gets the same 'fiveBet' label a real
+    // 4-bet would one level shallower, rather than a sixth context key.
+    const hand = {
+      handIndex: 1, stakes: '$1/$2', currency: 'USD',
+      players: [
+        { seat: 1, name: 'Villain', stack: 40000, isDealer: true, isHero: false, isSittingOut: false, effectiveStackBB: 200, profitLoss: -40000 },
+        { seat: 2, name: 'Hero', stack: 40000, isDealer: false, isHero: true, isSittingOut: false, effectiveStackBB: 200, profitLoss: 40000, holeCards: ['9c', '9d'] },
+      ],
+      actions: [
+        { street: 'PREFLOP', actionType: 'POST_SB', player: 'Villain', amount: 100, potSizeAfter: 100 },
+        { street: 'PREFLOP', actionType: 'POST_BB', player: 'Hero', amount: 200, potSizeAfter: 300 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 600, potSizeAfter: 900 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 1800, potSizeAfter: 2700 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Villain', amount: 5400, potSizeAfter: 8100 },
+        { street: 'PREFLOP', actionType: 'RAISE', player: 'Hero', amount: 40000, potSizeAfter: 48100 },
+        { street: 'PREFLOP', actionType: 'FOLD', player: 'Villain', amount: 0, potSizeAfter: 48100 },
+      ],
+      board: { flop: [], turn: [], river: [] },
+      winners: ['Hero'],
+    };
+
+    const stats = computeStatsForHands([hand], matchHero());
+
+    expect(stats.byHandClass['99'].contexts.fiveBet).toEqual(expect.objectContaining({ hands: 1 }));
+    expect(stats.byHandClass['99'].contexts.threeBet).toBeUndefined();
+  });
 });
 
 describe('computeStatsForHands: preflopMatrix (range-matrix grid)', () => {
