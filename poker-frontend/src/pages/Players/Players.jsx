@@ -97,11 +97,11 @@ export function Players() {
     }
   };
 
-  const handleCreatePlayer = async (name, file) => {
+  const handleCreatePlayer = async (name, file, starred) => {
     try {
       let imageUrl = '';
       if (file) imageUrl = await uploadImage(file);
-      await createPerson({ name, image: imageUrl });
+      await createPerson({ name, image: imageUrl, starred });
       setShowAddPlayer(false);
       // Clear any active search/starred filter and jump to page 1 - a
       // freshly created player can't match an old search term, and if

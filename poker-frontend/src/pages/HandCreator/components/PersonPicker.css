@@ -128,6 +128,24 @@
   background: rgba(248, 113, 113, 0.22);
 }
 
+.pp-star-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pp-star-toggle input {
+  accent-color: var(--color-accent);
+}
+
+.pp-star-toggle:has(input:checked) {
+  color: var(--color-accent);
+}
+
 .pp-create-actions {
   display: flex;
   gap: 8px;

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, Star, X } from 'lucide-react';
 import './PersonPicker.css';
 
 // Splits the old overloaded "link person" <select> (which hid a "__create__"
@@ -46,11 +46,18 @@ export default function PersonPicker({ people, peopleLoading, selectedId, defaul
 // Also used standalone (not just inside PersonPicker's own "+ New person"
 // flow) - Players.jsx's "Add Player" modal reuses it directly rather than
 // keeping a third copy of the same name+image create-person form.
-export function CreatePersonForm({ defaultName, onCancel, onCreate }) {
+// `showStarToggle` opts into an extra "Star this player" checkbox, passed
+// as a 3rd (starred: boolean) argument to onCreate - off by default so
+// PersonPicker's own inline "+ New person" flow (HandCreator) and
+// EditSessionLog.jsx's per-opponent picker (which always force-stars via
+// its own onCreate wrapper, since its list only shows starred players)
+// render exactly as before. Only Players.jsx's "Add Player" modal opts in.
+export function CreatePersonForm({ defaultName, onCancel, onCreate, showStarToggle = false }) {
   const inputId = useId();
   const [name, setName] = useState(defaultName || '');
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [starred, setStarred] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageUpload = (e) => {
@@ -73,7 +80,7 @@ export function CreatePersonForm({ defaultName, onCancel, onCreate }) {
   const submit = async () => {
     if (!name.trim() || isUploading) return;
     setIsUploading(true);
-    await onCreate(name.trim(), selectedFile);
+    await onCreate(name.trim(), selectedFile, starred);
     setIsUploading(false);
   };
 
@@ -116,6 +123,19 @@ export function CreatePersonForm({ defaultName, onCancel, onCreate }) {
           </div>
         )}
       </div>
+
+      {showStarToggle && (
+        <label className="pp-star-toggle">
+          <input
+            type="checkbox"
+            checked={starred}
+            onChange={(e) => setStarred(e.target.checked)}
+            disabled={isUploading}
+          />
+          <Star size={14} fill={starred ? 'currentColor' : 'none'} />
+          Star this player
+        </label>
+      )}
 
       <div className="pp-create-actions">
         <button type="button" onClick={onCancel} disabled={isUploading}>

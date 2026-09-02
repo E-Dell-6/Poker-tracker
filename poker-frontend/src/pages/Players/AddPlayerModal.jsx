@@ -9,7 +9,7 @@ export function AddPlayerModal({ onClose, onCreate }) {
     <div className="apm-overlay" onClick={onClose}>
       <div className="apm-modal" onClick={(e) => e.stopPropagation()}>
         <h3 className="apm-heading">Add Player</h3>
-        <CreatePersonForm onCancel={onClose} onCreate={onCreate} />
+        <CreatePersonForm onCancel={onClose} onCreate={onCreate} showStarToggle />
       </div>
     </div>
   );
