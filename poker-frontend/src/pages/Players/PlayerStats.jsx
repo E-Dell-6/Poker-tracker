@@ -2,60 +2,9 @@ import { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import './PlayerStats.css';
 import { getPersonStats, recomputePersonStats } from '../../api/stats';
-import { formatSignedMajorUnits } from '../../utils/formatMoney';
-import { confidenceModifier } from '../../utils/confidence';
+import { StatTile } from '../../components/ui/StatTile';
+import { StudyCharts } from '../Stats/StudyCharts';
 import { PositionalStats } from '../../components/PositionalStats';
-import { GroupedStats } from '../../components/GroupedStats';
-
-const STAT_GROUPS = [
-  {
-    title: 'Preflop',
-    stats: [
-      ['vpip', 'VPIP'],
-      ['pfr', 'PFR'],
-      ['open', 'Open %'],
-      ['threeBet', '3-Bet %'],
-      ['foldTo3Bet', 'Fold to 3-Bet %'],
-      ['fourBet', '4-Bet %'],
-      ['foldTo4Bet', 'Fold to 4-Bet %'],
-      ['steal', 'Steal %'],
-      ['foldToSteal', 'Fold to Steal %'],
-      ['limp', 'Limp %'],
-      ['coldCall', 'Cold Call %']
-    ]
-  },
-  {
-    title: 'Postflop',
-    stats: [
-      ['cbFlop', 'Flop C-Bet %'],
-      ['foldToCbFlop', 'Fold to Flop C-Bet %'],
-      ['checkRaise', 'Check-Raise %'],
-      ['wtsd', 'Went to Showdown %'],
-      ['wsd', 'Won at Showdown %'],
-      ['wwsf', 'Won When Saw Flop %']
-    ]
-  }
-];
-
-function StatBox({ label, rate }) {
-  if (!rate || rate.opportunities === 0) {
-    return (
-      <div className="stat-box stat-box--empty">
-        <div className="stat-label">{label}</div>
-        <div className="stat-value">—</div>
-        <div className="stat-sample">no data</div>
-      </div>
-    );
-  }
-  const modifier = confidenceModifier(rate);
-  return (
-    <div className={`stat-box ${modifier ? `stat-box--${modifier}` : ''}`}>
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{rate.pct}%</div>
-      <div className="stat-sample">{rate.made}/{rate.opportunities}</div>
-    </div>
-  );
-}
 
 export function PlayerStats({ player }) {
   const [stats, setStats] = useState(null);
@@ -111,46 +60,29 @@ export function PlayerStats({ player }) {
         </div>
       ) : (
         <div className="stats-container">
-          <div className="stats-grid">
-            <div className="stat-box">
-              <div className="stat-label">Total Hands</div>
-              <div className="stat-value">{stats.totalHands}</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">Net Won</div>
-              <div className="stat-value">
-                {stats.currency
-                  ? formatSignedMajorUnits(stats.totalProfitLoss, stats.currency)
-                  : `${stats.totalProfitLoss >= 0 ? '+' : ''}${stats.totalProfitLoss} (mixed currencies)`}
-              </div>
-              <div className="stat-sample">{stats.handsWithProfitData} hands w/ data</div>
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">BB/100</div>
-              <div className="stat-value">{stats.bb100 ?? '—'}</div>
-              {stats.bb100 === null && !stats.currency && (
-                <div className="stat-sample">mixed currencies</div>
-              )}
-            </div>
-            <div className="stat-box">
-              <div className="stat-label">Aggression %</div>
-              <div className="stat-value">{stats.aggPct}%</div>
-            </div>
+          {/* Same 6-tile summary + chart pairing as the Study page (see
+              Stats.jsx) - a curated headline set instead of one box per
+              tracked rate stat. The rest (open%, steal%, 4-bet%, limp%,
+              cold-call%, ...) aren't lost, just no longer flattened into a
+              single number here - PositionalStats below breaks every one
+              of them out by position, which is strictly more informative
+              than the box grid this replaced. */}
+          <div className="player-tiles-grid">
+            <StatTile label="Hands" value={stats.totalHands} />
+            <StatTile
+              label="Win Rate"
+              value={stats.bb100 != null ? `${stats.bb100} bb/100` : '—'}
+              valueClassName={stats.bb100 != null ? (stats.bb100 >= 0 ? 'pos' : 'neg') : ''}
+            />
+            <StatTile label="VPIP / PFR" value={`${stats.vpip.pct}% / ${stats.pfr.pct}%`} />
+            <StatTile label="3-Bet" value={`${stats.threeBet.pct}%`} />
+            <StatTile label="Flop C-Bet" value={`${stats.cbFlop.pct}%`} />
+            <StatTile label="WTSD / W$SD" value={`${stats.wtsd.pct}% / ${stats.wsd.pct}%`} />
           </div>
 
-          {STAT_GROUPS.map(group => (
-            <div key={group.title}>
-              <h3 className="section-title">{group.title}</h3>
-              <div className="stats-grid">
-                {group.stats.map(([key, label]) => (
-                  <StatBox key={key} label={label} rate={stats[key]} />
-                ))}
-              </div>
-            </div>
-          ))}
+          <StudyCharts positional={stats.positional} showdownBreakdown={stats.showdownBreakdown} />
 
           <PositionalStats positional={stats.positional} />
-          <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} byFlopTexture={stats.byFlopTexture} />
         </div>
       )}
     </div>

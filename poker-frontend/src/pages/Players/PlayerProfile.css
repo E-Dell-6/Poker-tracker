@@ -1,5 +1,9 @@
 .player-profile-page {
-  max-width: 900px;
+  /* Matches Stats.css's .study-page - the widest page-container convention
+     already used in the app - so the profile (and its StudyCharts graphs,
+     the same width-hungry component the Study page uses) gets real room
+     instead of being squeezed into a narrow centered column. */
+  max-width: 1600px;
   margin: 0 auto;
   padding: 24px 32px 60px;
 }

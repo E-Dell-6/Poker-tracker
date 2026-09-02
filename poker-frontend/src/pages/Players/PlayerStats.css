@@ -101,7 +101,18 @@
 }
 
 /* ── STATS ──────────────────────────────────────────────── */
-.stats-container { display: flex; flex-direction: column; gap: 16px; }
+.stats-container { display: flex; flex-direction: column; gap: 24px; }
+
+/* Headline StatTile row (see StatTile.css for the tile itself) - same
+   sizing convention as Study's .study-tiles-grid, kept as its own class
+   here rather than importing Stats.css for one selector (Stats.css
+   redefines .stats-container/.stats-grid itself, which would collide with
+   this file's own definitions below, still used by GroupedStats). */
+.player-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
 
 .stats-placeholder {
   text-align: center;
