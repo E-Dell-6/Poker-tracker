@@ -525,6 +525,41 @@
   color: var(--color-accent);
 }
 
+/* ── STAR BUTTON ────────────────────────────────────────── */
+/* right: 330px leaves clearance for .notes-button's widest state
+   ("Add Notes", anchored at right: 190px) so the two never overlap. */
+.star-toggle-button {
+  position: fixed;
+  top: 14px;
+  right: 330px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text);
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  white-space: nowrap;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.star-toggle-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.star-toggle-button--starred {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--color-accent);
+}
+
 /* ── NOTES MODAL ────────────────────────────────────────── */
 .notes-modal-overlay {
   position: fixed;
@@ -1017,6 +1052,11 @@
   .notes-button {
     right: 20px;
     top: 60px;
+  }
+
+  .star-toggle-button {
+    right: 20px;
+    top: 106px;
   }
 
   .hand-nav-btn {

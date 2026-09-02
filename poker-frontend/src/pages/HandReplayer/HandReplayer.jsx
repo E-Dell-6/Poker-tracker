@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye, ArrowLeft, StickyNote } from "lucide-react";
+import { AlertTriangle, X, Link2, Check, ChevronLeft, ChevronRight, Eye, ArrowLeft, StickyNote, Star } from "lucide-react";
 import "./HandReplayer.css";
 
 import PokerTable from "./PokerTable";
@@ -9,7 +9,7 @@ import Controller from "../../components/Controller";
 
 import { getSharedHand, createShareLink, deleteShareLink } from "../../api/share";
 import { updateHandNotes } from "../../api/sessions";
-import { getFavourites } from "../../api/favourites";
+import { getFavourites, toggleFavourite } from "../../api/favourites";
 import { getSeatStyle, getDealerButtonStyle, reorderPlayersForDisplay } from "../../utils/getSeatStyle";
 import { formatAmount, formatSignedAmount } from "../../utils/formatMoney";
 import { PublicHandViewerSkeleton } from "./PublicHandViewerSkeleton";
@@ -361,6 +361,20 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
     });
   };
 
+  const isCurrentHandStarred = favouriteHandIds.has(hand?._id);
+  const handleCurrentHandStarToggle = async () => {
+    if (!hand?._id) return;
+    const newStatus = !isCurrentHandStarred;
+    handleFavouriteToggle(hand._id, newStatus);
+    try {
+      const data = await toggleFavourite(hand._id);
+      handleFavouriteToggle(hand._id, data.isFavorited);
+    } catch (err) {
+      console.error("Failed to star hand:", err);
+      handleFavouriteToggle(hand._id, !newStatus);
+    }
+  };
+
   const actions = hand?.actions || [];
 
   const actionsWithReveals = useMemo(() => {
@@ -576,6 +590,18 @@ function HandReplayerCore({ hand, session, isPublic, navigate }) {
           title="Add notes to this hand"
         >
           <StickyNote size={14} /> {currentHandNotes ? "Notes" : "Add Notes"}
+        </button>
+      )}
+
+      {/* Star button — private mode only */}
+      {!isPublic && (
+        <button
+          className={`star-toggle-button ${isCurrentHandStarred ? "star-toggle-button--starred" : ""}`}
+          onClick={handleCurrentHandStarToggle}
+          title={isCurrentHandStarred ? "Remove from favourites" : "Add to favourites"}
+        >
+          <Star size={14} fill={isCurrentHandStarred ? "currentColor" : "none"} />
+          {isCurrentHandStarred ? "Starred" : "Star"}
         </button>
       )}
 
