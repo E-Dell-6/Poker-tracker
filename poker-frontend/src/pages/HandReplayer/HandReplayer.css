@@ -43,18 +43,20 @@
 .controller-wrapper {
   position: relative;
   z-index: 100;
-  padding-left: 100px;
-  padding-right: 120px;
   flex-shrink: 0;
 }
 
 /* ── CONTROLS ───────────────────────────────────────────── */
+/* Horizontal padding (not the wrapper's) carries the full-width
+   background/border edge-to-edge, while still reserving clearance on
+   each side so the fixed exit/share/notes/menu buttons never overlap
+   the Prev/Next controls. */
 .controls {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 20px;
-  padding: 14px 24px;
+  padding: 14px 120px 14px 100px;
   background: var(--color-bg-elevated);
   border-bottom: 1px solid var(--color-border);
   position: relative;
