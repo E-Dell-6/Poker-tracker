@@ -1,15 +1,17 @@
 import { Layout } from "../../components/Layout"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star } from "lucide-react";
+import { Star, UserPlus } from "lucide-react";
 import './Players.css';
 import { Table, TableHead, TableBody, TableRow, TableCell } from "../../components/ui/Table";
 import { Tag } from "../../components/ui/Tag";
 import { Pagination } from "../../components/ui/Pagination";
 import { PlayersTableSkeleton } from "./PlayersTableSkeleton";
+import { AddPlayerModal } from "./AddPlayerModal";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
 import { getPlayersStats } from "../../api/stats";
-import { getPeoplePage, updatePerson } from "../../api/people";
+import { getPeoplePage, updatePerson, createPerson } from "../../api/people";
+import { uploadImage } from "../../api/uploads";
 import { API_URL } from "../../config";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { ImportLogCta } from "../../components/ui/ImportLogCta";
@@ -27,6 +29,7 @@ export function Players() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   const hasActiveFilter = Boolean(debouncedSearch) || showStarredOnly;
 
@@ -94,12 +97,49 @@ export function Players() {
     }
   };
 
+  const handleCreatePlayer = async (name, file) => {
+    try {
+      let imageUrl = '';
+      if (file) imageUrl = await uploadImage(file);
+      await createPerson({ name, image: imageUrl });
+      setShowAddPlayer(false);
+      // Clear any active search/starred filter and jump to page 1 - a
+      // freshly created player can't match an old search term, and if
+      // "starred only" were active they'd be invisible (new players start
+      // unstarred), which would look like creation silently failed. Fetches
+      // directly with the reset params (page 1, no search, not starred-only)
+      // rather than delegating to fetchPlayers(), which closes over this
+      // render's page/debouncedSearch/showStarredOnly - those setState
+      // calls above haven't re-rendered yet, so fetchPlayers() here would
+      // still read the pre-reset (stale) values.
+      setSearchQuery('');
+      setDebouncedSearch('');
+      setShowStarredOnly(false);
+      setPage(1);
+      const data = await getPeoplePage({ page: 1, limit: PAGE_SIZE, search: '', starred: false });
+      setPlayers(Array.isArray(data.players) ? data.players : []);
+      setTotal(data.total ?? 0);
+    } catch (error) {
+      console.error('Error creating player:', error);
+      alert('Failed to create player. Name might already exist.');
+    }
+  };
+
   const subtitle = total > 0
     ? `${total} tracked opponent${total === 1 ? '' : 's'}`
     : undefined;
 
   return (
-    <Layout title="Players" subtitle={subtitle}>
+    <Layout
+      title="Players"
+      subtitle={subtitle}
+      ctaLabel="Add Player"
+      ctaIcon={UserPlus}
+      onCta={() => setShowAddPlayer(true)}
+    >
+      {showAddPlayer && (
+        <AddPlayerModal onClose={() => setShowAddPlayer(false)} onCreate={handleCreatePlayer} />
+      )}
       <div className="players-container">
         {loading ? (
           <div className="player-list-panel">

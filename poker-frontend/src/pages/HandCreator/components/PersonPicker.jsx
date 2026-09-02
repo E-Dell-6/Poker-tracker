@@ -43,7 +43,10 @@ export default function PersonPicker({ people, peopleLoading, selectedId, defaul
   );
 }
 
-function CreatePersonForm({ defaultName, onCancel, onCreate }) {
+// Also used standalone (not just inside PersonPicker's own "+ New person"
+// flow) - Players.jsx's "Add Player" modal reuses it directly rather than
+// keeping a third copy of the same name+image create-person form.
+export function CreatePersonForm({ defaultName, onCancel, onCreate }) {
   const inputId = useId();
   const [name, setName] = useState(defaultName || '');
   const [imagePreview, setImagePreview] = useState(null);

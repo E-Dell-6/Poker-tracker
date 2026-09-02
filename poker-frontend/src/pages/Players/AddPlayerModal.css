@@ -1,0 +1,37 @@
+/* Scoped to this component (apm- prefix) - .modal-overlay/.modal-content
+   are plain global class names shared by several unrelated modals
+   (SessionLog.css, PlayerSeat.css, Clock.css), so this stays independent
+   of them rather than risking cross-component leakage. */
+
+.apm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.apm-modal {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.apm-heading {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
