@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
     resetOtp: { type: String, default: '' },
     resetOtpExpireAt: { type: Number, default: 0 },
 
+    // Running totals maintained by the import pipeline and by session
+    // deletion, so a storage-quota check is one document read instead of
+    // an aggregation over every session's embedded hands. Approximate by
+    // design - they track what was written, not a re-measured truth.
+    storageBytes: { type: Number, default: 0 },
+    totalHands: { type: Number, default: 0 },
+
 });
 
 const UserModel = mongoose.models.user || mongoose.model('user', userSchema);

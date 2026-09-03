@@ -4,6 +4,10 @@ export function createEmptyHand (){
     return {
         _id: new mongoose.Types.ObjectId(),
         handIndex: -1,
+        // The poker site's own hand id, when the format has one.
+        // Stays null for PokerNow, whose CSV export carries no such
+        // column - see HandLedger.js for what that costs.
+        handId: null,
         gameType: null, 
         datePlayed: null,
 

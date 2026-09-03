@@ -5,17 +5,31 @@ import { useHandImport } from '../hooks/useHandImport';
 import "./Layout.css";
 
 // Any page that shows the "Import hands" CTA also gets page-wide
-// drag-and-drop: dropping a file anywhere in the layout (sidebar, header,
-// or main content, not just a page-specific drop zone) uploads it the same
-// way the CTA's own file picker does. Gated on the label rather than a
-// separate prop so every such page gets this for free - a page opts in
-// simply by asking for the "Import hands" button.
+// drag-and-drop: dropping files OR a folder anywhere in the layout
+// (sidebar, header, or main content, not just a page-specific drop zone)
+// uploads them the same way the CTA's own file picker does. Gated on the
+// label rather than a separate prop so every such page gets this for free -
+// a page opts in simply by asking for the "Import hands" button.
 const IMPORT_CTA_LABEL = 'Import hands';
+
+// A folder import has two distinct slow phases and they fail for different
+// reasons, so they're reported separately rather than as one opaque
+// "Processing..." - during upload the count is what moves, during
+// processing it's the hand total.
+function describeProgress({ phase, filesTotal, filesUploaded, filesProcessed, handsImported }) {
+  if (phase === 'screening') return 'Checking files...';
+  if (phase === 'uploading') return `Uploading ${filesUploaded} of ${filesTotal} file(s)...`;
+  if (phase === 'processing') {
+    const hands = handsImported > 0 ? ` - ${handsImported.toLocaleString()} hands` : '';
+    return `Importing ${filesProcessed} of ${filesTotal} file(s)${hands}...`;
+  }
+  return 'Working...';
+}
 
 export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, onImportSettled, children }) {
   const isImportPage = ctaLabel === IMPORT_CTA_LABEL;
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const { uploadStatus, error, uploadDroppedFiles } = useHandImport(onImportSettled);
+  const { uploadStatus, error, progress, uploadDroppedFiles } = useHandImport(onImportSettled);
 
   const handleDragEnter = (event) => {
     if (!isImportPage) return;
@@ -43,7 +57,10 @@ export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, onImportSett
     event.preventDefault();
     setIsDraggingFile(false);
     if (uploadStatus === 'uploading') return;
-    await uploadDroppedFiles(event.dataTransfer.files);
+    // The whole dataTransfer, not .files: a dropped FOLDER shows up in
+    // .files as one unusable directory entry, so folder drops always
+    // failed the extension check. The hook walks .items instead.
+    await uploadDroppedFiles(event.dataTransfer);
   };
 
   const displayedCtaLabel = isImportPage && uploadStatus === 'uploading' ? 'Processing...' : ctaLabel;
@@ -65,7 +82,10 @@ export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, onImportSett
       </div>
 
       {isImportPage && isDraggingFile && (
-        <div className="layout-drop-overlay">Drop .csv / .txt files to upload</div>
+        <div className="layout-drop-overlay">Drop .csv / .txt files or a folder to upload</div>
+      )}
+      {isImportPage && uploadStatus === 'uploading' && (
+        <div className="layout-upload-progress">{describeProgress(progress)}</div>
       )}
       {isImportPage && error && (
         <div className="layout-upload-error">{error}</div>

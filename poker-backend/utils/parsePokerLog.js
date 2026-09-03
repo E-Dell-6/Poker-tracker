@@ -27,18 +27,23 @@ export function detectPokerFileFormat(content) {
 /**
  * Detects the file format and parses it with the matching parser.
  * Returns { format, hands }. Throws if the format can't be identified.
+ *
+ * `options` is forwarded verbatim to whichever parser matches - currently
+ * just `{ computeEv }`, which bulk imports set to false so the expensive
+ * all-in EV pass can run separately with yields between chunks. Defaults
+ * preserve the original behavior for every existing caller.
  */
-export function parsePokerLog(content) {
+export function parsePokerLog(content, options = {}) {
     const format = detectPokerFileFormat(content);
 
     if (format === 'ACR') {
-        return { format, hands: parseACRLog(content) };
+        return { format, hands: parseACRLog(content, undefined, options) };
     }
     if (format === 'GGPOKER') {
-        return { format, hands: parseGGPokerLog(content) };
+        return { format, hands: parseGGPokerLog(content, options) };
     }
     if (format === 'POKERNOW') {
-        return { format, hands: parsePokerNowLog(content) };
+        return { format, hands: parsePokerNowLog(content, options) };
     }
 
     throw new Error("Unrecognized file format. Expected a PokerNow CSV export, an ACR hand history .txt export, or a GGPoker hand history .txt export.");

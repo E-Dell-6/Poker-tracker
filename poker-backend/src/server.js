@@ -15,7 +15,12 @@ import userRouter from '../routes/userRoutes.js';
 import liveSessionRouter from '../routes/liveSessionRoute.js';
 import shareRouter from '../routes/shareRoute.js';
 import statsRouter from '../routes/statsRoute.js'
+import importRouter from '../routes/importRoute.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import { resumeInterruptedJobs, sweepOrphanedStagingDirs } from '../services/importRunner.js';
+import { backfillMissingLedger } from '../services/handImportPipeline.js';
+import { STAGING } from '../config/limits.js';
+import fs from 'fs/promises';
 
 
 const app = express();
@@ -51,12 +56,33 @@ app.use('/api/user', userRouter);
 app.use('/api/live-sessions', liveSessionRouter);
 app.use('/api/share', shareRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/imports', importRouter);
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Server started on port: ${PORT}`);
-    if (process.env.MONGO_URI) {
-        connectDB(process.env.MONGO_URI);
-    } else {
+    if (!process.env.MONGO_URI) {
         console.error("MONGO_URI is missing");
+        return;
     }
+    await connectDB(process.env.MONGO_URI);
+
+    // Import staging lives on the host filesystem, outside the publicly
+    // served uploads/ directory (see config/limits.js).
+    await fs.mkdir(STAGING.DIR, { recursive: true }).catch(err => {
+        console.error(`Could not create import staging dir ${STAGING.DIR}:`, err.message);
+    });
+
+    // Because the disk is persistent, a job interrupted by a restart still
+    // has its staged files and can pick up from the first file that hadn't
+    // been processed yet, rather than making the user re-upload.
+    //
+    // NOTE: this makes the process stateful. Under pm2 it must run in fork
+    // mode / a single instance - with cluster mode every worker would
+    // resume and race the same jobs.
+    // Repairs the narrow window where a session was saved but its
+    // per-hand ledger rows weren't - otherwise those hands lose their
+    // protection against being imported twice by an overlapping export.
+    await backfillMissingLedger().catch(err => console.error('Ledger backfill failed:', err));
+    await sweepOrphanedStagingDirs().catch(err => console.error('Staging sweep failed:', err));
+    await resumeInterruptedJobs().catch(err => console.error('Job resume failed:', err));
 });

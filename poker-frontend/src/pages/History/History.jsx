@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, X, Star, Plus, Upload } from "lucide-react";
+import { Camera, X, Star, Plus, Upload, FolderUp } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { useHandImport } from "../../hooks/useHandImport";
@@ -179,6 +179,9 @@ export function History() {
   // has no visibility into this page's upload state.
   const { uploadStatus, setUploadStatus, error, setError, uploadFiles } = useHandImport();
   const fileInputRef = useRef(null);
+  // Separate ref because an input carrying webkitdirectory can only
+  // select folders - it can't also serve the multi-file picker.
+  const folderInputRef = useRef(null);
 
   const [renamingState, setRenamingState] = useState(null);
   const [usedPersonIds, setUsedPersonIds] = useState([]);
@@ -318,6 +321,20 @@ export function History() {
           className="visually-hidden-input"
         />
 
+        {/* Separate input because an input with webkitdirectory accepts
+            ONLY folders - it can't double as the file picker above. The
+            attribute is lowercase-spelled for React's DOM property, and
+            `directory` covers the non-WebKit spelling. */}
+        <input
+          type="file"
+          ref={folderInputRef}
+          onChange={handleFileUpload}
+          webkitdirectory=""
+          directory=""
+          multiple
+          className="visually-hidden-input"
+        />
+
         {error && <div className="error-message">{error}</div>}
 
         <div className="filter-bar">
@@ -342,6 +359,12 @@ export function History() {
               className="create-button"
               onClick={() => navigate("/hand-creator")}
             ><Plus size={15} /> Create Hand </button>
+            <button
+              className="create-button"
+              onClick={() => folderInputRef.current.click()}
+              disabled={uploadStatus === "uploading"}
+              title="Import every hand history file in a folder"
+            ><FolderUp size={15} /> Import folder </button>
             <HandSearchMenu
               onHandClick={(hand, session) =>
                 navigate("/hand-replay", { state: { hand, session } })

@@ -4,7 +4,18 @@ import { computeHandProfits } from './handProfitCalculator.js';
 import { detectAllIn } from './allInDetector.js';
 import { computeAllInEV } from './evCalculator.js';
 
-export function parsePokerNowLog(csvContent) {
+// `computeEv: false` skips the all-in EV computation below. That call is
+// by far the most expensive thing per hand - a preflop all-in runs 5000
+// Monte Carlo trials, each evaluating all C(7,5)=21 five-card subsets per
+// player, so one hand can cost ~210k evaluations - and it blocks the event
+// loop for every other request while it runs. Bulk imports turn it off
+// here and run it as a separate pass that yields between chunks (see
+// services/importRunner.js). Defaults to true so every existing caller,
+// and the parser tests, behave exactly as before.
+//
+// PokerNow exports carry no site hand id, so hands from here always
+// leave `handId` null and fall back to whole-file dedup.
+export function parsePokerNowLog(csvContent, { computeEv = true } = {}) {
     const records = parse(csvContent, {
         columns: true,
         skip_empty_lines: true
@@ -70,7 +81,7 @@ export function parsePokerNowLog(csvContent) {
             if (currentHand) {
                 computeHandProfits(currentHand);
                 detectAllIn(currentHand);
-                currentHand.allInEV = computeAllInEV(currentHand);
+                currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
                 hands.push(currentHand);
             }
             currentHand = createEmptyHand();
@@ -219,7 +230,7 @@ export function parsePokerNowLog(csvContent) {
         if (line.toLowerCase().startsWith("-- ending hand")) {
             computeHandProfits(currentHand);
             detectAllIn(currentHand);
-            currentHand.allInEV = computeAllInEV(currentHand);
+            currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
             hands.push(currentHand);
             currentHand = null;
             continue;
@@ -229,7 +240,7 @@ export function parsePokerNowLog(csvContent) {
     if (currentHand) {
         computeHandProfits(currentHand);
         detectAllIn(currentHand);
-        currentHand.allInEV = computeAllInEV(currentHand);
+        currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
         hands.push(currentHand);
     }
     return hands;

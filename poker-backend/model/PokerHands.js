@@ -73,6 +73,16 @@ export const HandSchema = new mongoose.Schema({
   sessionId: { type: String, index: true },
   handIndex: { type: Number, required: true },
 
+  // The poker site's own hand id (GGPoker's "HD123...", ACR's numeric
+  // id). Both parsers already matched this in their header regex and
+  // threw it away; it's kept now so overlapping exports of the same
+  // session can be deduplicated per-hand instead of only per-file.
+  // Null for PokerNow, which has no equivalent - those imports fall
+  // back to the file-hash check alone. Not indexed here: hands are
+  // embedded subdocuments, so lookups go through the flat HandLedger
+  // collection instead (see model/HandLedger.js).
+  handId: { type: String, default: null },
+
   notes: { type: String, default: '' },
 
   gameType: { type: String, enum: ['NLH', 'PLO']},

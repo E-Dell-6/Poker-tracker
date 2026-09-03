@@ -1,6 +1,7 @@
 import { parseCard } from './cardParser.js';
 import { evaluateHand } from './handEvaluator.js';
 import { combinationsOf } from './combinatorics.js';
+import { PROCESSING } from '../config/limits.js';
 
 const RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 const SUITS = ['s', 'h', 'd', 'c'];
@@ -64,7 +65,7 @@ function winners(strengths) {
 // non-all-in spots (where an opponent's exact cards aren't known) is a
 // meaningfully different, harder problem - out of scope here, left as a
 // follow-up rather than approximated.
-export function simulateEquity(hands, board, trials = 5000) {
+export function simulateEquity(hands, board, trials = PROCESSING.EQUITY_TRIALS) {
   return simulateEquityWithRng(hands, board, trials, Math.random);
 }
 

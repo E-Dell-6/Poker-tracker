@@ -1,24 +1,33 @@
-import { requestJson } from "./http";
+import { apiFetch, parseJson, requestJson } from "./http";
 
-// The userAuth middleware doesn't reject an unauthenticated request with a
-// real HTTP error - it responds 200 with { success: false, message: ... }
-// (see poker-backend/middleware/userAuth.js). A genuine live-sessions
-// response never has a `success` field (it's the raw array/document/null),
-// so this is a safe, unambiguous way to tell "not signed in" apart from
-// real data rather than passing that sentinel object through as if it
-// were a session.
+// These two run app-wide (the sidebar's live-session state loads on every
+// page), so a signed-out visitor hits them routinely. That's an empty
+// state, not an error, and neither should throw.
+//
+// userAuth now answers an unauthenticated request with 401 rather than the
+// 200 + { success: false } it used to send, so the status is what's
+// checked. The body-shape check is kept alongside it: a browser running a
+// cached copy of the old frontend, or a request in flight across a deploy,
+// can still see the old 200 sentinel, and a genuine live-sessions response
+// never has a `success` field (it's the raw array/document/null) - so the
+// check stays unambiguous.
 function isAuthFailure(data) {
   return !!data && data.success === false;
 }
 
+async function getOrEmpty(path, errorMessage, emptyValue) {
+  const res = await apiFetch(path);
+  if (res.status === 401) return emptyValue;
+  const data = await parseJson(res, errorMessage);
+  return isAuthFailure(data) ? emptyValue : data;
+}
+
 export async function getLiveSessions() {
-  const data = await requestJson("/api/live-sessions", {}, "Failed to load sessions");
-  return isAuthFailure(data) ? [] : data;
+  return getOrEmpty("/api/live-sessions", "Failed to load sessions", []);
 }
 
 export async function getActiveLiveSession() {
-  const data = await requestJson("/api/live-sessions/active", {}, "Failed to check active session");
-  return isAuthFailure(data) ? null : data;
+  return getOrEmpty("/api/live-sessions/active", "Failed to check active session", null);
 }
 
 export async function clockIn({ clockInTime, bigBlind, smallBlind, buyIns, totalBuyIn }) {

@@ -48,7 +48,15 @@ import { computeAllInEV } from './evCalculator.js';
  *   line provides (or stays null if that line isn't present, same as
  *   before this merge).
  */
-export function parseACRLog(fileContent, filePath) {
+// `computeEv: false` skips the all-in EV computation below. That call is
+// by far the most expensive thing per hand - a preflop all-in runs 5000
+// Monte Carlo trials, each evaluating all C(7,5)=21 five-card subsets per
+// player, so one hand can cost ~210k evaluations - and it blocks the event
+// loop for every other request while it runs. Bulk imports turn it off
+// here and run it as a separate pass that yields between chunks (see
+// services/importRunner.js). Defaults to true so every existing caller,
+// and the parser tests, behave exactly as before.
+export function parseACRLog(fileContent, filePath, { computeEv = true } = {}) {
     const text = String(fileContent || '').replace(/\r\n/g, '\n');
 
     let tableNameFromFilename = null;
@@ -95,6 +103,9 @@ export function parseACRLog(fileContent, filePath) {
         if (!headerMatch) continue; // not a recognizable hand block, skip it
 
         const currentHand = createEmptyHand();
+        // headerMatch[1] is ACR's own hand id, matched but previously
+        // discarded - kept now for per-hand dedup (see HandLedger.js).
+        currentHand.handId = headerMatch[1];
         currentHand.handIndex = handNumber++;
         currentHand.gameType = /omaha/i.test(headerMatch[2]) ? 'PLO' : 'NLH';
         currentHand.stakes = headerMatch[3];
@@ -323,7 +334,7 @@ export function parseACRLog(fileContent, filePath) {
 
         computeHandProfits(currentHand);
         detectAllIn(currentHand);
-        currentHand.allInEV = computeAllInEV(currentHand);
+        currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
         hands.push(currentHand);
     }
 

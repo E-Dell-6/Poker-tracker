@@ -49,7 +49,15 @@ import { computeAllInEV } from './evCalculator.js';
  *
  * @param {string} fileContent
  */
-export function parseGGPokerLog(fileContent) {
+// `computeEv: false` skips the all-in EV computation below. That call is
+// by far the most expensive thing per hand - a preflop all-in runs 5000
+// Monte Carlo trials, each evaluating all C(7,5)=21 five-card subsets per
+// player, so one hand can cost ~210k evaluations - and it blocks the event
+// loop for every other request while it runs. Bulk imports turn it off
+// here and run it as a separate pass that yields between chunks (see
+// services/importRunner.js). Defaults to true so every existing caller,
+// and the parser tests, behave exactly as before.
+export function parseGGPokerLog(fileContent, { computeEv = true } = {}) {
     const text = String(fileContent || '').replace(/\r\n/g, '\n');
 
     // Hands are separated by a blank line and each one starts with
@@ -75,6 +83,9 @@ export function parseGGPokerLog(fileContent) {
         if (!headerMatch) continue; // not a recognizable hand block, skip it
 
         const currentHand = createEmptyHand();
+        // headerMatch[1] is GGPoker's own hand id ("HD1234567..."). It was
+        // matched but discarded before per-hand dedup existed.
+        currentHand.handId = headerMatch[1];
         currentHand.gameType = /omaha/i.test(headerMatch[2]) ? 'PLO' : 'NLH';
         currentHand.stakes = headerMatch[3];
 
@@ -257,7 +268,7 @@ export function parseGGPokerLog(fileContent) {
 
         computeHandProfits(currentHand);
         detectAllIn(currentHand);
-        currentHand.allInEV = computeAllInEV(currentHand);
+        currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
         hands.push(currentHand);
     }
 

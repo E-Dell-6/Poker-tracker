@@ -18,7 +18,20 @@ export async function uploadSessionCsv(files) {
   const formData = new FormData();
   files.forEach((file) => formData.append("csvFile", file));
   const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-  const result = await res.json();
+
+  // Guarded because a failure here isn't always JSON: the proxy in front of
+  // the API answers an over-sized body with an HTML 413, and parsing that
+  // blind throws a SyntaxError that reaches the user as
+  // "Unexpected token '<'" instead of anything about the upload.
+  let result;
+  try {
+    result = await res.json();
+  } catch {
+    if (res.status === 413) throw new Error("That upload was too large for the server to accept.");
+    if (res.status === 401) throw new Error("Your session expired. Please sign in again.");
+    throw new Error(`Upload failed (HTTP ${res.status})`);
+  }
+
   if (!res.ok && !result.results) {
     throw new Error(result.error || "Upload failed");
   }

@@ -1,101 +1,65 @@
-import mongoose from 'mongoose';
-import crypto from 'crypto';
-import Session from '../model/Session.js';
 import LiveSession from '../model/LiveSession.js';
-import { parsePokerLog } from '../utils/parsePokerLog.js';
-import { attachPersonIdsToHands } from './personService.js';
-import { recomputeStatsForNewHands } from './statsService.js';
-import { computeEffectiveStacks } from '../utils/effectiveStackCalculator.js';
+import { importOneFile } from './handImportPipeline.js';
+import { createPersonResolver } from './personResolver.js';
+import { recomputeStatsForPersonIds } from './statsService.js';
 
-// currency per parser format; add new sites here + Session schema enum
-export const FORMAT_CURRENCY = {
-  ACR: 'USD',
-  GGPOKER: 'CAD',
-  POKERNOW: 'CHIPS',
-};
+export { FORMAT_CURRENCY } from '../config/formats.js';
 
+// The inline upload path (POST /api/upload), for small uploads that fit
+// comfortably in one request. Large folder imports go through
+// /api/imports and services/importRunner.js instead, but both share
+// handImportPipeline.importOneFile, so dedup, EV and quota behave
+// identically either way.
+//
 // Each file is processed independently so one duplicate/bad file in the
 // batch doesn't block the rest - every failure is caught inside the loop
 // and turned into a per-file result entry, not a request-level error.
 export async function processUpload(userId, files) {
   const results = [];
 
+  // ONE resolver for the whole batch. It holds this user's Person set in
+  // memory, so creating it per file would put back the N+1 it exists to
+  // remove.
+  const resolver = await createPersonResolver(userId);
+
+  // Accumulated across every file, then recomputed once at the end. The
+  // old code fired a detached recompute per file, which overlapped
+  // full-history scans with the remaining files' parsing.
+  const personIds = new Set();
+  let touchesHero = false;
+
   for (const file of files) {
-    const filename = file.originalname;
     try {
-      const fileHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
-      const existing = await Session.findOne({ userId, fileHash });
-      if (existing) {
-        results.push({ filename, success: false, duplicate: true, error: "This log file has already been uploaded." });
-        continue;
-      }
-
-      const fileContent = file.buffer.toString('utf8');
-
-      let format, parsedHands;
-      try {
-        ({ format, hands: parsedHands } = parsePokerLog(fileContent));
-      } catch (parseError) {
-        results.push({ filename, success: false, error: parseError.message });
-        continue;
-      }
-
-      if (parsedHands.length === 0) {
-        results.push({ filename, success: false, error: "No hands found in the uploaded file" });
-        continue;
-      }
-      parsedHands.forEach(hand => { if (!hand._id) hand._id = new mongoose.Types.ObjectId(); });
-
-      // Currency isn't known to the parser itself (ACR/GGPoker log dollar
-      // amounts in cents, PokerNow in play chips - see FORMAT_CURRENCY
-      // above) - it's only resolved here, from the upload format.
-      // computeEffectiveStacks needs it to convert stack sizes into bb
-      // units correctly, so it has to run here rather than inside the
-      // parser, using a shallow copy that carries `currency` without
-      // persisting it on the hand doc itself (HandSchema has no `currency`
-      // field - see statsService.js's extractHands for why that's
-      // per-Session).
-      const currency = FORMAT_CURRENCY[format] ?? 'CHIPS';
-      parsedHands.forEach(hand => computeEffectiveStacks({ ...hand, currency }));
-
-      // Every named player gets a Person record (auto-created on first
-      // sight, reused after) so stats can be tracked without requiring a
-      // manual "map this player" step first.
-      await attachPersonIdsToHands(userId, parsedHands);
-
-      const session = new Session({
+      const result = await importOneFile({
         userId,
-        fileHash,
-        sessionType: 'upload',
-        source: format,
-        currency,
-        date: parsedHands[0].datePlayed,
-        // Same "2 players seated = Heads-Up" override the old list route
-        // used to compute on every read; decided once here instead so the
-        // session list doesn't need `hands` at all.
-        gameType: parsedHands[0].players?.length === 2 ? 'Heads-Up' : parsedHands[0].gameType,
-        totalHands: parsedHands.length,
-        totalProfit: parsedHands.reduce((sum, h) => {
-          const hero = h.players?.find(p => p.isHero);
-          return sum + (hero?.profitLoss || 0);
-        }, 0),
-        hands: parsedHands
-      });
-      await session.save();
-
-      // Fire-and-forget: don't block the upload response on stats
-      // recomputation, but do log failures instead of swallowing them.
-      // Deliberately detached from this function's own promise chain -
-      // never awaited, keeps its own .catch (an unhandled rejection here
-      // would crash the process, not just fail this request).
-      recomputeStatsForNewHands(userId, parsedHands).catch(err => {
-        console.error(`Stats recompute failed for session ${session._id}:`, err);
+        buffer: file.buffer,
+        filename: file.originalname,
+        resolver,
       });
 
-      results.push({ filename, success: true, sessionId: session._id, totalHands: parsedHands.length, source: format });
+      if (result.success) {
+        result.personIds.forEach(id => personIds.add(id));
+        touchesHero = touchesHero || result.touchesHero;
+      }
+
+      // personIds/touchesHero are the caller's bookkeeping, not part of
+      // the per-file response contract the frontend reads.
+      const { personIds: _p, touchesHero: _h, ...publicResult } = result;
+      results.push(publicResult);
     } catch (fileError) {
-      results.push({ filename, success: false, error: fileError.message });
+      results.push({ filename: file.originalname, success: false, error: fileError.message });
     }
+  }
+
+  // Fire-and-forget: don't block the upload response on stats
+  // recomputation, but do log failures instead of swallowing them.
+  // Deliberately detached from this function's own promise chain - never
+  // awaited, and it keeps its own .catch (an unhandled rejection here
+  // would crash the process, not just fail this request).
+  if (personIds.size > 0 || touchesHero) {
+    recomputeStatsForPersonIds(userId, personIds, touchesHero).catch(err => {
+      console.error(`Stats recompute failed after upload for user ${userId}:`, err);
+    });
   }
 
   return results;

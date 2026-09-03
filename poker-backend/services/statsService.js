@@ -74,25 +74,89 @@ export async function computeFilteredHeroStats(userId, filters = {}) {
   return stats;
 }
 
-// Call this right after a session (a batch of parsed hands) is saved. It
-// looks at just the newly-saved hands to figure out which linked persons +
-// hero are affected, then recomputes only those - not everyone ever tracked.
-export async function recomputeStatsForNewHands(userId, hands) {
-  const personIds = new Set();
-  let touchesHero = false;
+// Computes and persists one person's stats from hands ALREADY in memory.
+// Split out of recomputeStatsForPerson so the batch path below can supply
+// its own hands instead of issuing a query per person.
+async function persistPersonStats(userId, personId, hands) {
+  const stats = computeStatsForHands(hands, matchByPersonId(personId));
+  return PlayerStats.findOneAndUpdate(
+    { userId, personId },
+    { ...stats, userId, personId, isHero: false, lastComputedAt: new Date() },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+}
 
-  for (const hand of hands) {
-    for (const p of hand.players || []) {
-      if (p.isSittingOut) continue;
-      if (p.personId) personIds.add(String(p.personId));
-      if (p.isHero) touchesHero = true;
+const yieldToEventLoop = () => new Promise(resolve => setImmediate(resolve));
+
+// Call this ONCE after a batch of files has been imported, with the union
+// of the person ids they touched.
+//
+// The naive version of this - loop the ids, call recomputeStatsForPerson
+// on each - is O(persons x all hands) in BOTH queries and CPU, because
+// every call re-queries the user's sessions and then walks every hand in
+// them looking for one person. Measured on a 20k-hand import with 400
+// distinct opponents that was ~0.8 persons/second: over eight minutes of
+// pegged CPU, running after the import had already reported itself done.
+//
+// So instead: read the sessions ONCE, bucket each hand under the people it
+// actually involves in a single pass, then compute each person's stats
+// from their own (much smaller) bucket. Same results - computeStatsForHands
+// only ever looks at hands where its matcher finds a player, so giving it
+// exactly those hands is equivalent to giving it all of them - at roughly
+// 1/(number of persons) of the work.
+//
+// A cursor rather than a find().lean() array, and hands are retained only
+// if they involve someone being recomputed, so a job touching a handful of
+// people doesn't hold the user's entire history in memory.
+export async function recomputeStatsForPersonIds(userId, personIds, touchesHero) {
+  const wanted = new Set([...personIds].map(String));
+  if (wanted.size === 0 && !touchesHero) return [];
+
+  const byPerson = new Map();
+  const heroHands = [];
+
+  const cursor = Session.find({ userId }).lean().cursor();
+  for await (const session of cursor) {
+    for (const hand of session.hands || []) {
+      // extractHands' job, inlined: each hand needs its parent session's
+      // currency, which statsEngine uses to reconcile bb-size against
+      // profitLoss units.
+      let stamped = null;
+      const stamp = () => (stamped ??= { ...hand, currency: session.currency });
+
+      let heroSeen = false;
+      for (const player of hand.players || []) {
+        if (player.isHero) {
+          if (!heroSeen) { heroHands.push(stamp()); heroSeen = true; }
+          continue;
+        }
+        const pid = player.personId && String(player.personId);
+        if (!pid || !wanted.has(pid)) continue;
+        let bucket = byPerson.get(pid);
+        if (!bucket) byPerson.set(pid, (bucket = []));
+        bucket.push(stamp());
+      }
     }
   }
 
-  const jobs = [...personIds].map(pid => recomputeStatsForPerson(userId, pid));
-  if (touchesHero) jobs.push(recomputeHeroStats(userId));
+  const results = [];
+  for (const pid of wanted) {
+    results.push(await persistPersonStats(userId, pid, byPerson.get(pid) || []));
+    // Pure CPU from here on, so nothing else yields on its own. Without
+    // this the whole batch blocks the event loop for every other request.
+    await yieldToEventLoop();
+  }
 
-  return Promise.all(jobs);
+  if (touchesHero) {
+    const stats = computeStatsForHands(heroHands, matchHero());
+    results.push(await PlayerStats.findOneAndUpdate(
+      { userId, isHero: true },
+      { ...stats, userId, personId: null, isHero: true, lastComputedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ));
+  }
+
+  return results;
 }
 
 // Chronological hero hand-by-hand profit vs. all-in EV, for the item 4e

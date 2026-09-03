@@ -4,6 +4,9 @@ import { handMatchesFilter } from '../utils/handFilters.js';
 import { getPositionMap } from '../utils/statsEngine.js';
 import { CENTS_CURRENCIES, parseBigBlind } from '../utils/blinds.js';
 import { classifyHoleCards } from '../utils/handClass.js';
+import { BSON } from 'mongodb';
+import HandLedger from '../model/HandLedger.js';
+import UserModel from '../model/User.js';
 
 // List view: deliberately excludes `hands` (each session can carry hundreds
 // of nested hand documents - players/actions/board/etc). The history page
@@ -238,10 +241,42 @@ export async function updateHandNotes(userId, sessionId, handId, notes) {
 }
 
 // Returns null if the session doesn't exist (or isn't this user's).
+//
+// Deleting a session has to release its HandLedger rows too. Those rows
+// are what make a hand count as "already imported", so leaving them behind
+// would make every hand in a deleted session permanently un-importable -
+// the user would delete a session, re-upload the same file, and be told
+// every hand was a duplicate of something that no longer exists.
 export async function deleteSession(userId, sessionId) {
-  return Session.findOneAndDelete({ _id: sessionId, userId });
+  const session = await Session.findOneAndDelete({ _id: sessionId, userId });
+  if (!session) return null;
+
+  await HandLedger.deleteMany({ sessionId: session._id });
+
+  // Keep the quota counters honest. $inc with negatives rather than a
+  // recount, matching how the import path accrues them; $max clamps at
+  // zero so a counter that has drifted can't go negative.
+  const freed = BSON.calculateObjectSize(session.toObject());
+  await UserModel.updateOne(
+    { _id: userId },
+    { $inc: { storageBytes: -freed, totalHands: -(session.totalHands || 0) } }
+  );
+  await UserModel.updateOne(
+    { _id: userId, storageBytes: { $lt: 0 } },
+    { $set: { storageBytes: 0 } }
+  );
+  await UserModel.updateOne(
+    { _id: userId, totalHands: { $lt: 0 } },
+    { $set: { totalHands: 0 } }
+  );
+
+  return session;
 }
 
 export async function deleteAllSessions(userId) {
   await Session.deleteMany({ userId });
+  // Same reasoning as deleteSession: without this, a full reset would
+  // leave the user unable to re-import anything they'd ever uploaded.
+  await HandLedger.deleteMany({ userId });
+  await UserModel.updateOne({ _id: userId }, { $set: { storageBytes: 0, totalHands: 0 } });
 }
