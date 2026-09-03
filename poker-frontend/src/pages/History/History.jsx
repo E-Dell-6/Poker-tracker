@@ -4,6 +4,7 @@ import { Camera, X, Star, Plus, Upload, FolderUp } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { useHandImport } from "../../hooks/useHandImport";
+import { describeImportProgress } from "../../utils/describeImportProgress";
 import { ImportLogCta } from "../../components/ui/ImportLogCta";
 import { SessionLog } from "../../components/SessionLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
@@ -177,7 +178,7 @@ export function History() {
   // file anywhere on the page is handled by Layout's own page-wide drop
   // zone (see onImportSettled below) - a separate instance, since Layout
   // has no visibility into this page's upload state.
-  const { uploadStatus, setUploadStatus, error, setError, uploadFiles } = useHandImport();
+  const { uploadStatus, setUploadStatus, error, setError, progress, uploadFiles } = useHandImport();
   const fileInputRef = useRef(null);
   // Separate ref because an input carrying webkitdirectory can only
   // select folders - it can't also serve the multi-file picker.
@@ -336,6 +337,16 @@ export function History() {
         />
 
         {error && <div className="error-message">{error}</div>}
+
+        {/* Layout's own page-wide drag-and-drop uses a separate
+            useHandImport() instance (see the comment above), so its
+            progress overlay never reflects THIS hook's uploads - a click on
+            "Import hands" or "Import folder" was showing only a static
+            "Processing..." button label with no live counts. Same class as
+            Layout's overlay (Layout.css), so it's visually identical. */}
+        {uploadStatus === "uploading" && (
+          <div className="layout-upload-progress">{describeImportProgress(progress)}</div>
+        )}
 
         <div className="filter-bar">
           <div className="filter-bar-primary">
