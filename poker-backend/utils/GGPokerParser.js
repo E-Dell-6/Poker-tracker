@@ -266,6 +266,8 @@ export function parseGGPokerLog(fileContent, { computeEv = true } = {}) {
             currentHand.finalPotSize = 0;
         }
 
+        anonymizeNonHeroNames(currentHand);
+
         computeHandProfits(currentHand);
         detectAllIn(currentHand);
         currentHand.allInEV = computeEv ? computeAllInEV(currentHand) : null;
@@ -282,6 +284,32 @@ export function parseGGPokerLog(fileContent, { computeEv = true } = {}) {
     hands.forEach((h, i) => { h.handIndex = i + 1; });
 
     return hands;
+}
+
+// GGPoker's "anonymized" opponent names (e.g. "abc12345") are still a
+// stable per-account identifier - the same string reappears across every
+// hand an opponent plays, in this file and in later imports. Storing that
+// verbatim would let the app quietly build a persistent profile of a
+// GGPoker player the user never consented to identify, so it's replaced
+// here with a seat-based label that's meaningful only within this one
+// hand. Hero is left untouched - this is about not fingerprinting
+// opponents, not about hiding the user's own data from themselves.
+function anonymizeNonHeroNames(hand) {
+    const nameMap = new Map();
+    for (const p of hand.players) {
+        if (!p.isHero) nameMap.set(p.name, `Seat ${p.seat}`);
+    }
+    if (nameMap.size === 0) return;
+
+    for (const p of hand.players) {
+        const label = nameMap.get(p.name);
+        if (label) p.name = label;
+    }
+    for (const a of hand.actions) {
+        const label = nameMap.get(a.player);
+        if (label) a.player = label;
+    }
+    hand.winners = hand.winners.map(name => nameMap.get(name) ?? name);
 }
 
 function pushZeroAmountAction(currentHand, actionType, playerName, street) {

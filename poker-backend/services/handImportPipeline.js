@@ -201,7 +201,14 @@ export async function importOneFile({ userId, buffer, filename, resolver, onProg
     fresh.forEach((hand, i) => { hand.handIndex = i + 1; });
 
     await computeEvWithYields(fresh, onProgress);
-    await resolver.attach(fresh);
+    // GGPoker's parser already replaces opponent names with per-hand seat
+    // labels (see anonymizeNonHeroNames in GGPokerParser.js) so no
+    // persistent identifier survives - linking those labels to a Person
+    // here would just merge unrelated GGPoker opponents who happened to
+    // sit in the same seat number across different files.
+    if (format !== 'GGPOKER') {
+      await resolver.attach(fresh);
+    }
 
     const session = new Session({
       userId,

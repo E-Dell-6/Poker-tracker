@@ -308,7 +308,7 @@ describe('parseGGPokerLog: run it twice', () => {
     });
     expect(hand.board.river).not.toEqual(hand.secondBoard.river);
 
-    expect(hand.winners).toEqual(expect.arrayContaining(['Hero', 'abc12345']));
+    expect(hand.winners).toEqual(expect.arrayContaining(['Hero', 'Seat 2']));
     expect(hero.winnings).toBe(500); // won exactly one of the two runs
     expect(villain.winnings).toBe(500);
     expect(hero.profitLoss).toBe(0); // won one run, lost the other -> breakeven
@@ -318,8 +318,10 @@ describe('parseGGPokerLog: run it twice', () => {
 describe('parseGGPokerLog: straddle', () => {
   it('treats each "straddle $X" line as a running preflop total (raise-to), not an additive post', () => {
     const [hand] = parseGGPokerLog(doubleStraddleAllInHand());
-    const straddler = hand.players.find(p => p.name === '72e99644');
-    const raiser = hand.players.find(p => p.name === 'cbd38f96');
+    // Names are anonymized to per-hand seat labels (see the anonymization
+    // describe block below), so straddler/raiser are located by seat here.
+    const straddler = hand.players.find(p => p.seat === 4);
+    const raiser = hand.players.find(p => p.seat === 1);
 
     // The double-straddler's total investment across the whole hand must
     // land exactly on their starting stack (all-in on the river) - it
@@ -349,6 +351,36 @@ describe('parseGGPokerLog: hand ordering', () => {
     expect(hands.map(h => h.handIndex)).toEqual([1, 2, 3]);
     expect(hands[0].datePlayed.toISOString()).toContain('12:10:00');
     expect(hands[2].datePlayed.toISOString()).toContain('12:20:00');
+  });
+});
+
+describe('parseGGPokerLog: opponent name anonymization', () => {
+  it('replaces every non-hero player\'s GGPoker-provided name with a seat-based label, everywhere it appears, and leaves Hero untouched', () => {
+    const [hand] = parseGGPokerLog(heroWinsAtShowdown());
+    const hero = hand.players.find(p => p.isHero);
+    const villain = hand.players.find(p => !p.isHero);
+
+    // GGPoker's own anonymized id must not survive parsing anywhere.
+    const serialized = JSON.stringify(hand);
+    expect(serialized).not.toContain('abc12345');
+
+    expect(hero.name).toBe('Hero');
+    expect(villain.name).toBe(`Seat ${villain.seat}`);
+    expect(hand.winners).toContain('Hero');
+
+    // Action attribution still works, just via the anonymized label.
+    const villainActions = hand.actions.filter(a => a.player === villain.name);
+    expect(villainActions.length).toBeGreaterThan(0);
+    expect(hand.actions.some(a => a.player === 'abc12345')).toBe(false);
+  });
+
+  it('anonymizes every opponent independently in a multiway hand, keyed by seat', () => {
+    const [hand] = parseGGPokerLog(doubleStraddleAllInHand());
+    const names = hand.players.map(p => p.name);
+
+    // Six distinct seat labels, no leftover GGPoker ids.
+    expect(names.sort()).toEqual(['Seat 1', 'Seat 2', 'Seat 3', 'Seat 4', 'Seat 5', 'Seat 6']);
+    expect(JSON.stringify(hand)).not.toMatch(/cbd38f96|fbb6c1a1|b8da175a|72e99644|5a024d7f|2775b93a/);
   });
 });
 
