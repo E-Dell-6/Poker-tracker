@@ -84,14 +84,7 @@ export function PreflopMatrixPage() {
       />
 
       <div className="pfm-grid-wrap">
-        {!gridData || Object.keys(gridData).length === 0 ? (
-          <div className="study-status-container">
-            <h2>No hands recorded</h2>
-            <p>Hero has no tracked hands for this seat/situation yet.</p>
-          </div>
-        ) : (
-          <HandMatrix data={gridData} minSampleSize={minSampleSize} />
-        )}
+        <HandMatrix data={gridData} minSampleSize={minSampleSize} />
       </div>
 
       <PreflopPositionMatrix positional={stats.positional} />

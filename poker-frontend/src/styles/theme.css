@@ -39,7 +39,7 @@
      three side-by-side actions, not a win/loss binary. */
   --color-action-fold: #6b7280;
   --color-action-call: #38bdf8;
-  --color-action-raise: #f472b6;
+  --color-action-raise: #ef4444;
 
   /* Player-tag colors (TagMenu.jsx / players table) */
   --color-tag-fish: #4ade80;

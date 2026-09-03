@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RANKS, handToken } from '../../../utils/handGrid';
+import '../MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.section-title
 import './HandMatrix.css';
 
 const ACTIONS = [
@@ -16,6 +17,21 @@ function ActionBars({ cell }) {
         cell[a.pctKey] > 0
           ? <div key={a.key} className="hm-bar" style={{ flexGrow: cell[a.pctKey], background: a.color }} />
           : null
+      ))}
+    </div>
+  );
+}
+
+// Same dot-legend convention as EVGraph.jsx's Actual/All-in EV legend -
+// explains the bar colors inline instead of only on hover/tap.
+function Legend() {
+  return (
+    <div className="hm-legend">
+      {ACTIONS.map(a => (
+        <span key={a.key} className="hm-legend-item">
+          <span className="hm-legend-dot" style={{ background: a.color }} />
+          {a.label}
+        </span>
       ))}
     </div>
   );
@@ -53,9 +69,14 @@ function Tooltip({ active }) {
 // position combination the page has selected - this component itself is
 // scenario-agnostic. `cell` shape: {fold,call,raise,total,foldPct,callPct,
 // raisePct,confidence} (see statsEngine.js's finalizeMatrixCell) or
-// undefined for a hand hero has never held in this slice.
+// undefined for a hand hero has never held in this slice. Owns its own
+// `.matrix-table-card` chrome (title/legend/empty state) - same convention
+// every other Study card follows (BoardTexture, the position matrices,
+// HandClassBreakdown) - rather than a bare grid with no title the way this
+// used to render.
 export function HandMatrix({ data, minSampleSize }) {
   const [active, setActive] = useState(null);
+  const hasAnyData = data && Object.keys(data).length > 0;
 
   const openTooltip = (e, token, cell) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -72,37 +93,51 @@ export function HandMatrix({ data, minSampleSize }) {
   };
 
   return (
-    <div className="hand-matrix-wrap">
-      <div className="hand-matrix">
-        {RANKS.map(rowRank => (
-          RANKS.map(colRank => {
-            const token = handToken(rowRank, colRank);
-            const cell = data?.[token];
-            const hasData = !!cell && cell.total > 0;
-            const belowThreshold = hasData && cell.total < minSampleSize;
-            const cellClass = [
-              'hm-cell',
-              rowRank === colRank ? 'hm-cell--pair' : (RANKS.indexOf(rowRank) < RANKS.indexOf(colRank) ? 'hm-cell--suited' : 'hm-cell--offsuit'),
-              !hasData ? 'hm-cell--empty' : '',
-              belowThreshold ? 'hm-cell--below-threshold' : ''
-            ].filter(Boolean).join(' ');
-
-            return (
-              <div
-                key={token}
-                className={cellClass}
-                onMouseEnter={e => openTooltip(e, token, cell)}
-                onMouseLeave={closeTooltip}
-                onClick={e => toggleTooltip(e, token, cell)}
-              >
-                <span className="hm-cell-token">{token}</span>
-                {!belowThreshold && <ActionBars cell={cell} />}
-              </div>
-            );
-          })
-        ))}
+    <div className="matrix-table-card hand-matrix-card">
+      <div className="matrix-table-header">
+        <h3 className="section-title">Preflop Range Matrix</h3>
+        <Legend />
       </div>
-      <Tooltip active={active} />
+
+      {!hasAnyData ? (
+        <div className="study-status-container">
+          <h2>No hands recorded</h2>
+          <p>Hero has no tracked hands for this seat/situation yet.</p>
+        </div>
+      ) : (
+        <div className="hand-matrix-wrap">
+          <div className="hand-matrix">
+            {RANKS.map(rowRank => (
+              RANKS.map(colRank => {
+                const token = handToken(rowRank, colRank);
+                const cell = data?.[token];
+                const hasData = !!cell && cell.total > 0;
+                const belowThreshold = hasData && cell.total < minSampleSize;
+                const cellClass = [
+                  'hm-cell',
+                  rowRank === colRank ? 'hm-cell--pair' : (RANKS.indexOf(rowRank) < RANKS.indexOf(colRank) ? 'hm-cell--suited' : 'hm-cell--offsuit'),
+                  !hasData ? 'hm-cell--empty' : '',
+                  belowThreshold ? 'hm-cell--below-threshold' : ''
+                ].filter(Boolean).join(' ');
+
+                return (
+                  <div
+                    key={token}
+                    className={cellClass}
+                    onMouseEnter={e => openTooltip(e, token, cell)}
+                    onMouseLeave={closeTooltip}
+                    onClick={e => toggleTooltip(e, token, cell)}
+                  >
+                    <span className="hm-cell-token">{token}</span>
+                    {!belowThreshold && <ActionBars cell={cell} />}
+                  </div>
+                );
+              })
+            ))}
+          </div>
+          <Tooltip active={active} />
+        </div>
+      )}
     </div>
   );
 }

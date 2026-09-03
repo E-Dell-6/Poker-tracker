@@ -1,3 +1,34 @@
+/* Card chrome matches every other Study section (see MatrixTableCard.css's
+   .matrix-table-card/.matrix-table-header) - the grid used to render as a
+   bare bordered block with no title, out of step with BoardTexture/
+   HandClassBreakdown/the position matrices next to it. */
+.hm-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.hm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.hm-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* Higher specificity than the bare .study-status-container rule (Stats.css)
+   so this wins regardless of CSS import order - the page-wide ghost-state
+   padding is too generous for a state living inside a card, not the page. */
+.hand-matrix-card .study-status-container {
+  padding: 60px 20px;
+}
+
 .hand-matrix-wrap {
   position: relative;
 }
@@ -14,7 +45,9 @@
 
 .hm-cell {
   position: relative;
-  aspect-ratio: 1;
+  /* Horizontally rectangular, not square - wide enough for the stacked
+     fold/call/raise bars to read as a clear proportion at a glance. */
+  aspect-ratio: 4 / 3;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
