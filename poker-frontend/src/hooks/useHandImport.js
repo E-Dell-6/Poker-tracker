@@ -11,8 +11,7 @@ import {
 } from "../api/imports";
 
 // Shared upload-and-report logic behind every "Import hands" entry point
-// (History's file picker and folder picker, and the page-wide drop zone in
-// Layout).
+// (History's folder picker and the page-wide drop zone in Layout).
 //
 // Uploads now go through the staged import flow (/api/imports) rather than
 // one synchronous request: files are screened client-side, sent in batches

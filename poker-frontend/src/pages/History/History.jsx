@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, X, Star, Plus, Upload, FolderUp } from "lucide-react";
+import { Camera, X, Star, Plus, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { useHandImport } from "../../hooks/useHandImport";
@@ -180,9 +180,6 @@ export function History() {
   // has no visibility into this page's upload state.
   const { uploadStatus, setUploadStatus, error, setError, progress, uploadFiles } = useHandImport();
   const fileInputRef = useRef(null);
-  // Separate ref because an input carrying webkitdirectory can only
-  // select folders - it can't also serve the multi-file picker.
-  const folderInputRef = useRef(null);
 
   const [renamingState, setRenamingState] = useState(null);
   const [usedPersonIds, setUsedPersonIds] = useState([]);
@@ -313,22 +310,14 @@ export function History() {
           />
         )}
 
+        {/* webkitdirectory makes the native picker select a whole folder
+            (recursively, filtered down to .csv/.txt by screenFiles) rather
+            than individual files. `directory` covers the non-WebKit
+            spelling. Individual files are still importable via drag-and-drop
+            (Layout's page-wide drop zone). */}
         <input
           type="file"
           ref={fileInputRef}
-          onChange={handleFileUpload}
-          accept=".csv,.txt"
-          multiple
-          className="visually-hidden-input"
-        />
-
-        {/* Separate input because an input with webkitdirectory accepts
-            ONLY folders - it can't double as the file picker above. The
-            attribute is lowercase-spelled for React's DOM property, and
-            `directory` covers the non-WebKit spelling. */}
-        <input
-          type="file"
-          ref={folderInputRef}
           onChange={handleFileUpload}
           webkitdirectory=""
           directory=""
@@ -339,9 +328,9 @@ export function History() {
         {/* Layout's own page-wide drag-and-drop uses a separate
             useHandImport() instance (see the comment above), so its
             progress overlay never reflects THIS hook's uploads - a click on
-            "Import hands" or "Import folder" was showing only a static
-            "Processing..." button label with no live counts. Same class as
-            Layout's overlay (Layout.css), so it's visually identical. */}
+            "Import hands" was showing only a static "Processing..." button
+            label with no live counts. Same class as Layout's overlay
+            (Layout.css), so it's visually identical. */}
         {uploadStatus === "uploading" && (
           <div className="layout-upload-progress">{describeImportProgress(progress)}</div>
         )}
@@ -373,12 +362,6 @@ export function History() {
               className="create-button"
               onClick={() => navigate("/hand-creator")}
             ><Plus size={15} /> Create Hand </button>
-            <button
-              className="create-button"
-              onClick={() => folderInputRef.current.click()}
-              disabled={uploadStatus === "uploading"}
-              title="Import every hand history file in a folder"
-            ><FolderUp size={15} /> Import folder </button>
             <HandSearchMenu
               onHandClick={(hand, session) =>
                 navigate("/hand-replay", { state: { hand, session } })
