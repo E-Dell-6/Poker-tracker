@@ -1,37 +1,32 @@
 import { Layout } from '../../components/Layout';
-import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
+import { Outlet, useOutletContext } from 'react-router-dom';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
 import { useHeroStats, TIME_FILTERS } from '../../hooks/useHeroStats';
-import { PositionalStats } from '../../components/PositionalStats';
-import { GroupedStats } from '../../components/GroupedStats';
-import { EVGraph } from '../../components/EVGraph';
 import { StatTile } from '../../components/ui/StatTile';
 import { GhostChart } from '../../components/ui/GhostChart';
 import { Tabs } from '../../components/ui/Tabs';
-import { StudyCharts } from './StudyCharts';
-import { PositionMatrixTables } from './PositionMatrixTables';
-import { HandClassBreakdown } from './HandClassBreakdown';
-import { BoardTexture } from './BoardTexture';
 import { StudyPageSkeleton } from './StudyPageSkeleton';
+import './MatrixTableCard.css';
 import './Stats.css';
 
-const SECTION_TABS = [
-  { key: 'hands', label: 'Hands' },
-  { key: 'position', label: 'Position' },
-  { key: 'board', label: 'Board' }
-];
-
-export function Stats() {
+// Owns the single useHeroStats() instance for the whole /study section (see
+// studyRoutes.jsx) - every subpage reads its result via useStudyContext()
+// instead of calling the hook itself, so switching subpages no longer
+// refetches stats or resets the stakes/date filter (the bug this layout
+// route was built to fix; previously each of Stats.jsx and
+// PreflopMatrixPage.jsx called useHeroStats() independently). Navigation
+// between Hands/Preflop/Flop is the sidebar's job (see Sidebar.jsx's
+// Study subItems) - no in-page tab strip here.
+export function StudyLayout() {
   const {
     isLoggedIn, baseStats, stats,
-    isFilterActive, fromISO,
+    isFilterActive,
     loading, filterLoading, refreshing, error,
     stakesFilter, setStakesFilter,
     daysFilter, setDaysFilter,
     fetchStats, refreshStats
   } = useHeroStats();
-  const [section, setSection] = useState('hands');
 
   if (loading || (isFilterActive && !stats)) {
     return (
@@ -83,9 +78,9 @@ export function Stats() {
             </div>
             <div className="matrix-table-card">
               <div className="matrix-table-header">
-                <h3 className="section-title">Profit vs. Expected Value</h3>
+                <h3 className="section-title">Preflop range matrix</h3>
               </div>
-              <GhostChart type="area" emptyMessage="Sign in to see your EV over time." />
+              <GhostChart type="area" emptyMessage="Sign in to see your preflop range matrix." />
             </div>
           </div>
         </div>
@@ -140,39 +135,11 @@ export function Stats() {
               </div>
             ) : (
               <>
-                <div className="study-tiles-grid">
-                  <StatTile label="Hands" value={stats.totalHands.toLocaleString()} />
-                  <StatTile
-                    label="Win Rate"
-                    value={stats.bb100 != null ? `${stats.bb100} bb/100` : '—'}
-                    valueClassName={stats.bb100 != null ? (stats.bb100 >= 0 ? 'pos' : 'neg') : ''}
-                  />
-                  <StatTile label="VPIP / PFR" value={`${stats.vpip.pct}% / ${stats.pfr.pct}%`} />
-                  <StatTile label="3-Bet" value={`${stats.threeBet.pct}%`} />
-                  <StatTile label="Flop C-Bet" value={`${stats.cbFlop.pct}%`} />
-                  <StatTile label="WTSD / W$SD" value={`${stats.wtsd.pct}% / ${stats.wsd.pct}%`} />
-                </div>
-
-                <StudyCharts positional={stats.positional} showdownBreakdown={stats.showdownBreakdown} />
-
-                <Tabs className="study-section-tabs" options={SECTION_TABS} active={section} onChange={setSection} />
-
-                {section === 'hands' && (
-                  <HandClassBreakdown byHandClass={stats.byHandClass} byHandClassCategory={stats.byHandClassCategory} />
-                )}
-                {section === 'position' && (
-                  <>
-                    <PositionMatrixTables positional={stats.positional} />
-                    <PositionalStats positional={stats.positional} coverage={stats.positionCoverage} />
-                  </>
-                )}
-                {section === 'board' && (
-                  <>
-                    <BoardTexture byBoardTexture={stats.byBoardTexture} />
-                    <GroupedStats byStakes={stats.byStakes} byStackDepth={stats.byStackDepth} />
-                    <EVGraph stakes={stakesFilter || undefined} from={fromISO || undefined} />
-                  </>
-                )}
+                {/* The 6 stat tiles + StudyCharts render ONLY on the
+                    /study index route (StudyOverview.jsx) - every other
+                    subpage gets just the filter bar above and its own
+                    content via this Outlet. */}
+                <Outlet context={{ stats }} />
 
                 <p className="study-note">
                   Last computed {new Date(stats.lastComputedAt).toLocaleString()}. Stats are cached
@@ -187,4 +154,13 @@ export function Stats() {
   );
 }
 
-export default Stats;
+// Subpages of /study read the layout's single useHeroStats() instance
+// through this - see studyRoutes.jsx. `stats` is guaranteed non-null with
+// totalHands > 0 here: the layout above gates on loading/error/logged-out/
+// no-data/empty-filter before ever rendering <Outlet>, so subpages need no
+// null guards of their own.
+export function useStudyContext() {
+  return useOutletContext();
+}
+
+export default StudyLayout;

@@ -1,9 +1,8 @@
 import './Tabs.css';
 
 // Segmented tab control, extracted from the `.pos-size-tab` pattern built
-// earlier this session in PositionalStats.css/GroupedStats.jsx (both now
-// import this instead of keeping their own copy). `options`: [{key, label}]
-// or plain strings (used as both key and label).
+// in PositionalStats.css (which imports this instead of keeping its own
+// copy). `options`: [{key, label}] or plain strings (used as both key and label).
 export function Tabs({ options, active, onChange, className = '' }) {
   return (
     <div className={`ui-tabs ${className}`}>

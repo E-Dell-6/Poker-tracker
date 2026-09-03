@@ -157,6 +157,10 @@
   align-items: flex-start; margin-bottom: 20px;
 }
 
+/* EVGraph carries its own top margin for the Study page's flow column;
+   inside a card that already supplies 28px of padding it's dead space. */
+.profile-chart-card .ev-graph-section { margin-top: 0; }
+
 .chart-title {
   font-family: var(--font-sans);
   font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 3px;

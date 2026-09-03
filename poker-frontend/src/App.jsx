@@ -1,4 +1,4 @@
-import { Routes, Route, useSearchParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { HomePage } from './pages/HomePage/HomePage';
 import { History } from './pages/History/History';
 import './App.css'
@@ -8,8 +8,7 @@ import { Players } from './pages/Players/Players';
 import { PlayerProfile } from './pages/Players/PlayerProfile';
 import { Starred } from './pages/Starred/Starred';
 import { SearchResults } from './pages/Search/SearchResults';
-import { Stats } from './pages/Stats/Stats';
-import { PreflopMatrixPage } from './pages/Stats/PreflopMatrix/PreflopMatrixPage';
+import { STUDY_ROUTES } from './pages/Stats/studyRoutes';
 import { Profile } from './pages/Profile/Profile';
 import { Login } from './pages/Login/Login';
 import HandCreator from './pages/HandCreator/HandCreator';
@@ -39,9 +38,9 @@ function App() {
         <Route path="/players/:personId" element={<PlayerProfile />} />
         <Route path="/starred" element={<Starred />} />
         <Route path="/search" element={<SearchResults />} />
-        <Route path="/stats" element={<Stats />} />
-        <Route path="/study" element={<Stats />} />
-        <Route path="/study/range-matrix" element={<PreflopMatrixPage />} />
+        {/* Legacy alias - /stats was the original Study URL. */}
+        <Route path="/stats" element={<Navigate to="/study" replace />} />
+        {STUDY_ROUTES}
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path='/hand-creator' element={<HandCreator />}/>

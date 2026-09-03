@@ -13,3 +13,9 @@
   width: 100%;
   margin: 0 auto;
 }
+
+.pfm-lead {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}

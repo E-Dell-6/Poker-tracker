@@ -168,17 +168,8 @@
   font-style: italic;
 }
 
-/* .stats-container's flex `gap` already spaces every direct child
-   (including this tab row) at the page's normal 44px rhythm - that's the
-   right amount of separation from StudyCharts above, but too much between
-   the tab selector and the section it controls below it, so pull just that
-   side in. */
-.study-section-tabs {
-  margin-bottom: -20px;
-}
-
-/* ---------- section title (shared by StudyCharts/PositionMatrixTables/
-   HandClassBreakdown card headers, and PositionalStats) ---------- */
+/* ---------- section title (shared by StudyCharts/PreflopPositionMatrix/
+   PostflopPositionMatrix/HandClassBreakdown card headers, and PositionalStats) ---------- */
 
 .section-title {
   font-size: 13px;

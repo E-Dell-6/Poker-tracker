@@ -6,6 +6,7 @@ import {
   CONTEXT_ORDER, sortHandEntries, ProfitValue, RateValue, Toggle, toggleInSet
 } from './handClassShared';
 import { TEXTURE_TAG_ORDER, TEXTURE_TAG_LABEL, ACTION_MIX_ORDER, actionMixSummary, sizingSummary } from './boardTextureShared';
+import './MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.matrix-table-sub
 import './BoardTexture.css';
 
 const CONTEXT_LABEL = Object.fromEntries(CONTEXT_ORDER);

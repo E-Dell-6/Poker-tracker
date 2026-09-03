@@ -8,6 +8,7 @@ import { getAllSessions } from "../../api/sessions";
 import { getLiveSessions } from "../../api/liveSessions";
 import { toMajorUnits } from "../../utils/formatMoney";
 import { CumulativeChart } from "../../components/CumulativeChart";
+import { EVGraph } from "../../components/EVGraph";
 import { ProfileSkeleton } from "./ProfileSkeleton";
 
 const TIME_FILTERS = [
@@ -223,6 +224,24 @@ export function Profile() {
             </div>
           </div>
           <CumulativeChart data={chartData} emptyMessage="Not enough data — play more sessions!" />
+        </div>
+
+        {/* ── EV CHART ── */}
+        {/* Unlike everything above, this refetches server-side on each time-
+            filter click (GET /api/stats/me/ev-graph is hand-level, not
+            session-level, so there's nothing already in memory to filter
+            client-side). `cutoff` is a useMemo on [timeFilter] (see above),
+            so it's referentially stable per filter value - an inline `new
+            Date()` here would refetch on every render. No `stakes` prop -
+            Profile has no stakes filter, unlike the Study page. */}
+        <div className="profile-chart-card">
+          <div className="chart-header">
+            <div>
+              <div className="chart-title">Profit vs. Expected Value</div>
+              <div className="chart-sub">All-in EV vs. actual, hand by hand</div>
+            </div>
+          </div>
+          <EVGraph heading={false} from={cutoff ? cutoff.toISOString() : undefined} />
         </div>
 
         {/* ── LIVE BREAKDOWN ── */}

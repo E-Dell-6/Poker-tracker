@@ -13,7 +13,7 @@
 .hcb-value-neg { color: var(--color-negative); }
 .hcb-value-empty { color: var(--color-text-faint); }
 
-/* Same convention as PositionMatrixTables.css's .matrix-cell-pct--low-
+/* Same convention as MatrixTableCard.css's .matrix-cell-pct--low-
    confidence / PositionalStats.css's .pos-cell--low-confidence: dim a
    value when its sample size is too small to trust, rather than hiding it
    or (worse) rendering it with the same visual weight as a solid sample. */

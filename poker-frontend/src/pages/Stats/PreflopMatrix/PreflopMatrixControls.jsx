@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Settings, X, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs } from '../../../components/ui/Tabs';
-import { TIME_FILTERS } from '../../../hooks/useHeroStats';
 import { TABLE_SIZES } from '../../../utils/handGrid';
 import './PreflopMatrixControls.css';
 
@@ -96,8 +95,6 @@ function ScrollableRow({ children }) {
 export function PreflopMatrixControls({
   path, openSeats, complete, onRedoStep, onCommitOpenSeat, onReset,
   tableSize, setTableSize,
-  stakesFilter, setStakesFilter, stakesOptions,
-  daysFilter, setDaysFilter,
   minSampleSize, setMinSampleSize
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -143,8 +140,8 @@ export function PreflopMatrixControls({
           type="button"
           className={`pfm-gear-btn ${settingsOpen ? 'active' : ''}`}
           onClick={() => setSettingsOpen(o => !o)}
-          aria-label="Filters"
-          title="Filters"
+          aria-label="Display settings"
+          title="Display settings"
         >
           <Settings size={16} />
         </button>
@@ -153,28 +150,10 @@ export function PreflopMatrixControls({
       {settingsOpen && (
         <div className="pfm-settings-panel">
           <div className="pfm-settings-header">
-            <span className="pfm-settings-title">Filters</span>
+            <span className="pfm-settings-title">Display</span>
             <button type="button" className="pfm-settings-close" onClick={() => setSettingsOpen(false)} aria-label="Close">
               <X size={14} />
             </button>
-          </div>
-
-          <div className="pfm-settings-field">
-            <label className="pfm-settings-label" htmlFor="pfm-stakes">Stakes</label>
-            <select
-              id="pfm-stakes"
-              className="study-filter-select"
-              value={stakesFilter}
-              onChange={e => setStakesFilter(e.target.value)}
-            >
-              <option value="">All stakes</option>
-              {stakesOptions.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-
-          <div className="pfm-settings-field">
-            <span className="pfm-settings-label">Date range</span>
-            <Tabs options={TIME_FILTERS} active={daysFilter} onChange={setDaysFilter} />
           </div>
 
           <div className="pfm-settings-field">

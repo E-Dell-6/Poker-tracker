@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CATEGORY_LABEL, CONTEXT_ORDER, ProfitValue, RateValue, PositionBadges } from './handClassShared';
+import './MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.matrix-table-sub
 import './HandClassLeaks.css';
 
 // Reuses confidence.js's "low" cutoff - only surface a hand/action combo

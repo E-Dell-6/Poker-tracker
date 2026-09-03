@@ -23,8 +23,14 @@ const FETCH_LIMIT = 200;
 // instead of the actions row shrinking and the star shifting sideways. The
 // actual upload UI lives on History, so the button navigates there rather
 // than duplicating the upload flow (also true for Study's "Recompute
-// Stats", which has nothing to recompute on this page).
-const IMPORT_CTA_PATHS = ["/", "/dashboard", "/history", "/study", "/stats"];
+// Stats", which has nothing to recompute on this page). Prefix match, not
+// equality: Study is now a nested section (/study/hands, /study/range-matrix,
+// /study/flop - see studyRoutes.jsx), not one single path.
+const IMPORT_CTA_PREFIXES = ["/", "/dashboard", "/history", "/study", "/stats"];
+
+function matchesImportCtaPath(path) {
+  return IMPORT_CTA_PREFIXES.some(p => path === p || (p !== "/" && path.startsWith(p + "/")));
+}
 
 export function Starred() {
   const navigate = useNavigate();
@@ -32,7 +38,7 @@ export function Starred() {
   const [activeTab, setActiveTab] = useState("hands");
 
   const fromPath = location.state?.from?.split("?")[0];
-  const showImportCta = fromPath ? IMPORT_CTA_PATHS.includes(fromPath) : false;
+  const showImportCta = fromPath ? matchesImportCtaPath(fromPath) : false;
 
   const [hands, setHands] = useState([]);
   const [handsLoading, setHandsLoading] = useState(true);

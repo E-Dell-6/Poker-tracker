@@ -15,8 +15,12 @@ const menuItems = [
   { icon: List, label: "History", to: "/history" },
   { icon: Users, label: "Players", to: "/players" },
   {
-    icon: BarChart2, label: "Study", to: "/study",
-    subItems: [{ label: "Preflop", to: "/study/range-matrix" }]
+    icon: BarChart2, label: "Study", to: "/study", matchPrefix: "/study",
+    subItems: [
+      { label: "Hands", to: "/study/hands" },
+      { label: "Preflop", to: "/study/range-matrix" },
+      { label: "Flop", to: "/study/flop" },
+    ]
   },
 ];
 
@@ -65,34 +69,46 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
-          <div key={item.label}>
-            <Link
-              to={item.to}
-              className={`sidebar-link ${location.pathname === item.to ? 'active' : ''}`}
-              title={collapsed ? item.label : ''}
-            >
-              <item.icon className="sidebar-icon" size={18} />
-              {!collapsed && <span className="sidebar-label">{item.label}</span>}
-            </Link>
-            {/* Contextual sub-nav: only shown while inside this section
-                (e.g. Study's "Preflop"), and hidden when collapsed since
-                there's no room to show sub-labels. */}
-            {item.subItems && !collapsed && location.pathname.startsWith(item.to) && (
-              <div className="sidebar-subnav">
-                {item.subItems.map(sub => (
-                  <Link
-                    key={sub.to}
-                    to={sub.to}
-                    className={`sidebar-sublink ${location.pathname === sub.to ? 'active' : ''}`}
-                  >
-                    {sub.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {menuItems.map((item) => {
+          // Sections with subpages (e.g. Study, now /study/hands|range-matrix|
+          // flop) match by prefix, since their own `to` only ever names ONE
+          // of the subpages - strict equality would leave the parent
+          // permanently unhighlighted whenever a sibling subpage is active.
+          // Everything else keeps exact matching, unchanged.
+          const sectionPath = item.matchPrefix ?? item.to;
+          const parentActive = item.matchPrefix
+            ? location.pathname.startsWith(item.matchPrefix)
+            : location.pathname === item.to;
+
+          return (
+            <div key={item.label}>
+              <Link
+                to={item.to}
+                className={`sidebar-link ${parentActive ? 'active' : ''}`}
+                title={collapsed ? item.label : ''}
+              >
+                <item.icon className="sidebar-icon" size={18} />
+                {!collapsed && <span className="sidebar-label">{item.label}</span>}
+              </Link>
+              {/* Contextual sub-nav: only shown while inside this section
+                  (e.g. Study's "Preflop"), and hidden when collapsed since
+                  there's no room to show sub-labels. */}
+              {item.subItems && !collapsed && location.pathname.startsWith(sectionPath) && (
+                <div className="sidebar-subnav">
+                  {item.subItems.map(sub => (
+                    <Link
+                      key={sub.to}
+                      to={sub.to}
+                      className={`sidebar-sublink ${location.pathname === sub.to ? 'active' : ''}`}
+                    >
+                      {sub.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Live session widget - only rendered when one is actually active */}

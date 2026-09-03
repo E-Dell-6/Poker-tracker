@@ -24,10 +24,17 @@ describe('EVGraph', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders nothing while the initial fetch is in flight', () => {
+  it('renders a skeleton while the initial fetch is in flight', () => {
     globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
     const { container } = render(<EVGraph />);
-    expect(container).toBeEmptyDOMElement();
+    expect(container.querySelector('.ui-skeleton')).toBeInTheDocument();
+    expect(screen.getByText('Profit vs. Expected Value')).toBeInTheDocument();
+  });
+
+  it('omits the header when heading={false}', () => {
+    globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
+    render(<EVGraph heading={false} />);
+    expect(screen.queryByText('Profit vs. Expected Value')).not.toBeInTheDocument();
   });
 
   it('fetches from the ev-graph endpoint with credentials included', () => {

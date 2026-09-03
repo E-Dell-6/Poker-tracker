@@ -7,6 +7,7 @@ import {
   sortHandEntries, ProfitValue, RateValue, PositionBadges, Toggle, toggleInSet
 } from './handClassShared';
 import { HandClassLeaks } from './HandClassLeaks';
+import './MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.matrix-table-sub
 import './HandClassBreakdown.css';
 
 const AXIS_TICK = { fontSize: 11, fill: 'var(--color-text-muted)' };

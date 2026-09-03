@@ -1,23 +1,14 @@
 import { useState } from 'react';
-import { Layout } from '../../../components/Layout';
-import { useHeroStats } from '../../../hooks/useHeroStats';
-import { StudyPageSkeleton } from '../StudyPageSkeleton';
+import { useStudyContext } from '../StudyLayout';
 import { HandMatrix } from './HandMatrix';
 import { PreflopMatrixControls } from './PreflopMatrixControls';
+import { PreflopPositionMatrix } from '../PreflopPositionMatrix';
 import { computeWalk, getMatrixBucket } from '../../../utils/preflopWalk';
 import { SEATS_BY_SIZE } from '../../../utils/handGrid';
-import '../Stats.css';
 import './PreflopMatrixPage.css';
 
 export function PreflopMatrixPage() {
-  const {
-    isLoggedIn, baseStats, stats,
-    isFilterActive,
-    loading, error,
-    stakesFilter, setStakesFilter,
-    daysFilter, setDaysFilter,
-    fetchStats
-  } = useHeroStats();
+  const { stats } = useStudyContext();
 
   // Every seat is hero: since hero's tracked hands cover every position,
   // `path` walks the whole hand in real action order (see preflopWalk.js),
@@ -28,11 +19,11 @@ export function PreflopMatrixPage() {
   const [tableSize, setTableSize] = useState(6);
   const [minSampleSize, setMinSampleSize] = useState(0);
 
-  // The backend aggregates preflopMatrix for 6/7/8-handed tables (see
+  // The backend aggregates preflopMatrix for 6/7/8/9-handed tables (see
   // statsEngine.js's tableSize gate) - switching sizes changes the whole
-  // acting order (UTG+1/UTG+2 appear at 7/8-handed), so the in-progress
+  // acting order (UTG+1/UTG+2 appear at 7/8/9-handed), so the in-progress
   // walk can't carry over and gets reset.
-  const matrixRoot = stats?.preflopMatrix?.[String(tableSize)];
+  const matrixRoot = stats.preflopMatrix?.[String(tableSize)];
   const seats = SEATS_BY_SIZE[tableSize];
   const walk = computeWalk(path, seats);
 
@@ -77,78 +68,34 @@ export function PreflopMatrixPage() {
   const displayNode = !walk.complete ? walk.openSeats[0] : path[path.length - 1];
   const gridData = displayNode ? getMatrixBucket(matrixRoot, displayNode.scenario, displayNode.position, displayNode.facingPosition) : null;
 
-  if (loading || (isFilterActive && !stats)) {
-    return (
-      <Layout title="Preflop">
-        <div className="study-page">
-          <StudyPageSkeleton />
-        </div>
-      </Layout>
-    );
-  }
-
-  if (error) {
-    return (
-      <Layout title="Preflop">
-        <div className="study-page">
-          <div className="study-status-container study-status-container--error">
-            <h2>Couldn't load your stats</h2>
-            <p>{error}</p>
-            <button className="refresh-btn" onClick={fetchStats}>Retry</button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (isLoggedIn === false || !baseStats || baseStats.totalHands === 0) {
-    return (
-      <Layout title="Preflop">
-        <div className="study-page">
-          <div className="study-status-container">
-            <h2>No data yet</h2>
-            <p>
-              {isLoggedIn === false
-                ? 'Sign in to see your preflop range matrix.'
-                : 'Import a session, then hit Recompute on the Study page to generate your stats.'}
-            </p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
-    <Layout title="Preflop" subtitle="Walk any preflop line - every card is hero's own history for that seat">
-      <div className="study-page">
-        <div className="pfm-page">
-          <PreflopMatrixControls
-            path={path}
-            openSeats={!walk.complete ? walk.openSeats : []}
-            complete={walk.complete}
-            onRedoStep={redoStep}
-            onCommitOpenSeat={commitOpenSeat}
-            onReset={resetWalk}
-            tableSize={tableSize} setTableSize={setTableSizeAndReset}
-            stakesFilter={stakesFilter} setStakesFilter={setStakesFilter}
-            stakesOptions={Object.keys(baseStats.byStakes || {})}
-            daysFilter={daysFilter} setDaysFilter={setDaysFilter}
-            minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
-          />
+    <div className="pfm-page">
+      <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
 
-          <div className="pfm-grid-wrap">
-            {!gridData || Object.keys(gridData).length === 0 ? (
-              <div className="study-status-container">
-                <h2>No hands recorded</h2>
-                <p>Hero has no tracked hands for this seat/situation yet.</p>
-              </div>
-            ) : (
-              <HandMatrix data={gridData} minSampleSize={minSampleSize} />
-            )}
+      <PreflopMatrixControls
+        path={path}
+        openSeats={!walk.complete ? walk.openSeats : []}
+        complete={walk.complete}
+        onRedoStep={redoStep}
+        onCommitOpenSeat={commitOpenSeat}
+        onReset={resetWalk}
+        tableSize={tableSize} setTableSize={setTableSizeAndReset}
+        minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
+      />
+
+      <div className="pfm-grid-wrap">
+        {!gridData || Object.keys(gridData).length === 0 ? (
+          <div className="study-status-container">
+            <h2>No hands recorded</h2>
+            <p>Hero has no tracked hands for this seat/situation yet.</p>
           </div>
-        </div>
+        ) : (
+          <HandMatrix data={gridData} minSampleSize={minSampleSize} />
+        )}
       </div>
-    </Layout>
+
+      <PreflopPositionMatrix positional={stats.positional} />
+    </div>
   );
 }
 

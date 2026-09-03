@@ -10,6 +10,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { getEvGraph } from '../api/stats';
+import { Skeleton } from './ui/Skeleton';
 import './PositionalStats.css'; // shared section-header/glyph/rule classes
 import './EVGraph.css';
 
@@ -48,11 +49,13 @@ function EVTooltip({ active, payload, label }) {
   );
 }
 
-// `stakes`/`from`/`to` mirror Stats.jsx's page-wide Stakes/Time filter
-// (see statsController.js's getHeroEvGraphRoute) - all optional, omitted
-// entirely means "all hands", matching this component's own prior
-// behavior exactly when the Study page has no filter active.
-export function EVGraph({ stakes, from, to } = {}) {
+// `stakes`/`from`/`to` mirror the page-wide Stakes/Time filter of whichever
+// page renders this (see statsController.js's getHeroEvGraphRoute) - all
+// optional, omitted entirely means "all hands". `heading` lets a host page
+// that already renders its own card title (Profile.jsx) suppress this
+// component's internal one instead of showing two - default true keeps
+// every other render site's existing look.
+export function EVGraph({ stakes, from, to, heading = true } = {}) {
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,16 +77,39 @@ export function EVGraph({ stakes, from, to } = {}) {
     return () => { cancelled = true; };
   }, [stakes, from, to]);
 
-  if (loading) return null;
+  // Distinct from the empty/`rows === null` case below: this only covers
+  // the very first fetch. A host page whose filter changes (Profile.jsx's
+  // time filter) re-triggers the effect above on every click - collapsing
+  // to nothing on each of those refetches (the old `if (loading) return
+  // null` behavior) would make the chart flicker away and back constantly,
+  // so only the initial load (no `rows` yet at all) shows this skeleton;
+  // a refetch keeps rendering the previous chart underneath until the new
+  // data arrives.
+  if (loading && !rows) {
+    return (
+      <div className="ev-graph-section">
+        {heading && (
+          <div className="pos-section-header">
+            <span className="pos-glyph" aria-hidden="true">♥</span>
+            <h3 className="section-title">Profit vs. Expected Value</h3>
+            <span className="pos-rule" />
+          </div>
+        )}
+        <Skeleton style={{ height: 260 }} />
+      </div>
+    );
+  }
   if (error) return <div className="ev-graph-section stats-placeholder">{error}</div>;
   if (!rows || rows.length < 2) {
     return (
       <div className="ev-graph-section">
-        <div className="pos-section-header">
-          <span className="pos-glyph" aria-hidden="true">♥</span>
-          <h3 className="section-title">Profit vs. Expected Value</h3>
-          <span className="pos-rule" />
-        </div>
+        {heading && (
+          <div className="pos-section-header">
+            <span className="pos-glyph" aria-hidden="true">♥</span>
+            <h3 className="section-title">Profit vs. Expected Value</h3>
+            <span className="pos-rule" />
+          </div>
+        )}
         <div className="stats-placeholder">
           Not enough hand-by-hand data yet - this fills in as all-in hands with known showdown cards are tracked.
         </div>
@@ -96,11 +122,13 @@ export function EVGraph({ stakes, from, to } = {}) {
 
   return (
     <div className="ev-graph-section">
-      <div className="pos-section-header">
-        <span className="pos-glyph" aria-hidden="true">♥</span>
-        <h3 className="section-title">Profit vs. Expected Value</h3>
-        <span className="pos-rule" />
-      </div>
+      {heading && (
+        <div className="pos-section-header">
+          <span className="pos-glyph" aria-hidden="true">♥</span>
+          <h3 className="section-title">Profit vs. Expected Value</h3>
+          <span className="pos-rule" />
+        </div>
+      )}
 
       <div className="ev-chart-header">
         <div className="ev-legend">

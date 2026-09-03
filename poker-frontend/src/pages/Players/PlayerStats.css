@@ -107,7 +107,7 @@
    sizing convention as Study's .study-tiles-grid, kept as its own class
    here rather than importing Stats.css for one selector (Stats.css
    redefines .stats-container/.stats-grid itself, which would collide with
-   this file's own definitions below, still used by GroupedStats). */
+   this file's own definitions below). */
 .player-tiles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

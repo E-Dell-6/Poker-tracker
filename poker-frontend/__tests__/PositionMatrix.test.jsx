@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PositionMatrixTables } from '../src/pages/Stats/PositionMatrixTables.jsx';
+import { PreflopPositionMatrix } from '../src/pages/Stats/PreflopPositionMatrix.jsx';
+import { PostflopPositionMatrix } from '../src/pages/Stats/PostflopPositionMatrix.jsx';
 
 function rate(made, opportunities) {
   return { pct: opportunities > 0 ? Math.round((made / opportunities) * 1000) / 10 : 0, made, opportunities, confidence: 'high' };
@@ -21,15 +22,24 @@ function positionStats(overrides) {
   };
 }
 
-describe('PositionMatrixTables', () => {
+describe.each([
+  [PreflopPositionMatrix, 'Preflop matrix by position'],
+  [PostflopPositionMatrix, 'Postflop matrix by position']
+])('%s', (Matrix, title) => {
   it('renders nothing when there are no positions', () => {
-    const { container } = render(<PositionMatrixTables positional={{}} />);
+    const { container } = render(<Matrix positional={{}} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows its own section title', () => {
+    const positional = { 6: { positions: { BTN: positionStats() } } };
+    render(<Matrix positional={positional} />);
+    expect(screen.getByText(title)).toBeInTheDocument();
   });
 
   it('does not show a size-tab row when only one table size exists', () => {
     const positional = { 6: { positions: { BTN: positionStats() } } };
-    render(<PositionMatrixTables positional={positional} />);
+    render(<Matrix positional={positional} />);
     expect(screen.queryByRole('button', { name: /-handed/ })).not.toBeInTheDocument();
   });
 
@@ -38,9 +48,9 @@ describe('PositionMatrixTables', () => {
       6: { positions: { BTN: positionStats({ hands: 84 }) } },
       9: { positions: { CO: positionStats({ hands: 1 }) } }
     };
-    render(<PositionMatrixTables positional={positional} />);
+    render(<Matrix positional={positional} />);
     expect(screen.getByRole('button', { name: '6-handed (84)' })).toHaveClass('active');
-    expect(screen.getAllByText('BTN').length).toBeGreaterThan(0);
+    expect(screen.getByText('BTN')).toBeInTheDocument();
     expect(screen.queryByText('CO')).not.toBeInTheDocument();
   });
 
@@ -50,11 +60,11 @@ describe('PositionMatrixTables', () => {
       6: { positions: { BTN: positionStats({ hands: 84 }) } },
       9: { positions: { CO: positionStats({ hands: 1 }) } }
     };
-    render(<PositionMatrixTables positional={positional} />);
+    render(<Matrix positional={positional} />);
 
     await user.click(screen.getByRole('button', { name: '9-handed (1)' }));
 
-    expect(screen.getAllByText('CO').length).toBeGreaterThan(0);
+    expect(screen.getByText('CO')).toBeInTheDocument();
     expect(screen.queryByText('BTN')).not.toBeInTheDocument();
   });
 });
