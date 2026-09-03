@@ -73,24 +73,30 @@
      (see its comment): the top-right corner collides with the header's own
      "Import hands" button. Sits above the error slot rather than beside it,
      since a folder import can legitimately report both - progress while
-     running, then a summary of skipped files when it finishes. */
+     running, then a summary of skipped files when it finishes.
+     Sized as a real status card, not a toast - a 20k-hand import runs for
+     up to a minute and this is the only feedback the user has that
+     anything is happening, so it needs to be readable at a glance rather
+     than squinted at. */
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 501;
-  max-width: 320px;
+  min-width: 320px;
+  max-width: 440px;
   color: var(--color-accent);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 700;
   background: var(--color-bg-elevated-hover);
   border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
-  padding: 10px 16px;
-  border-radius: 8px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  padding: 20px 28px;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
 }
 
 /* When both are visible the error/summary moves up so it doesn't stack
-   underneath the progress pill. */
+   underneath the (now much taller) progress card. */
 .layout-upload-progress ~ .layout-upload-error {
-  bottom: 72px;
+  bottom: 132px;
 }
