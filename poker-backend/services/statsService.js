@@ -108,7 +108,7 @@ const yieldToEventLoop = () => new Promise(resolve => setImmediate(resolve));
 // A cursor rather than a find().lean() array, and hands are retained only
 // if they involve someone being recomputed, so a job touching a handful of
 // people doesn't hold the user's entire history in memory.
-export async function recomputeStatsForPersonIds(userId, personIds, touchesHero) {
+export async function recomputeStatsForPersonIds(userId, personIds, touchesHero, onProgress) {
   const wanted = new Set([...personIds].map(String));
   if (wanted.size === 0 && !touchesHero) return [];
 
@@ -139,9 +139,14 @@ export async function recomputeStatsForPersonIds(userId, personIds, touchesHero)
     }
   }
 
+  const total = wanted.size + (touchesHero ? 1 : 0);
+  let done = 0;
+
   const results = [];
   for (const pid of wanted) {
     results.push(await persistPersonStats(userId, pid, byPerson.get(pid) || []));
+    done += 1;
+    await onProgress?.(done, total);
     // Pure CPU from here on, so nothing else yields on its own. Without
     // this the whole batch blocks the event loop for every other request.
     await yieldToEventLoop();
@@ -154,6 +159,8 @@ export async function recomputeStatsForPersonIds(userId, personIds, touchesHero)
       { ...stats, userId, personId: null, isHero: true, lastComputedAt: new Date() },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ));
+    done += 1;
+    await onProgress?.(done, total);
   }
 
   return results;

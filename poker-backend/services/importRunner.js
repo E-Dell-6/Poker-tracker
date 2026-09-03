@@ -4,7 +4,7 @@ import ImportJob from '../model/ImportJob.js';
 import { importOneFile } from './handImportPipeline.js';
 import { createPersonResolver } from './personResolver.js';
 import { recomputeStatsForPersonIds } from './statsService.js';
-import { STAGING, QUOTA } from '../config/limits.js';
+import { STAGING, QUOTA, PROCESSING } from '../config/limits.js';
 
 // In-process job runner for staged bulk imports.
 //
@@ -182,9 +182,32 @@ async function runJob(jobId) {
   // This is only affordable because recomputeStatsForPersonIds does a
   // single bucketed pass: per-person recomputes measured ~508s for the 400
   // opponents in a 20k-hand import, versus ~4.8s batched.
+  //
+  // Every file can already show filesDone === totalFiles at this point, so
+  // without a distinct stage the poll response looks frozen for however
+  // long this takes - stuck on the last file's numbers, indistinguishable
+  // from a hang. 'finalizing' plus its own personsDone/personsTotal gives
+  // the client something that keeps moving.
   if (personIds.size > 0 || touchesHero) {
+    const personsTotal = personIds.size + (touchesHero ? 1 : 0);
+    await ImportJob.updateOne(
+      { _id: jobId },
+      { $set: { 'progress.stage': 'finalizing', 'progress.personsTotal': personsTotal, 'progress.personsDone': 0 } }
+    );
+
     try {
-      await recomputeStatsForPersonIds(userId, personIds, touchesHero);
+      await recomputeStatsForPersonIds(userId, personIds, touchesHero, async (done, total) => {
+        // Throttled the same way file progress is: written every
+        // PROGRESS_EVERY_N_PERSONS, plus unconditionally on the last one
+        // so the client's final read always shows personsDone === total
+        // rather than whatever the last multiple-of-N happened to be.
+        if (done % PROCESSING.PROGRESS_EVERY_N_PERSONS === 0 || done === total) {
+          await ImportJob.updateOne(
+            { _id: jobId },
+            { $set: { 'progress.personsDone': done, 'progress.personsTotal': total } }
+          );
+        }
+      });
     } catch (err) {
       // Stats are derived data and can be rebuilt on demand, so a failure
       // here doesn't invalidate an import whose hands are already saved.
@@ -194,7 +217,7 @@ async function runJob(jobId) {
 
   await ImportJob.updateOne(
     { _id: jobId },
-    { $set: { status: 'done', finishedAt: new Date(), progress: { ...totals } } }
+    { $set: { status: 'done', finishedAt: new Date(), progress: { ...totals, stage: 'importing', personsDone: 0, personsTotal: 0 } } }
   );
 }
 

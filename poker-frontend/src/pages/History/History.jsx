@@ -336,8 +336,6 @@ export function History() {
           className="visually-hidden-input"
         />
 
-        {error && <div className="error-message">{error}</div>}
-
         {/* Layout's own page-wide drag-and-drop uses a separate
             useHandImport() instance (see the comment above), so its
             progress overlay never reflects THIS hook's uploads - a click on
@@ -366,6 +364,11 @@ export function History() {
             )}
           </div>
           <div className="filter-bar-actions">
+            {/* Was rendered off-screen entirely (position: absolute,
+                anchored to a container removed in an earlier refactor) -
+                flows in-place now, to the left of "Create Hand", so it
+                can't escape the viewport the same way again. */}
+            {error && <div className="filter-bar-error">{error}</div>}
             <button
               className="create-button"
               onClick={() => navigate("/hand-creator")}

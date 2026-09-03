@@ -27,12 +27,14 @@ import {
 // lives alongside it in `progress` rather than replacing it.
 
 const initialProgress = {
-  phase: "idle",        // idle | screening | uploading | processing | done
+  phase: "idle",        // idle | screening | uploading | processing | finalizing | done
   filesTotal: 0,
   filesUploaded: 0,
   filesProcessed: 0,
   handsImported: 0,
   handsSkipped: 0,
+  personsDone: 0,
+  personsTotal: 0,
   jobId: null,
 };
 
@@ -129,12 +131,21 @@ export function useHandImport(onSettled) {
       const job = await pollImportUntilDone(
         jobId,
         (tick) => {
+          // Every file can report done - filesDone === filesTotal - while
+          // the job is still very much working: one stats recompute runs
+          // after the last file and before the job reports itself 'done'
+          // (see importRunner.js). Without distinguishing that stage here,
+          // the progress card would freeze on "120/120 files" for however
+          // long that takes, which reads as hung rather than working.
+          const finalizing = tick.progress?.stage === "finalizing";
           setProgress((p) => ({
             ...p,
-            phase: "processing",
+            phase: finalizing ? "finalizing" : "processing",
             filesProcessed: tick.progress?.filesDone ?? 0,
             handsImported: tick.progress?.handsImported ?? 0,
             handsSkipped: tick.progress?.handsSkipped ?? 0,
+            personsDone: tick.progress?.personsDone ?? 0,
+            personsTotal: tick.progress?.personsTotal ?? 0,
           }));
         },
         { shouldStop: () => cancelledRef.current }

@@ -1,6 +1,5 @@
 /* ── PAGE CONTAINER ─────────────────────────────────────── */
 .history-container {
-  position: relative; /* lets .error-message anchor here */
   font-family: var(--font-sans);
   color: var(--color-text);
   width: 100%;
@@ -107,21 +106,24 @@
   transform: none;
 }
 
-.error-message {
-  position: absolute;
-  top: 0;
-  right: 100%; /* places the box just outside the left edge of
-    .upload-section, i.e. to the left of the info icon/buttons, so its
-    width never affects their layout. */
-  margin-right: 12px;
-  width: 260px;
+/* Sits in the filter-bar-actions row, to the left of "Create Hand" - see
+   History.jsx. Previously this was `position: absolute; right: 100%`
+   anchored to .upload-section, a container that no longer exists (the
+   upload buttons moved to Layout's TopHeader CTA); with no matching
+   ancestor left in the DOM it anchored to .history-container instead,
+   which placed it entirely off the left edge of the page, behind the
+   sidebar. Flowing in-place avoids that whole class of bug: it can only
+   ever push its own row around, never escape the viewport. */
+.filter-bar-error {
+  max-width: 320px;
   color: var(--color-negative);
   font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.25);
-  padding: 6px 12px;
-  border-radius: 6px;
-  text-align: right;
+  padding: 8px 14px;
+  border-radius: 8px;
 }
 
 .visually-hidden-input {

@@ -56,14 +56,26 @@ export const QUOTA = {
 // --- Processing -------------------------------------------------------
 //
 // The box has 1-2 cores and mongod is on the same machine, so the strategy
-// throughout is to reduce work rather than parallelize it. YIELD_EVERY_N_HANDS
-// is what keeps the API responsive during an import: the all-in EV pass is
-// the CPU-heavy part (a preflop all-in is ~210k five-card evaluations) and
-// without an await in that loop it blocks the event loop for every other
-// request.
+// throughout is to reduce work rather than parallelize it. The all-in EV
+// pass is the CPU-heavy part (a preflop all-in is ~5000 Monte Carlo trials,
+// measured at ~51ms each) and without yielding in that loop it blocks the
+// event loop for every other request.
 export const PROCESSING = {
-  YIELD_EVERY_N_HANDS: 10000000,
+  // Upper bound on hands processed between event-loop yields. Only reached
+  // by stretches of cheap (non-all-in) hands - any hand that actually
+  // computes equity yields immediately after, because one preflop all-in
+  // alone is thousands of Monte Carlo trials. See computeEvWithYields in
+  // handImportPipeline.js. Verified: on an all-in-heavy corpus, yielding
+  // only every 50 hands (this same value, before that per-hand check
+  // existed) produced p95 request latency over 5s; yielding after every
+  // EV-computing hand brought that to ~105ms.
+  YIELD_EVERY_N_HANDS: 50,
   PROGRESS_EVERY_N_HANDS: 500,
+  // Same idea for the post-import stats recompute (see
+  // recomputeStatsForPersonIds / importRunner.js): write personsDone every
+  // N people rather than on every single one, since a job can touch
+  // thousands of opponents and each write is a round trip to Mongo.
+  PROGRESS_EVERY_N_PERSONS: 10,
   // Mongo's hard document ceiling is 16MB and hands are embedded in the
   // Session doc. Fail below it with a real message rather than letting the
   // driver throw its own.

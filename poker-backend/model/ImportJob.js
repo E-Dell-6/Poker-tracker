@@ -54,6 +54,18 @@ const ImportJobSchema = new mongoose.Schema({
     handsImported: { type: Number, default: 0 },
     handsSkipped: { type: Number, default: 0 },
     handsDuplicate: { type: Number, default: 0 },
+
+    // 'importing' covers the whole file loop above; every file can be
+    // 'done' (filesDone === totalFiles) while the job is still very much
+    // in progress, because ONE stats recompute runs after the last file
+    // and before status flips to 'done' (see importRunner.js). Without a
+    // stage the poll response looks identical for the length of that
+    // recompute - stuck at "120/120 files, 20,000 hands" - which reads as
+    // hung rather than working. personsDone/personsTotal give that phase
+    // its own numbers to move.
+    stage: { type: String, enum: ['importing', 'finalizing'], default: 'importing' },
+    personsDone: { type: Number, default: 0 },
+    personsTotal: { type: Number, default: 0 },
   },
 
   // Job-level failure (quota refused, disk full, unexpected throw). A file
