@@ -88,6 +88,16 @@ export const HandSchema = new mongoose.Schema({
     turn: [{ type: String }],
     river: [{ type: String }]
   },
+  // Second runout for a run-it-twice/three-times hand (GGPoker's parser is
+  // the first to populate this). Same cumulative-per-street shape as
+  // `board`. Left unset for ACR/PokerNow hands and for single-run GGPoker
+  // hands - the frontend (HandReplayer.jsx/PokerTable.jsx) already guards
+  // its second-board display behind `isRunTwice && secondBoard`.
+  secondBoard: {
+    flop: [{ type: String }],
+    turn: [{ type: String }],
+    river: [{ type: String }]
+  },
 
   winners: { type: [String], default: [], required: true},
   finalPotSize: { type: Number },
