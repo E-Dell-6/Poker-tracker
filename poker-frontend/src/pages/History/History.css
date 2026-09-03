@@ -1,16 +1,10 @@
 /* ── PAGE CONTAINER ─────────────────────────────────────── */
 .history-container {
-  position: relative; /* lets .error-message/.drop-overlay anchor here */
+  position: relative; /* lets .error-message anchor here */
   font-family: var(--font-sans);
   color: var(--color-text);
   width: 100%;
   box-sizing: border-box;
-}
-
-.history-container.drag-active {
-  outline: 2px dashed var(--color-accent);
-  outline-offset: 4px;
-  border-radius: 8px;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
@@ -128,23 +122,6 @@
   padding: 6px 12px;
   border-radius: 6px;
   text-align: right;
-}
-
-/* ── DRAG & DROP ────────────────────────────────────────── */
-.drop-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-  border-radius: 8px;
-  pointer-events: none;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--color-accent);
-  text-align: center;
-  padding: 8px;
 }
 
 .visually-hidden-input {

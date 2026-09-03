@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Camera, X, Star, Plus, Upload } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
+import { useHandImport } from "../../hooks/useHandImport";
 import { ImportLogCta } from "../../components/ui/ImportLogCta";
 import { SessionLog } from "../../components/SessionLog";
 import { HandSearchMenu } from "../../components/HandSearchMenu";
@@ -10,7 +11,7 @@ import { Tabs } from "../../components/ui/Tabs";
 import { Pagination } from "../../components/ui/Pagination";
 import { SessionListSkeleton } from "./SessionListSkeleton";
 import { formatSignedMajorUnits } from "../../utils/formatMoney";
-import { uploadImage, uploadSessionCsv } from "../../api/uploads";
+import { uploadImage } from "../../api/uploads";
 import { getPeople, createPerson } from "../../api/people";
 import { getSessions, getSessionStakes, mapSessionPlayer, updateSession } from "../../api/sessions";
 import "./History.css";
@@ -172,9 +173,11 @@ export function History() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedGame, setSelectedGame] = useState("All");
-  const [uploadStatus, setUploadStatus] = useState(null);
-  const [error, setError] = useState(null);
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  // Handles this page's own CTA-driven (file picker) upload. Dropping a
+  // file anywhere on the page is handled by Layout's own page-wide drop
+  // zone (see onImportSettled below) - a separate instance, since Layout
+  // has no visibility into this page's upload state.
+  const { uploadStatus, setUploadStatus, error, setError, uploadFiles } = useHandImport();
   const fileInputRef = useRef(null);
 
   const [renamingState, setRenamingState] = useState(null);
@@ -224,92 +227,16 @@ export function History() {
   const handleStakesChange = (e) => { setPage(1); setSelectedStakes(e.target.value); };
   const handleToggleStarredFilter = () => { setPage(1); setShowStarredSessions((prev) => !prev); };
 
-  const uploadFiles = async (fileList) => {
-    const files = Array.from(fileList || []);
-    if (files.length === 0) return;
-
-    setError(null);
-    setUploadStatus("uploading");
-
-    try {
-      const result = await uploadSessionCsv(files);
-
-      const perFileResults = result.results || [];
-      const duplicates = perFileResults.filter((r) => !r.success && r.duplicate);
-      const otherFailures = perFileResults.filter((r) => !r.success && !r.duplicate);
-      const successCount = perFileResults.filter((r) => r.success).length;
-
-      const messageParts = [];
-      if (otherFailures.length > 0) {
-        // Real errors are rarer and need attention, so name the files.
-        const names = otherFailures.map((f) => `${f.filename}: ${f.error}`).join(" | ");
-        messageParts.push(names);
-      }
-      if (duplicates.length > 0) {
-        messageParts.push(
-          duplicates.length === 1
-            ? "1 file was already uploaded."
-            : `${duplicates.length} files were already uploaded.`
-        );
-      }
-      if (successCount > 0 && (duplicates.length > 0 || otherFailures.length > 0)) {
-        messageParts.unshift(
-          `Uploaded ${successCount} of ${files.length} file(s).`
-        );
-      }
-
-      if (messageParts.length > 0) {
-        setError(messageParts.join(" "));
-      }
-
-      setUploadStatus("success-" + Date.now());
-    } catch (err) {
-      setUploadStatus("error");
-      setError(err.message);
-    }
-  };
-
   const handleFileUpload = async (event) => {
     await uploadFiles(event.target.files);
     event.target.value = null;
   };
 
-  const handleDragEnter = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (uploadStatus === "uploading") return;
-    setIsDraggingFile(true);
-  };
-
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
-
-  const handleDragLeave = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    // Only clear once the pointer actually leaves the drop zone, not when it
-    // moves over a child element inside it.
-    if (event.currentTarget.contains(event.relatedTarget)) return;
-    setIsDraggingFile(false);
-  };
-
-  const handleDrop = async (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setIsDraggingFile(false);
-    if (uploadStatus === "uploading") return;
-
-    const dropped = Array.from(event.dataTransfer.files || []).filter((f) =>
-      /\.(csv|txt)$/i.test(f.name)
-    );
-    if (dropped.length === 0) {
-      setError("Please drop a .csv or .txt log file.");
-      return;
-    }
-    await uploadFiles(dropped);
-  };
+  // A page-wide drop (handled by Layout) uses its own separate upload
+  // state, so this page's own uploadStatus/effect-based refetch never
+  // fires for it - nudge uploadStatus here instead, which the effect
+  // above already treats as "something changed, refetch."
+  const handleImportSettled = () => setUploadStatus("success-" + Date.now());
 
   const onPlayerMapped = async (person) => {
     const { sessionId, originalName } = renamingState;
@@ -370,14 +297,9 @@ export function History() {
       ctaLabel={uploadStatus === "uploading" ? "Processing..." : "Import hands"}
       ctaIcon={Upload}
       onCta={() => fileInputRef.current.click()}
+      onImportSettled={handleImportSettled}
     >
-      <div
-        className={`history-container${isDraggingFile ? " drag-active" : ""}`}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+      <div className="history-container">
         {renamingState && (
           <EditSession
             renamingState={renamingState}
@@ -397,10 +319,6 @@ export function History() {
         />
 
         {error && <div className="error-message">{error}</div>}
-
-        {isDraggingFile && (
-          <div className="drop-overlay">Drop .csv / .txt files to upload</div>
-        )}
 
         <div className="filter-bar">
           <div className="filter-bar-primary">

@@ -40,14 +40,12 @@ export function HomePage() {
   const [favourites, setFavourites] = useState([]);
   const [chartRange, setChartRange] = useState(30);
 
-  useEffect(() => {
-    if (isLoggedIn === false) {
-      setDataLoading(false);
-      return;
-    }
-    if (!isLoggedIn) return;
-
-    Promise.all([
+  // Named (not inline in the effect) so a page-wide hand-history drop can
+  // re-run the exact same fetch and reflect the newly imported session(s)
+  // without a full page reload - same reasoning as History's uploadStatus-
+  // triggered refetch.
+  const fetchDashboardData = () => {
+    return Promise.all([
       getAllSessions().catch(() => []),
       getLiveSessions().catch(() => []),
       getMyStats().catch(() => null),
@@ -81,6 +79,16 @@ export function HomePage() {
       });
       setDataLoading(false);
     });
+  };
+
+  useEffect(() => {
+    if (isLoggedIn === false) {
+      setDataLoading(false);
+      return;
+    }
+    if (!isLoggedIn) return;
+
+    fetchDashboardData();
   }, [isLoggedIn]);
 
   const recentSessions = [...combinedSessions]
@@ -154,6 +162,7 @@ export function HomePage() {
       ctaLabel="Import hands"
       ctaIcon={Upload}
       onCta={() => navigate('/history')}
+      onImportSettled={fetchDashboardData}
     >
       <div className="hp-dashboard">
         {dataLoading ? <DashboardSkeleton /> : (

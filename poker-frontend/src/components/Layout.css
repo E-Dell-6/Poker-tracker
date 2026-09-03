@@ -5,10 +5,46 @@
    With min-height, taller-than-viewport content grows .app-layout past
    100vh and the whole page (sidebar included) scrolls away instead. */
 .app-layout {
+  position: relative; /* anchors .layout-drop-overlay/.layout-upload-error
+    to the whole shell, not just .main-content, so a page-wide drop is
+    visible no matter where over the layout the pointer is. */
   display: flex;
   height: 100vh;
   overflow: hidden;
   background: var(--color-bg);
+}
+
+/* ── PAGE-WIDE DRAG & DROP (any page with the "Import hands" CTA) ──── */
+.layout-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -8px;
+  pointer-events: none;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+.layout-upload-error {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 500;
+  max-width: 320px;
+  color: var(--color-negative);
+  font-size: 13px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
 
 .app-layout-column {
