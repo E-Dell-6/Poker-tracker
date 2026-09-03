@@ -1,5 +1,11 @@
-/* EVGraph — shared component, hardcoded colors like PositionalStats.css
-   rather than relying on host-page CSS variables. */
+/* EVGraph — every color here and in the chart itself comes from
+   theme.css's tokens (see its header: tokens are the single source of
+   truth, no stylesheet redeclares hex). The series strokes live in this
+   file rather than as inline props in EVGraph.jsx specifically so a line
+   and the legend/tooltip swatch labeling it cannot drift apart - they had:
+   the Actual dot was pinned to --color-positive while its line turns red
+   on a losing graph, and the EV dot was --color-accent against a
+   hardcoded gold line. */
 
 .ev-graph-section {
   margin-top: 2rem;
@@ -76,8 +82,30 @@
   flex-shrink: 0;
 }
 
-.ev-tt-dot--actual { background: var(--color-positive); }
+/* Actual is green or red depending on whether the graph ends up or down
+   (`.is-down` is set by EVGraph.jsx), exactly like the .ev-chart-total
+   figure beside it. Resolving that choice ONCE into --ev-actual-color is
+   what keeps the line, its gradient wash, the legend dot and the tooltip
+   dot from ever disagreeing about which color "Actual" is. */
+.ev-graph-section { --ev-actual-color: var(--color-positive); }
+.ev-graph-section.is-down { --ev-actual-color: var(--color-negative); }
+
+.ev-tt-dot--actual { background: var(--ev-actual-color); }
 .ev-tt-dot--ev { background: var(--color-accent); }
+
+/* Recharts puts our className on the series' wrapper <g> and its own
+   default stroke (#3182bd) as a presentation attribute on the curve
+   <path> nested inside, so inheriting a stroke down from the <g> won't
+   override it - but matching the path directly does, presentation
+   attributes losing to any author-stylesheet rule. EVGraph.jsx passes
+   these same values as stroke props too, which is what recharts derives
+   the hover activeDot's fill from; CSS can't do that job, since both
+   series' active dots share one class. */
+.ev-area-actual .recharts-area-curve { stroke: var(--ev-actual-color); }
+.ev-line-ev .recharts-line-curve { stroke: var(--color-accent); }
+
+/* The Area's gradient wash under the line, matching its stroke. */
+.ev-fill-stop { stop-color: var(--ev-actual-color); }
 
 .ev-tt-variance {
   margin-top: 4px;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import {
   ComposedChart,
   Area,
@@ -56,6 +56,12 @@ function EVTooltip({ active, payload, label }) {
 // component's internal one instead of showing two - default true keeps
 // every other render site's existing look.
 export function EVGraph({ stakes, from, to, heading = true } = {}) {
+  // Gradient ids are document-global, so two EVGraphs on one page would
+  // otherwise share whichever <defs> came first - harmless when both
+  // gradients were identical hardcoded stops, but not now that the wash
+  // follows each instance's own up/down state. Colons are stripped since
+  // React's generated ids contain them and url(#...) can't take them raw.
+  const fillId = `evFillActual-${useId().replace(/:/g, '')}`;
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -121,7 +127,10 @@ export function EVGraph({ stakes, from, to, heading = true } = {}) {
   const isUp = last.cumulativeActual >= 0;
 
   return (
-    <div className="ev-graph-section">
+    // `is-down` drives the Actual series' red-instead-of-green in
+    // EVGraph.css - the line, its gradient wash, the legend dot and the
+    // tooltip dot all key off this one class so they stay in step.
+    <div className={`ev-graph-section ${isUp ? 'is-up' : 'is-down'}`}>
       {heading && (
         <div className="pos-section-header">
           <span className="pos-glyph" aria-hidden="true">♥</span>
@@ -142,13 +151,9 @@ export function EVGraph({ stakes, from, to, heading = true } = {}) {
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={rows} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="evFillGreen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="evFillRed" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                <stop className="ev-fill-stop" offset="0%" stopOpacity={0.22} />
+                <stop className="ev-fill-stop" offset="100%" stopOpacity={0} />
               </linearGradient>
             </defs>
 
@@ -171,20 +176,25 @@ export function EVGraph({ stakes, from, to, heading = true } = {}) {
 
             <Tooltip content={<EVTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.18)', strokeDasharray: '4 3' }} />
 
+            {/* stroke is also set in EVGraph.css (which is what actually
+                paints the curve, over recharts' default); passing it here
+                too is what gives the hover activeDot its matching fill. */}
             <Area
+              className="ev-area-actual"
               type="monotone"
               dataKey="cumulativeActual"
-              stroke={isUp ? '#22c55e' : '#ef4444'}
+              stroke="var(--ev-actual-color)"
               strokeWidth={2.2}
-              fill={isUp ? 'url(#evFillGreen)' : 'url(#evFillRed)'}
+              fill={`url(#${fillId})`}
               dot={false}
               activeDot={{ r: 4 }}
               isAnimationActive={false}
             />
             <Line
+              className="ev-line-ev"
               type="monotone"
               dataKey="cumulativeEV"
-              stroke="#d4af37"
+              stroke="var(--color-accent)"
               strokeWidth={2}
               strokeDasharray="5 3"
               dot={false}

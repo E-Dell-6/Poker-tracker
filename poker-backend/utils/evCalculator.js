@@ -63,9 +63,18 @@ export function computeAllInEV(hand) {
     if (actions[j].actionType === 'BET' || actions[j].actionType === 'RAISE') return null;
   }
 
+  // Every fold in the WHOLE hand, not just those from triggerIndex on:
+  // a player who folded before the all-in (an early-position preflop
+  // muck) is just as absent from the equity contest as one who folds
+  // facing it. Scanning only post-trigger actions left those early
+  // folders in `participants`, where two things went wrong - their cards
+  // were never shown, so the showedHand guard below rejected the whole
+  // hand (on a 9-handed table that's nearly every all-in), and a hand
+  // hero herself folded early still counted her as live, which would
+  // fabricate an EV off her mucked holeCards.
   const folded = new Set();
-  for (let j = triggerIndex; j < actions.length; j++) {
-    if (actions[j].actionType === 'FOLD') folded.add(actions[j].player);
+  for (const action of actions) {
+    if (action.actionType === 'FOLD') folded.add(action.player);
   }
   const participants = players.filter(p => !p.isSittingOut && !folded.has(p.name));
   if (participants.length < 2 || !participants.some(p => p.isHero)) return null;
