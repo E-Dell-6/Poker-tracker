@@ -9,11 +9,21 @@
   padding: 16px 20px;
 }
 
+/* The seat cards, on their own now - nothing shares this row, so the
+   scrolling card strip gets the panel's full width. */
 .pfm-controls-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+}
+
+/* Table-size tabs + reset/settings, grouped at the left under the cards so
+   the row reads in the same left-to-right order the cards do. */
+.pfm-controls-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .pfm-gear-btn {
@@ -206,7 +216,9 @@
 .pfm-settings-panel {
   position: absolute;
   top: calc(100% + 8px);
-  right: 20px;
+  /* Anchored under the gear button, which lives at the toolbar's left end
+     (see .pfm-controls-toolbar). */
+  left: 20px;
   width: 260px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-strong);

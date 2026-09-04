@@ -127,9 +127,7 @@ export function PreflopMatrixPage() {
         minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
       />
 
-      <div className="pfm-grid-wrap">
-        <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
-      </div>
+      <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
 
       <PreflopPositionMatrix positional={stats.positional} />
     </div>

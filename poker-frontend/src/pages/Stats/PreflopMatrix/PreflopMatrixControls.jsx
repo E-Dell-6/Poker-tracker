@@ -148,6 +148,13 @@ export function PreflopMatrixControls({
             </div>
           )}
         </ScrollableRow>
+      </div>
+
+      {/* Table size + the two panel-wide actions, on their own row under
+          the seat cards rather than crowded in beside them - the card row
+          spans the full page width now (see PreflopMatrixPage.css), which
+          left these squeezed against the far edge. */}
+      <div className="pfm-controls-toolbar">
         <Tabs options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} />
         <button type="button" className="pfm-gear-btn" onClick={onReset} aria-label="Restart from UTG" title="Restart from UTG">
           <RotateCcw size={16} />

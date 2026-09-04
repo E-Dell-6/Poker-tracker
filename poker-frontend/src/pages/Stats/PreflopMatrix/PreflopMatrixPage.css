@@ -2,15 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  /* Wider than the grid below (see .pfm-grid-wrap) - the sequence bar
-     wants the room, the 13-column grid doesn't need it. */
+  /* One width for the whole page: the sequence bar, the range grid and the
+     position matrix below it all share this edge. The grid used to be
+     capped narrower and centred, which left it visibly inset from the two
+     cards it sits between. Its 13 columns are fluid (see HandMatrix.css's
+     1fr/aspect-ratio cells), so the extra room just makes them bigger. */
   max-width: 1320px;
-  margin: 0 auto;
-}
-
-.pfm-grid-wrap {
-  max-width: 900px;
-  width: 100%;
   margin: 0 auto;
 }
 
