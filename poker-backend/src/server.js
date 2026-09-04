@@ -21,6 +21,7 @@ import { resumeInterruptedJobs, sweepOrphanedStagingDirs } from '../services/imp
 import { backfillMissingLedger } from '../services/handImportPipeline.js';
 import { STAGING } from '../config/limits.js';
 import fs from 'fs/promises';
+import path from 'path';
 
 
 const app = express();
@@ -67,10 +68,22 @@ app.listen(PORT, '0.0.0.0', async () => {
     await connectDB(process.env.MONGO_URI);
 
     // Import staging lives on the host filesystem, outside the publicly
-    // served uploads/ directory (see config/limits.js).
-    await fs.mkdir(STAGING.DIR, { recursive: true }).catch(err => {
-        console.error(`Could not create import staging dir ${STAGING.DIR}:`, err.message);
-    });
+    // served uploads/ directory (see config/limits.js). Creating it isn't
+    // enough to prove it's usable - a dir that exists but isn't writable by
+    // this process (wrong owner, or a path the service's mount namespace
+    // can't reach) let the server come up looking healthy while every
+    // import failed at its per-job mkdir. Probe an actual write instead.
+    try {
+        await fs.mkdir(STAGING.DIR, { recursive: true });
+        const probe = path.join(STAGING.DIR, `.write-probe-${process.pid}`);
+        await fs.writeFile(probe, '');
+        await fs.rm(probe, { force: true });
+    } catch (err) {
+        console.error(
+            `IMPORTS DISABLED: staging dir ${STAGING.DIR} is not writable by uid ${process.getuid?.() ?? '?'}:`,
+            err.message
+        );
+    }
 
     // Because the disk is persistent, a job interrupted by a restart still
     // has its staged files and can pick up from the first file that hadn't

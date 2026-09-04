@@ -110,7 +110,7 @@ export function toggleInSet(set, key) {
 
 // Color + label for a position badge - prefers bb100 (the real win-rate
 // figure) and only falls back to a bare hand count for the rare bucket
-// with hands but no bb100 (mixed currency/no bb-size data).
+// with hands but no bb100 (no parseable bb size in the hand's stakes).
 function positionBadgeColor(bucket) {
   if (bucket.bb100 != null) return bucket.bb100 >= 0 ? 'var(--color-positive)' : 'var(--color-negative)';
   return 'var(--color-text-faint)';

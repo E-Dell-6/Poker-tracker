@@ -1211,16 +1211,24 @@ function finalizePositional(positional) {
 // finalizeProfitLoss below instead of the generic finalizeRate loop.
 const PROFIT_FIELD_KEYS = new Set(['totalProfitLoss', 'handsWithProfitData', 'bbUnitsWon', 'handsWithBbData', 'currencies']);
 
-// Shared by the top-level accumulator and every grouping bucket: same
-// currency-safety rule either way - totalProfitLoss/bb100 only mean
-// anything as a single scalar when every hand in the slice shares one
-// currency, otherwise the caller gets an explicit null instead of a
-// silently-wrong mixed-unit number.
+// Shared by the top-level accumulator and every grouping bucket.
+//
+// bb100 is NOT currency-guarded: bbUnitsWon is a sum of profitLoss/bb per
+// hand, i.e. already dimensionless big blinds by the time it lands in the
+// sink (bumpProfit keeps profitLoss and parseBigBlind's `bb` in matching
+// units for cents currencies, so the ratio is bb either way). A player
+// whose hands span USD, CAD and CHIPS still has one meaningful bb/100 -
+// nulling it there hid the metric from anyone with a mixed history.
+//
+// `currency` stays single-currency-only: it labels the raw
+// totalProfitLoss figure, which really is a mixed-unit sum when a slice
+// spans currencies, so a null tells the consumer not to print a $ symbol
+// it can't justify.
 function finalizeProfitLoss(sink) {
   return {
     totalProfitLoss: Math.round(sink.totalProfitLoss * 100) / 100,
     handsWithProfitData: sink.handsWithProfitData,
-    bb100: (sink.handsWithBbData > 0 && sink.currencies.size <= 1)
+    bb100: sink.handsWithBbData > 0
       ? Math.round((sink.bbUnitsWon / sink.handsWithBbData) * 100 * 100) / 100
       : null,
     currency: sink.currencies.size === 1 ? [...sink.currencies][0] : null
@@ -1370,9 +1378,9 @@ function finalize(acc) {
     ...rateStats,
     aggPct,
     aggFactor,
-    // totalProfitLoss/bb100/currency: see finalizeProfitLoss above - same
-    // "null if mixed currencies" rule this used to compute inline (e.g. a
-    // real-money site + a play-chip home game mixed together).
+    // totalProfitLoss/bb100/currency: see finalizeProfitLoss above for
+    // which of these survive a slice that mixes currencies (e.g. a
+    // real-money site + a play-chip home game) and which go null.
     ...finalizeProfitLoss(acc),
     // Position-vs-position breakdown, bucketed by table size (2-9 active
     // players). See ensurePositional/ensureVsOpen/ensureVs3Bet above for

@@ -49,7 +49,19 @@ export async function prepareJob(req, res, next) {
     }
 
     req.jobStagingDir = path.join(STAGING.DIR, String(req.importJob._id));
-    await fs.mkdir(req.jobStagingDir, { recursive: true });
+    try {
+      await fs.mkdir(req.jobStagingDir, { recursive: true });
+    } catch (err) {
+      // A staging dir the server can't write is a deploy fault, not a bad
+      // upload. Without this it fell through to handleMulterError's
+      // catch-all and came back as a 400 carrying a raw ENOENT string,
+      // which reads as "your file was rejected" to both the user and
+      // whoever is debugging it.
+      console.error(`[import] staging dir unusable (${req.jobStagingDir}):`, err.message);
+      return res.status(503).json({
+        error: 'Imports are temporarily unavailable - the server could not open its staging directory.',
+      });
+    }
     next();
   } catch (err) {
     next(err);

@@ -52,9 +52,10 @@ const PlayerStatsSchema = new mongoose.Schema({
   totalProfitLoss: { type: Number, default: 0 },
   handsWithProfitData: { type: Number, default: 0 },
   bb100: { type: Number, default: null },
-  // Null when this player's tracked hands span more than one currency
-  // (mixing units would make totalProfitLoss/bb100 meaningless) - see
-  // statsEngine.js's `finalize()` for how this is derived.
+  // Null when this player's tracked hands span more than one currency:
+  // it labels totalProfitLoss, which really is a mixed-unit sum in that
+  // case. bb100 above is unaffected (big blinds are dimensionless) - see
+  // statsEngine.js's finalizeProfitLoss().
   currency: { type: String, enum: ['USD', 'CAD', 'CHIPS', null], default: null },
 
   // Position-vs-position breakdown, bucketed by table size (2-9 active

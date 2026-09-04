@@ -7,7 +7,7 @@ import { computeStatsForHands, matchHero } from '../utils/statsEngine.js';
 // whole engine - just the showdownBreakdown/per-position-bb100 fields added
 // for the Study page redesign, which had none.
 
-function hand({ handIndex, heroWins, heroFolds, showdown, profitLoss }) {
+function hand({ handIndex, heroWins, heroFolds, showdown, profitLoss, stakes = '$1/$2', currency = 'USD' }) {
   const players = [
     { seat: 1, name: 'Hero', stack: 40000, isDealer: true, isHero: true, isSittingOut: false, effectiveStackBB: 200 },
     { seat: 2, name: 'Villain', stack: 40000, isDealer: false, isHero: false, isSittingOut: false, effectiveStackBB: 200 },
@@ -29,7 +29,7 @@ function hand({ handIndex, heroWins, heroFolds, showdown, profitLoss }) {
   players.find(p => p.isHero).profitLoss = profitLoss;
   players.find(p => p.name === 'Villain').profitLoss = -profitLoss;
   return {
-    handIndex, stakes: '$1/$2', currency: 'USD',
+    handIndex, stakes, currency,
     players, actions,
     board: { flop: [], turn: [], river: [] },
     winners: heroWins ? ['Hero'] : ['Villain'],
@@ -70,6 +70,25 @@ describe('computeStatsForHands: per-position profitability', () => {
     expect(posBucket.totalProfitLoss).toBe(-1);
     expect(posBucket.currency).toBe('USD');
     expect(posBucket.bb100).not.toBeNull();
+  });
+});
+
+describe('computeStatsForHands: bb100 across mixed currencies', () => {
+  it('still reports bb100 when a slice spans currencies, but nulls the $ currency label', () => {
+    // bb/100 is dimensionless (profit / big-blind size), so a history that
+    // mixes a real-money site with a play-chip game still has one honest
+    // win rate - only the raw totalProfitLoss sum is unit-mixed.
+    // USD profitLoss is in cents: 400 / (2 * 100) = 2bb. CHIPS is in major
+    // units: 4 / 2 = 2bb. 4bb over 2 hands -> 200 bb/100.
+    const hands = [
+      hand({ handIndex: 1, heroWins: true, heroFolds: false, showdown: false, profitLoss: 400 }),
+      hand({ handIndex: 2, heroWins: true, heroFolds: false, showdown: false, profitLoss: 4, stakes: '1/2', currency: 'CHIPS' }),
+    ];
+    const stats = computeStatsForHands(hands, matchHero());
+    expect(stats.bb100).toBe(200);
+    expect(stats.currency).toBeNull();
+    // Every drill-down bucket goes through the same finalizer.
+    expect(stats.positional[2]?.positions?.['BTN/SB']?.bb100).toBe(200);
   });
 });
 
