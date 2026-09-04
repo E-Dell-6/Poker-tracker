@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Table, TableHead, TableBody, TableRow, TableCell } from '../../components/ui/Table';
+import { Tag } from '../../components/ui/Tag';
 import { CATEGORY_LABEL, CONTEXT_ORDER, ProfitValue, RateValue, PositionBadges } from './handClassShared';
 import './MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.matrix-table-sub
 import './HandClassLeaks.css';
@@ -27,6 +29,10 @@ function computeLeaks(byHandClass, contextFilter) {
   return { leaks: leaks.slice(0, LEAK_LIMIT), qualifying };
 }
 
+function hasPositionData(ctxData) {
+  return Object.values(ctxData.byPosition || {}).some(bucket => bucket.hands > 0);
+}
+
 // Ranked, cross-hand view of the worst-performing hand/preflop-action spots
 // - the direct answer to "which hands are costing me money from an open vs.
 // a 3-bet vs. calling one of these, and from what positions", instead of
@@ -42,17 +48,20 @@ export function HandClassLeaks({ byHandClass, onSelectHand }) {
     <div className="matrix-table-card hand-class-leaks">
       <div className="matrix-table-header">
         <h3 className="section-title">Biggest leaks</h3>
-        <select
-          className="hcl-context-select"
-          value={contextFilter}
-          onChange={e => setContextFilter(e.target.value)}
-          aria-label="Filter leaks by preflop action"
-        >
-          <option value="all">All actions</option>
-          {CONTEXT_ORDER.map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </select>
+        <div className="hcl-header-controls">
+          <span className="matrix-table-sub">net loss · 30+ hands</span>
+          <select
+            className="study-filter-select hcl-context-select"
+            value={contextFilter}
+            onChange={e => setContextFilter(e.target.value)}
+            aria-label="Filter leaks by preflop action"
+          >
+            <option value="all">All actions</option>
+            {CONTEXT_ORDER.map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {leaks.length === 0 ? (
@@ -62,26 +71,44 @@ export function HandClassLeaks({ byHandClass, onSelectHand }) {
             : 'No losing spots found — every hand/action combo with enough hands is break-even or profitable.'}
         </p>
       ) : (
-        <div className="hcl-list">
-          {leaks.map((leak, i) => (
-            <div
-              key={`${leak.token}::${leak.ctxKey}`}
-              className="hcl-row"
-              onClick={() => onSelectHand(leak.token)}
-            >
-              <div className="hcl-row-head">
-                <span className="hcl-rank">{i + 1}</span>
-                <span className="hcl-token">{leak.token}</span>
-                <span className="hcl-category">{CATEGORY_LABEL[leak.category]}</span>
-                <span className="hcl-context-tag">{leak.ctxLabel}</span>
-                <span className="hcl-hands">{leak.ctxData.hands}h</span>
-                <RateValue bucket={leak.ctxData} />
-                <ProfitValue bucket={leak.ctxData} />
-              </div>
-              <PositionBadges ctxData={leak.ctxData} />
-            </div>
-          ))}
-        </div>
+        <>
+          <Table className="hcl-list">
+            <TableHead>
+              <TableCell header align="right">#</TableCell>
+              <TableCell header>Hand</TableCell>
+              <TableCell header>Action</TableCell>
+              <TableCell header>Positions</TableCell>
+              <TableCell header align="right">Hands</TableCell>
+              <TableCell header align="right">bb/100</TableCell>
+              <TableCell header align="right">Net $</TableCell>
+            </TableHead>
+            <TableBody>
+              {leaks.map((leak, i) => (
+                <TableRow
+                  key={`${leak.token}::${leak.ctxKey}`}
+                  className="hcl-row"
+                  onClick={() => onSelectHand(leak.token)}
+                >
+                  <TableCell align="right" className="hcl-rank">{i + 1}</TableCell>
+                  <TableCell>
+                    <span className="hcl-token">{leak.token}</span>
+                    <span className="hcl-category">{CATEGORY_LABEL[leak.category]}</span>
+                  </TableCell>
+                  <TableCell><Tag variant="neutral">{leak.ctxLabel}</Tag></TableCell>
+                  <TableCell className="hcl-positions-cell">
+                    {hasPositionData(leak.ctxData)
+                      ? <PositionBadges ctxData={leak.ctxData} />
+                      : <span className="hcb-value-empty">—</span>}
+                  </TableCell>
+                  <TableCell align="right"><span className="hcb-value-mono">{leak.ctxData.hands}</span></TableCell>
+                  <TableCell align="right"><RateValue bucket={leak.ctxData} /></TableCell>
+                  <TableCell align="right"><ProfitValue bucket={leak.ctxData} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <p className="hcl-note">Click a leak to open that hand's full preflop-action breakdown below.</p>
+        </>
       )}
     </div>
   );

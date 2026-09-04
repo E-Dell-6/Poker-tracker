@@ -5,6 +5,7 @@ import Session from '../model/Session.js';
 import Person from '../model/People.js';
 import HandLedger from '../model/HandLedger.js';
 import ImportJob from '../model/ImportJob.js';
+import SharedHand from '../model/sharedHand.js';
 
 // One-off index build. Run this deliberately rather than letting Mongoose
 // autoIndex do it on boot: these are built against a live collection and
@@ -26,6 +27,9 @@ const MODELS = [
   ['Person', Person],
   ['HandLedger', HandLedger],
   ['ImportJob', ImportJob],
+  // The TTL index here is the one that expires public share links, so a
+  // deployment missing it leaves those links live forever.
+  ['SharedHand', SharedHand],
 ];
 
 async function main() {
@@ -38,7 +42,8 @@ async function main() {
       const indexes = await model.collection.indexes();
       console.log(`ok (${indexes.length} total)`);
       for (const idx of indexes) {
-        console.log(`    ${idx.name}: ${JSON.stringify(idx.key)}${idx.unique ? ' [unique]' : ''}`);
+        const ttl = idx.expireAfterSeconds !== undefined ? ` [ttl ${idx.expireAfterSeconds}s]` : '';
+        console.log(`    ${idx.name}: ${JSON.stringify(idx.key)}${idx.unique ? ' [unique]' : ''}${ttl}`);
       }
     } catch (err) {
       console.log('FAILED');

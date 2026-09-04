@@ -1,78 +1,49 @@
+/* Card chrome (background/border/radius/padding) comes from
+   .matrix-table-card - only the bits specific to this card live here. */
 .hand-class-leaks {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
   margin: 24px 0;
 }
 
+/* Every other card header pairs a title with static text and so aligns on
+   the baseline; this one carries an interactive control, which reads
+   straight only when centered against the title. */
 .hand-class-leaks .matrix-table-header {
+  align-items: center;
+}
+
+.hcl-header-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.hand-class-leaks .matrix-table-header .section-title {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  margin: 0;
-}
-
+/* Same select as the Stakes filter (.study-filter-select in Stats.css),
+   sized down a notch to sit inside a card header rather than the page-level
+   filter bar. */
 .hcl-context-select {
-  background: var(--color-bg-elevated-hover);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-family: var(--font-sans);
+  padding: 6px 10px;
   font-size: 12px;
-  padding: 5px 8px;
-}
-.hcl-context-select:hover {
-  border-color: var(--color-border-strong);
 }
 
-.hcl-empty {
-  font-size: 12.5px;
+.hcl-empty,
+.hcl-note {
+  font-size: 11px;
   color: var(--color-text-faint);
   font-style: italic;
-  margin: 14px 2px 2px;
+  margin: 10px 2px 0;
 }
 
-.hcl-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 14px;
-}
-
-.hcl-row {
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
-  cursor: pointer;
-}
-.hcl-row:hover {
-  background: rgba(255, 255, 255, 0.045);
-  border-color: var(--color-border-strong);
-}
-
-.hcl-row-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
+.hcl-list .ui-table-cell {
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .hcl-rank {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-faint);
-  width: 18px;
-  flex-shrink: 0;
+  width: 1%;
 }
 
 .hcl-token {
@@ -81,28 +52,24 @@
   color: var(--color-text);
 }
 
+/* Category rides along with the hand token as a secondary label rather
+   than claiming a column of its own - it's context, not a value to scan. */
 .hcl-category {
+  margin-left: 8px;
   font-size: 11.5px;
   color: var(--color-text-muted);
 }
 
-.hcl-context-tag {
-  font-size: 11px;
-  color: var(--color-accent);
-  background: var(--color-accent-dim);
-  border: 1px solid var(--color-accent-border);
-  border-radius: var(--radius-sm);
-  padding: 2px 7px;
+/* The one cell allowed to wrap: a leak can span every position at the
+   table, and badges reflowing onto a second line beats one row stretching
+   the whole table into a horizontal scroll. The width cap has to sit on
+   the inner flex container - auto table layout ignores max-width on a
+   <td> itself. */
+.hcl-positions-cell {
+  white-space: normal;
 }
 
-.hcl-hands {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-  margin-left: auto;
-}
-
-.hcl-row .hcb-detail-positions {
-  margin-top: 8px;
-  margin-left: 28px;
+.hcl-positions-cell .hcb-detail-positions {
+  max-width: 300px;
+  margin-top: 0;
 }

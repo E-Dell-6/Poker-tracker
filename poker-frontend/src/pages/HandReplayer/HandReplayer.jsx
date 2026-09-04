@@ -138,6 +138,11 @@ export function HandReplayer() {
   );
 }
 
+// Mirrors SHARE.LINK_TTL_SECONDS in the backend's config/limits.js. The
+// server is what enforces it; this is only so the person handing the link
+// to someone else knows it has a shelf life.
+const SHARE_LINK_TTL_DAYS = 90;
+
 function ShareModal({ hand, session, onClose }) {
   const [shareId, setShareId] = useState(null);
   const [isShared, setIsShared] = useState(false);
@@ -212,6 +217,7 @@ function ShareModal({ hand, session, onClose }) {
             <>
               <p className="share-modal-desc">
                 Anyone with the link will be able to view this hand replay without logging in.
+                The link stops working {SHARE_LINK_TTL_DAYS} days after you create it.
               </p>
               <button
                 className="share-modal-enable-btn"
@@ -241,6 +247,10 @@ function ShareModal({ hand, session, onClose }) {
                   {copied ? <><Check size={14} /> Copied!</> : "Copy"}
                 </button>
               </div>
+
+              <p className="share-modal-expiry">
+                Expires {SHARE_LINK_TTL_DAYS} days after creation.
+              </p>
 
               <button
                 className="share-modal-revoke-btn"

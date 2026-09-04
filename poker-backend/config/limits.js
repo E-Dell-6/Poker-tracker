@@ -101,3 +101,16 @@ export const STAGING = {
   // boot. Long enough that a job interrupted over a weekend still resumes.
   ORPHAN_MAX_AGE_MS: 7 * 24 * 60 * 60 * 1000,
 };
+
+// --- Public share links -----------------------------------------------
+//
+// A share link is an unauthenticated URL holding a full copy of the hand,
+// so its lifetime is the whole of its access control: once minted, the
+// only ways it stops working are the owner revoking it or this TTL. Both
+// the Mongo TTL index that deletes the doc and the read-time check that
+// refuses to serve it are driven from this one number - the index alone
+// isn't enough, because Mongo's TTL monitor only sweeps about once a
+// minute and the index is silently absent if it was never built.
+export const SHARE = {
+  LINK_TTL_SECONDS: 90 * 24 * 60 * 60,
+};

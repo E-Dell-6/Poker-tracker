@@ -7,8 +7,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.hcb-rate { margin-right: 14px; }
-
 .hcb-value-pos { color: var(--color-positive); }
 .hcb-value-neg { color: var(--color-negative); }
 .hcb-value-empty { color: var(--color-text-faint); }
