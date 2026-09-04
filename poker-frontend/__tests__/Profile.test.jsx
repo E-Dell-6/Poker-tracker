@@ -4,14 +4,18 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Profile } from '../src/pages/Profile/Profile.jsx';
 import { LiveSessionProvider } from '../src/context/LiveSessionContext.jsx';
+import { ImportProvider } from '../src/context/ImportContext.jsx';
 
 // Profile.jsx renders inside Layout, which renders Sidebar (uses react-router's
-// Link/useLocation, and useLiveSession()) - both required for this to render.
+// Link/useLocation, and useLiveSession()) and reads useImport() for its drop
+// zone - all three required for this to render, as they are in App.jsx.
 function renderProfile() {
   return render(
     <MemoryRouter>
       <LiveSessionProvider>
-        <Profile />
+        <ImportProvider>
+          <Profile />
+        </ImportProvider>
       </LiveSessionProvider>
     </MemoryRouter>
   );

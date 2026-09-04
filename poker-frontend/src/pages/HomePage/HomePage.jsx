@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Upload } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { useIsLoggedIn } from '../../hooks/useIsLoggedIn';
+import { useImport } from '../../context/ImportContext';
 import { getMyStats } from '../../api/stats';
 import { getAllSessions } from '../../api/sessions';
 import { getLiveSessions } from '../../api/liveSessions';
@@ -39,11 +40,15 @@ export function HomePage() {
   const [heroStats, setHeroStats] = useState(null);
   const [favourites, setFavourites] = useState([]);
   const [chartRange, setChartRange] = useState(30);
+  // App-wide import state - an import can be started from anywhere (this
+  // page's CTA, History, a drop on any page) and finish while the user is
+  // sitting here, so the dashboard refetches when uploadStatus settles.
+  const { uploadStatus } = useImport();
 
-  // Named (not inline in the effect) so a page-wide hand-history drop can
-  // re-run the exact same fetch and reflect the newly imported session(s)
-  // without a full page reload - same reasoning as History's uploadStatus-
-  // triggered refetch.
+  // Named (not inline in the effect) so a finished import can re-run the
+  // exact same fetch and reflect the newly imported session(s) without a
+  // full page reload - same reasoning as History's uploadStatus-triggered
+  // refetch.
   const fetchDashboardData = () => {
     return Promise.all([
       getAllSessions().catch(() => []),
@@ -89,7 +94,7 @@ export function HomePage() {
     if (!isLoggedIn) return;
 
     fetchDashboardData();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, uploadStatus]);
 
   const recentSessions = [...combinedSessions]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -162,7 +167,6 @@ export function HomePage() {
       ctaLabel="Import hands"
       ctaIcon={Upload}
       onCta={() => navigate('/history')}
-      onImportSettled={fetchDashboardData}
     >
       <div className="hp-dashboard">
         {dataLoading ? <DashboardSkeleton /> : (

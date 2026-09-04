@@ -1,0 +1,60 @@
+/* The import status card and its error/summary line. Moved here from
+   Layout.css when imports became app-wide state (see ImportContext):
+   these two are no longer a layout concern - they render outside <Layout>
+   entirely, so they show on every page and survive navigation. */
+
+.import-status-card {
+  /* Anchored bottom-right, not top-right: the top-right corner lands
+     almost exactly on the header's own "Import hands" button (see
+     TopHeader.css's padding: 20px 32px), which made the message unreadable
+     underneath it.
+     Sized as a real status card, not a toast - a 20k-hand import runs for
+     up to a minute and this is the only feedback the user has that
+     anything is happening, so it needs to be readable at a glance rather
+     than squinted at. */
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 501;
+  min-width: 320px;
+  max-width: 440px;
+  color: var(--color-accent);
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 700;
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  padding: 20px 28px;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.import-status-error {
+  /* Same anchor as the card above, for the same reason. A <button>, not a
+     <div>: it clears itself after a few seconds, and clicking dismisses it
+     sooner - keyboard included. */
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 500;
+  max-width: 320px;
+  color: var(--color-negative);
+  font-size: 13px;
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-sans);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* When both are visible the error/summary moves up so it doesn't stack
+   underneath the (much taller) progress card. A folder import can
+   legitimately report both - progress while running, then a summary of
+   skipped files when it finishes. */
+.import-status-card ~ .import-status-error {
+  bottom: 132px;
+}

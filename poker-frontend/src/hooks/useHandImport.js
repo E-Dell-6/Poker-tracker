@@ -53,6 +53,124 @@ export function useHandImport(onSettled) {
     }
   }, []);
 
+  // Watches a job that is already running server-side and reports it to
+  // completion. Split out of runImport because it's the whole of what a
+  // reloaded page (or a second tab) can do: the upload phase needs the
+  // File objects, which only the tab that picked them ever had, but the
+  // job itself keeps running on the server and can be followed by anyone.
+  const watchJob = useCallback(async (jobId, { messageParts = [] } = {}) => {
+    jobIdRef.current = jobId;
+    try {
+      const job = await pollImportUntilDone(
+        jobId,
+        (tick) => {
+          // Every file can report done - filesDone === filesTotal - while
+          // the job is still very much working: one stats recompute runs
+          // after the last file and before the job reports itself 'done'
+          // (see importRunner.js). Without distinguishing that stage here,
+          // the progress card would freeze on "120/120 files" for however
+          // long that takes, which reads as hung rather than working.
+          const finalizing = tick.progress?.stage === "finalizing";
+          setProgress((p) => ({
+            ...p,
+            phase: finalizing ? "finalizing" : "processing",
+            // A watcher that didn't do the uploading learns the file count
+            // from the job itself.
+            filesTotal: p.filesTotal || tick.totalFiles || 0,
+            filesProcessed: tick.progress?.filesDone ?? 0,
+            handsImported: tick.progress?.handsImported ?? 0,
+            handsSkipped: tick.progress?.handsSkipped ?? 0,
+            personsDone: tick.progress?.personsDone ?? 0,
+            personsTotal: tick.progress?.personsTotal ?? 0,
+          }));
+        },
+        { shouldStop: () => cancelledRef.current }
+      );
+
+      if (job?.status === "failed") {
+        setUploadStatus("error");
+        setError(job.error || "Import failed.");
+        return;
+      }
+
+      // Reachable via another tab (or this one) cancelling the job while
+      // this poll was watching it.
+      if (job?.status === "cancelled") {
+        setUploadStatus("error");
+        setError("Import cancelled.");
+        return;
+      }
+
+      // Per-file outcomes only matter when something went wrong; a clean
+      // import just reports its totals.
+      const failed = (job?.files || []).filter((f) => f.status === "failed");
+      const skipped = (job?.files || []).filter((f) => f.status === "skipped");
+
+      if (failed.length > 0) {
+        messageParts.push(
+          failed.length <= 3
+            ? failed.map((f) => `${f.originalName}: ${f.error}`).join(" | ")
+            : `${failed.length} files could not be imported.`
+        );
+      }
+      if (skipped.length > 0) {
+        messageParts.push(
+          skipped.length === 1
+            ? "1 file was already uploaded."
+            : `${skipped.length} files were already uploaded.`
+        );
+      }
+
+      const importedHands = job?.progress?.handsImported ?? 0;
+      const dedupedHands = job?.progress?.handsSkipped ?? 0;
+      if (dedupedHands > 0) {
+        messageParts.push(`${dedupedHands.toLocaleString()} duplicate hand(s) skipped.`);
+      }
+
+      setProgress((p) => ({
+        ...p,
+        phase: "done",
+        filesProcessed: job?.progress?.filesDone ?? p.filesProcessed,
+        handsImported: importedHands,
+      }));
+
+      if (messageParts.length > 0) setError(messageParts.join(" "));
+      setUploadStatus("success-" + Date.now());
+    } catch (err) {
+      setUploadStatus("error");
+      setError(err.message);
+    }
+  }, []);
+
+  // Picks up a job reported by GET /api/imports/active - i.e. one this tab
+  // never started, because the page was reloaded or opened fresh while an
+  // import was already running.
+  const adoptJob = useCallback(async (job) => {
+    if (!job?.jobId) return;
+    cancelledRef.current = false;
+    setError(null);
+    setUploadStatus("uploading");
+    setProgress({
+      ...initialProgress,
+      phase: job.progress?.stage === "finalizing" ? "finalizing" : "processing",
+      filesTotal: job.totalFiles || 0,
+      // Whatever this job still has to do, its bytes are all on the server
+      // already - there is no upload phase left to report.
+      filesUploaded: job.totalFiles || 0,
+      filesProcessed: job.progress?.filesDone ?? 0,
+      handsImported: job.progress?.handsImported ?? 0,
+      handsSkipped: job.progress?.handsSkipped ?? 0,
+      personsDone: job.progress?.personsDone ?? 0,
+      personsTotal: job.progress?.personsTotal ?? 0,
+      jobId: job.jobId,
+    });
+    try {
+      await watchJob(job.jobId);
+    } finally {
+      onSettled?.();
+    }
+  }, [watchJob, onSettled]);
+
   const runImport = useCallback(async (fileList, { preScreened } = {}) => {
     const incoming = Array.from(fileList || []);
     if (incoming.length === 0) return;
@@ -111,7 +229,6 @@ export function useHandImport(onSettled) {
         await cancelImport(jobId).catch(() => {});
         setUploadStatus("error");
         setError("Import cancelled.");
-        onSettled?.();
         return;
       }
 
@@ -128,78 +245,14 @@ export function useHandImport(onSettled) {
       await startImport(jobId);
       setProgress((p) => ({ ...p, phase: "processing" }));
 
-      const job = await pollImportUntilDone(
-        jobId,
-        (tick) => {
-          // Every file can report done - filesDone === filesTotal - while
-          // the job is still very much working: one stats recompute runs
-          // after the last file and before the job reports itself 'done'
-          // (see importRunner.js). Without distinguishing that stage here,
-          // the progress card would freeze on "120/120 files" for however
-          // long that takes, which reads as hung rather than working.
-          const finalizing = tick.progress?.stage === "finalizing";
-          setProgress((p) => ({
-            ...p,
-            phase: finalizing ? "finalizing" : "processing",
-            filesProcessed: tick.progress?.filesDone ?? 0,
-            handsImported: tick.progress?.handsImported ?? 0,
-            handsSkipped: tick.progress?.handsSkipped ?? 0,
-            personsDone: tick.progress?.personsDone ?? 0,
-            personsTotal: tick.progress?.personsTotal ?? 0,
-          }));
-        },
-        { shouldStop: () => cancelledRef.current }
-      );
-
-      if (job?.status === "failed") {
-        setUploadStatus("error");
-        setError(job.error || "Import failed.");
-        onSettled?.();
-        return;
-      }
-
-      // Per-file outcomes only matter when something went wrong; a clean
-      // import just reports its totals.
-      const failed = (job?.files || []).filter((f) => f.status === "failed");
-      const skipped = (job?.files || []).filter((f) => f.status === "skipped");
-
-      if (failed.length > 0) {
-        messageParts.push(
-          failed.length <= 3
-            ? failed.map((f) => `${f.originalName}: ${f.error}`).join(" | ")
-            : `${failed.length} files could not be imported.`
-        );
-      }
-      if (skipped.length > 0) {
-        messageParts.push(
-          skipped.length === 1
-            ? "1 file was already uploaded."
-            : `${skipped.length} files were already uploaded.`
-        );
-      }
-
-      const importedHands = job?.progress?.handsImported ?? 0;
-      const dedupedHands = job?.progress?.handsSkipped ?? 0;
-      if (dedupedHands > 0) {
-        messageParts.push(`${dedupedHands.toLocaleString()} duplicate hand(s) skipped.`);
-      }
-
-      setProgress((p) => ({
-        ...p,
-        phase: "done",
-        filesProcessed: job?.progress?.filesDone ?? p.filesProcessed,
-        handsImported: importedHands,
-      }));
-
-      if (messageParts.length > 0) setError(messageParts.join(" "));
-      setUploadStatus("success-" + Date.now());
+      await watchJob(jobId, { messageParts });
     } catch (err) {
       setUploadStatus("error");
       setError(err.message);
     } finally {
       onSettled?.();
     }
-  }, [onSettled]);
+  }, [onSettled, watchJob]);
 
   // Click-driven picker (files or a folder). The input already filters by
   // accept=, but a folder picker returns everything inside it, so
@@ -241,5 +294,6 @@ export function useHandImport(onSettled) {
     cancel,
     uploadFiles,
     uploadDroppedFiles,
+    adoptJob,
   };
 }

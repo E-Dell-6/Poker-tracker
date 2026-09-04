@@ -117,6 +117,24 @@ export async function getImportStatus(jobId) {
   return res.json();
 }
 
+/**
+ * The user's still-running import, if any - what lets a fresh page load
+ * (or a second tab) pick a job back up and keep showing its progress.
+ * Returns null when nothing is running, including when nobody is signed
+ * in: an absent job is an ordinary answer here, not an error worth
+ * surfacing over the whole app.
+ */
+export async function getActiveImport() {
+  try {
+    const res = await apiFetch(`/api/imports/active`);
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.job || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function cancelImport(jobId) {
   const res = await apiFetch(`/api/imports/${jobId}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await errorFrom(res, "Could not cancel import"));

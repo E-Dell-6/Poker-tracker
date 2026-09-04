@@ -5,9 +5,9 @@
    With min-height, taller-than-viewport content grows .app-layout past
    100vh and the whole page (sidebar included) scrolls away instead. */
 .app-layout {
-  position: relative; /* anchors .layout-drop-overlay/.layout-upload-error
-    to the whole shell, not just .main-content, so a page-wide drop is
-    visible no matter where over the layout the pointer is. */
+  position: relative; /* anchors .layout-drop-overlay to the whole shell,
+    not just .main-content, so a page-wide drop is visible no matter where
+    over the layout the pointer is. */
   display: flex;
   height: 100vh;
   overflow: hidden;
@@ -32,26 +32,6 @@
   text-align: center;
 }
 
-.layout-upload-error {
-  /* Fixed to the viewport, not absolute within .app-layout - anchoring
-     near the top-right (top:16/right:16) landed almost exactly on top of
-     the header's own "Import hands" button (see TopHeader.css's
-     padding: 20px 32px), making the message unreadable underneath/behind
-     it. Bottom-right stays clear of every header control on every page. */
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 500;
-  max-width: 320px;
-  color: var(--color-negative);
-  font-size: 13px;
-  background: var(--color-bg-elevated-hover);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  padding: 10px 16px;
-  border-radius: 8px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
-}
-
 .app-layout-column {
   flex: 1;
   display: flex;
@@ -66,37 +46,4 @@
   min-height: 0;
   overflow-y: auto;
   padding: 32px;
-}
-
-.layout-upload-progress {
-  /* Same bottom-right anchor as .layout-upload-error, for the same reason
-     (see its comment): the top-right corner collides with the header's own
-     "Import hands" button. Sits above the error slot rather than beside it,
-     since a folder import can legitimately report both - progress while
-     running, then a summary of skipped files when it finishes.
-     Sized as a real status card, not a toast - a 20k-hand import runs for
-     up to a minute and this is the only feedback the user has that
-     anything is happening, so it needs to be readable at a glance rather
-     than squinted at. */
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 501;
-  min-width: 320px;
-  max-width: 440px;
-  color: var(--color-accent);
-  font-size: 20px;
-  line-height: 1.4;
-  font-weight: 700;
-  background: var(--color-bg-elevated-hover);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
-  padding: 20px 28px;
-  border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-}
-
-/* When both are visible the error/summary moves up so it doesn't stack
-   underneath the (now much taller) progress card. */
-.layout-upload-progress ~ .layout-upload-error {
-  bottom: 132px;
 }

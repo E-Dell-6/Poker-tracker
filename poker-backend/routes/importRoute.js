@@ -12,6 +12,7 @@ import {
   stageFiles,
   startImportJob,
   getImportJob,
+  getActiveImportJob,
   cancelImportJob,
 } from '../controllers/importController.js';
 
@@ -51,6 +52,8 @@ router.post(
 );
 
 router.post('/:id/start', userAuth, startImportJob);
+// Before '/:id', or Express would read "active" as a job id.
+router.get('/active', userAuth, getActiveImportJob);
 router.get('/:id', userAuth, getImportJob);
 router.delete('/:id', userAuth, cancelImportJob);
 

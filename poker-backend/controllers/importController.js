@@ -177,6 +177,40 @@ export async function startImportJob(req, res) {
   }
 }
 
+// The one job a freshly-loaded page can still be shown progress for.
+//
+// Only 'queued'/'running' count: those keep going on the server whether or
+// not any browser is watching, so a reload (or a second tab, or another
+// device) can pick the job back up and keep reporting it. A 'staging' job
+// deliberately does NOT count - staging means the client was still
+// uploading batches, and those bytes only ever existed in the tab that's
+// now gone, so the job will never start. Reporting it would leave a
+// progress card up forever. (checkImportQuota sweeps those away.)
+export async function getActiveImportJob(req, res) {
+  try {
+    const job = await ImportJob.findOne({ userId: req.userId, status: { $in: ['queued', 'running'] } })
+      .sort({ createdAt: -1 })
+      .select('status totalFiles progress error createdAt startedAt')
+      .lean();
+
+    if (!job) return res.json({ job: null });
+
+    res.json({
+      job: {
+        jobId: job._id,
+        status: job.status,
+        totalFiles: job.totalFiles,
+        progress: job.progress,
+        error: job.error,
+        createdAt: job.createdAt,
+        startedAt: job.startedAt,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to read import status' });
+  }
+}
+
 // The progress poll. Deliberately small: the client hits this about once a
 // second, so it returns the denormalized counters and per-file outcomes
 // rather than anything that needs computing.

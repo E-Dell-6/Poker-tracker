@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter, Routes } from 'react-router-dom';
 import { STUDY_ROUTES } from '../../src/pages/Stats/studyRoutes.jsx';
 import { LiveSessionProvider } from '../../src/context/LiveSessionContext.jsx';
+import { ImportProvider } from '../../src/context/ImportContext.jsx';
 
 // Not a *.test.jsx file - outside vitest.config.js's `include` glob, so
 // this is a plain helper module, not a collected test file.
@@ -126,7 +127,12 @@ export function renderStudy(initialPath = '/study') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <LiveSessionProvider>
-        <Routes>{STUDY_ROUTES}</Routes>
+        {/* Both providers live above the router in App.jsx; Layout (via
+            Sidebar) reads one and (via its drop zone) the other, so a page
+            rendered without them throws. */}
+        <ImportProvider>
+          <Routes>{STUDY_ROUTES}</Routes>
+        </ImportProvider>
       </LiveSessionProvider>
     </MemoryRouter>
   );
