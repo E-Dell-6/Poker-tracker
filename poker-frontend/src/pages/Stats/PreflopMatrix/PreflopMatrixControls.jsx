@@ -13,24 +13,48 @@ const ACTIONS = [
 // One seat's decision node: header is JUST the position (no "vs X" / bet-
 // level text - the card's place in the sequence already says what it's
 // facing), then hero's own fold/call/raise options for having been in this
-// exact seat facing this exact situation. Every row is clickable, since
-// whichever action gets picked is itself backed by real hero hands (that's
-// what the NEXT node's lookup is built from). `chosen` is the action
-// already picked for this node (undefined for a still-open card).
-function NodeCard({ position, chosen, isOpen, onPick }) {
+// exact seat facing this exact situation.
+//
+// The card has two independent click targets, same as GTOWizard's node bar:
+// clicking the CARD selects it, pointing the range grid at that seat's
+// numbers without touching the line; clicking one of the three ACTION rows
+// commits/re-commits that decision and lets the line walk on. Every action
+// is clickable (not just the chosen one), since whichever gets picked is
+// itself backed by real hero hands - that's what the next node's lookup is
+// built from.
+//
+// The card body is a plain div rather than a <button> because it contains
+// the action buttons, and nesting buttons is invalid HTML - the title is
+// the real focusable control, so selecting a node works from the keyboard
+// too.
+function NodeCard({ node, isActive, onSelect, onPick }) {
+  const className = [
+    'pfm-node-card',
+    node.decided ? 'pfm-node-card--decided' : 'pfm-node-card--open',
+    isActive ? 'pfm-node-card--active' : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`pfm-node-card ${isOpen ? 'active' : ''}`}>
+    <div className={className} onClick={onSelect}>
       <div className="pfm-node-header">
-        <span className="pfm-node-title">{position}</span>
+        <button
+          type="button"
+          className="pfm-node-title"
+          aria-pressed={isActive}
+          title={`Show ${node.position}'s range`}
+          onClick={e => { e.stopPropagation(); onSelect(); }}
+        >
+          {node.position}
+        </button>
       </div>
       <div className="pfm-node-actions">
         {ACTIONS.map(a => (
           <button
             key={a.key}
             type="button"
-            className={`pfm-node-action ${chosen === a.key ? 'pfm-node-action--chosen' : ''}`}
-            style={chosen === a.key ? { background: `color-mix(in srgb, ${a.color} 22%, transparent)`, borderColor: a.color } : undefined}
-            onClick={() => onPick(a.key)}
+            className={`pfm-node-action ${node.action === a.key ? 'pfm-node-action--chosen' : ''}`}
+            style={node.action === a.key ? { background: `color-mix(in srgb, ${a.color} 22%, transparent)`, borderColor: a.color } : undefined}
+            onClick={e => { e.stopPropagation(); onPick(a.key); }}
           >
             <span className="pfm-node-action-dot" style={{ background: a.color }} />
             {a.label}
@@ -93,7 +117,7 @@ function ScrollableRow({ children }) {
 }
 
 export function PreflopMatrixControls({
-  path, openSeats, complete, onRedoStep, onCommitOpenSeat, onReset,
+  nodes, activeId, complete, onSelectNode, onPickAction, onReset,
   tableSize, setTableSize,
   minSampleSize, setMinSampleSize
 }) {
@@ -103,27 +127,19 @@ export function PreflopMatrixControls({
     <div className="pfm-controls">
       <div className="pfm-controls-row">
         <ScrollableRow>
-          {path.map((step, i) => (
-            <NodeCard
-              key={i}
-              position={step.position}
-              chosen={step.action}
-              isOpen={false}
-              onPick={action => onRedoStep(i, action)}
-            />
-          ))}
-          {/* Every seat still to act this round, UTG->BB, shown and
-              clickable at once - clicking one that isn't the very next
-              (e.g. BTN's Raise while UTG/HJ/CO are still undecided)
-              auto-folds whichever open seats come before it (see
+          {/* The committed decisions followed by every seat still to act
+              this round, UTG->BB, all shown and clickable at once -
+              picking an action on one that isn't the very next seat (e.g.
+              BTN's Raise while UTG/HJ/CO are still undecided) auto-folds
+              whichever open seats come before it (see
               PreflopMatrixPage.jsx's commitOpenSeat). */}
-          {openSeats.map(seat => (
+          {nodes.map(node => (
             <NodeCard
-              key={seat.position}
-              position={seat.position}
-              chosen={undefined}
-              isOpen
-              onPick={action => onCommitOpenSeat(seat.position, action)}
+              key={node.id}
+              node={node}
+              isActive={node.id === activeId}
+              onSelect={() => onSelectNode(node.id)}
+              onPick={action => onPickAction(node, action)}
             />
           ))}
           {complete && (

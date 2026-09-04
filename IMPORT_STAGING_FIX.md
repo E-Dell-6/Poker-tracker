@@ -1,121 +1,86 @@
-# Fix: import staging directory on the production server
+# Import staging directory on the production server
 
-Symptom: uploading hands returns
+**Status: resolved 2026-09-04.** Kept as a record of the root cause and the
+verification method, because the failure mode is silent and will look "clean" in logs
+if it ever recurs.
+
+## Symptom
+
+Uploading hands returned:
 `ENOENT: no such file or directory, mkdir '/var/lib/pokerflow/import-staging/<jobId>'`
 
-Cause: the app's per-job `mkdir` uses `recursive: true`, so it cannot return ENOENT
-unless `/var/lib/pokerflow/import-staging` is missing **as the running service sees
-it**. A hand-created directory doesn't survive systemd sandboxing (`DynamicUser=`,
-`StateDirectory=`, `ProtectSystem=strict`, `TemporaryFileSystem=`), which gives the
-service its own view of `/var/lib`. The fix is to let systemd create the directory
-inside the service's namespace, with the correct owner, on every start.
+## Root cause
 
-Everything below runs on the Linux box, as root / with sudo.
+`poker-backend.service` runs with `ProtectSystem=strict`, which mounts the entire
+filesystem **read-only inside the service's mount namespace** except paths listed in
+`ReadWritePaths=`. That list contained only the `uploads/` directory, so the import
+staging directory was unwritable no matter what its Unix ownership or mode said.
 
----
+This was not a Unix-permissions problem, and two things made it look like one:
 
-## 1. Inspect the unit
+- Setting the parent directory to `711` made it look correct from a root shell.
+- The boot-time `mkdir(recursive: true)` **succeeded silently** — the directory already
+  existed, so `mkdir` was a no-op and never attempted a write. Absence of an error in
+  the logs proved nothing.
 
-```bash
-sudo systemctl cat poker-backend.service
-```
+Imports were broken from the first "clean" restart onward, with clean logs throughout.
 
-Note two things:
+## Fix applied
 
-- Is there a `User=` line? (expected: `pokerflow`)
-- Are there any of `DynamicUser=`, `StateDirectory=`, `ProtectSystem=`,
-  `TemporaryFileSystem=`, `ReadWritePaths=`?
-
-**If there is no `User=` AND none of those sandboxing directives**, stop — a namespace
-mismatch was impossible, so the service is not running on the box where the directory
-was created. Verify where `api.pokerflow.live` actually resolves before continuing:
-
-```bash
-dig +short api.pokerflow.live
-ip -4 addr show | grep inet
-```
-
-## 2. Move the hand-made directory aside
-
-It holds only transient staged uploads. If the unit uses `DynamicUser=yes`, a
-pre-existing root-owned `/var/lib/pokerflow` actively conflicts with what systemd
-expects at that path.
-
-```bash
-sudo ls -la /var/lib/pokerflow /var/lib/pokerflow/import-staging   # confirm it's empty/junk
-sudo mv /var/lib/pokerflow /var/lib/pokerflow.bak                  # rename, don't delete
-```
-
-## 3. Add the StateDirectory lines to the unit
-
-```bash
-sudo systemctl edit --full poker-backend.service
-```
-
-In the `[Service]` section, add:
+Added the staging directory to the unit's `ReadWritePaths=`:
 
 ```ini
-StateDirectory=pokerflow/import-staging
-StateDirectoryMode=0700
-Environment=IMPORT_STAGING_DIR=/var/lib/pokerflow/import-staging
+ReadWritePaths=/var/lib/pokerflow/import-staging
 ```
 
-`StateDirectory=` accepts a nested path and creates the whole chain before `ExecStart`,
-owned by the unit's `User=`, and stays writable even under `ProtectSystem=strict`.
-That is the property the manual `mkdir` did not have.
-
-## 4. Reload and restart
+Then:
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl restart poker-backend
-sudo systemctl status poker-backend --no-pager
 ```
 
-## 5. Verify before touching the UI
+No directory relocation and no `StateDirectory=` were needed — this unit uses a static
+`pokerflow` user, not `DynamicUser=`, so the plain `ReadWritePaths=` addition is the
+minimal correct fix.
+
+## How to verify (the only check that actually proves it)
+
+Write a real file from **inside the running process's own mount namespace**. Checking
+ownership from a root shell, or checking that the logs are quiet, does not test what
+`ProtectSystem=strict` enforces:
 
 ```bash
-sudo journalctl -u poker-backend -b | grep -iE "IMPORTS DISABLED|Could not create import staging|staging"
+PID=$(sudo systemctl show -p MainPID --value poker-backend.service)
+sudo nsenter -t "$PID" -m -- sh -c \
+  'touch /var/lib/pokerflow/import-staging/.probe && echo WRITE_OK && rm /var/lib/pokerflow/import-staging/.probe'
 ```
 
-- **No output** → the boot probe wrote and deleted a file in the staging dir. Imports
-  will work. Go test an upload.
-- **`IMPORTS DISABLED: ... EACCES`** → the directory exists but `User=` doesn't match its
-  owner. Check the uid printed in that same line against:
-  ```bash
-  sudo systemctl show -p User -p Group -p UID poker-backend.service
-  sudo ls -ld /var/lib/pokerflow /var/lib/pokerflow/import-staging
-  ```
-- **`IMPORTS DISABLED: ... ENOENT`** → still a namespace problem. Compare what the
-  service sees against what the host sees:
-  ```bash
-  PID=$(sudo systemctl show -p MainPID --value poker-backend.service)
-  sudo nsenter -t "$PID" -m -- ls -la /var/lib/pokerflow/
-  namei -l /var/lib/pokerflow/import-staging     # reveals dangling symlinks
-  ```
+`WRITE_OK` is the pass condition. `EROFS` / "Read-only file system" means the path is
+still outside `ReadWritePaths=`.
 
-## 6. Confirm end to end
+## If this recurs on a fresh box
 
-Log in on the site and import a folder of real hand histories. Then:
-
-```bash
-sudo ls -la /var/lib/pokerflow/import-staging    # job dirs appear during an import, and are cleaned up after
-```
-
-## 7. Clean up once it works
-
-```bash
-sudo rm -rf /var/lib/pokerflow.bak
-```
-
----
+1. Check the sandboxing directives first — they explain more failures here than
+   ownership does:
+   ```bash
+   sudo systemctl cat poker-backend.service   # ProtectSystem, ReadWritePaths, DynamicUser, StateDirectory
+   ```
+2. If `ProtectSystem=strict` or `ProtectSystem=full` is set, every writable path the app
+   needs must be in `ReadWritePaths=`. Currently that means `uploads/` and
+   `/var/lib/pokerflow/import-staging`.
+3. If the unit ever gains `DynamicUser=yes`, switch to `StateDirectory=pokerflow/import-staging`
+   instead — systemd then creates and owns the path inside the namespace, and
+   `/var/lib/pokerflow` becomes a symlink into `/var/lib/private/`, so any hand-created
+   directory at that path must be moved aside first.
+4. Always finish with the `nsenter` write test above.
 
 ## Notes
 
-- Import jobs stuck in Mongo pointing at the old path fail cleanly on restart with
+- Import jobs left in Mongo pointing at an unreachable path fail cleanly on restart with
   "staged files are no longer available, please re-upload". Expected, not a new problem.
-- `IMPORT_STAGING_DIR` overrides the default in `poker-backend/config/limits.js`; the
-  value above matches that default, so it is explicit rather than load-bearing.
-- Step 5's `IMPORTS DISABLED` line only exists once the current backend code is deployed
-  (it auto-deploys via the push webhook). On older code the equivalent line reads
-  `Could not create import staging dir`.
+- `IMPORT_STAGING_DIR` overrides the default in `poker-backend/config/limits.js`.
+- Once the pending backend change is deployed, boot writes and deletes a probe file in
+  the staging dir and logs `IMPORTS DISABLED: <path> is not writable by uid <N>: <errno>`
+  on failure. That check is what makes this failure mode visible from logs alone; before
+  it, quiet logs were not evidence.

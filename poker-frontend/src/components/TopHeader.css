@@ -136,3 +136,75 @@
     display: none;
   }
 }
+
+/* ── CTA dropdown (see TopHeader's `ctaMenu` prop) ──
+   Anchored to the CTA button itself rather than rendered as a full-screen
+   overlay, so it reads as part of the button it belongs to. */
+.top-header-cta {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.top-header-cta-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 232px;
+  padding: 6px;
+  background: var(--color-bg-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: top-header-cta-drop-in 0.18s ease;
+}
+
+@keyframes top-header-cta-drop-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.top-header-cta-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.top-header-cta-menu-item:hover,
+.top-header-cta-menu-item:focus-visible {
+  background: var(--color-bg-elevated-hover);
+  outline: none;
+}
+
+.top-header-cta-menu-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-text-muted);
+}
+
+.top-header-cta-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.top-header-cta-menu-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.top-header-cta-menu-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}

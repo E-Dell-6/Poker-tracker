@@ -14,10 +14,19 @@ import { HandSearchMenu } from './HandSearchMenu';
 // hijack normal "/" characters). The pill-filter modal (HandSearchMenu) -
 // also used inline on the History page toolbar - stays reachable here via
 // its own small icon button next to the input.
-export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
+//
+// `ctaMenu` (optional) turns the CTA into a split-less dropdown trigger:
+// pass [{ label, description, icon, onSelect }] and clicking the button
+// opens a small menu anchored under it instead of firing onCta. That's what
+// lets a single "Import hands" button offer both a file picker and a folder
+// picker - one <input type="file"> can't do both (webkitdirectory makes it
+// folders-only), so the choice has to be made before the picker opens.
+export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }) {
   const [query, setQuery] = useState('');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [ctaMenuOpen, setCtaMenuOpen] = useState(false);
   const inputRef = useRef(null);
+  const ctaRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isStarredPage = location.pathname === '/starred';
@@ -33,6 +42,25 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Close the CTA menu on an outside click or Escape. Bound only while
+  // open so the listeners aren't live for every page that never uses it.
+  useEffect(() => {
+    if (!ctaMenuOpen) return;
+    const handlePointerDown = (e) => {
+      if (ctaRef.current?.contains(e.target)) return;
+      setCtaMenuOpen(false);
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setCtaMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [ctaMenuOpen]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -93,9 +121,40 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta }) {
           </button>
 
           {ctaLabel && (
-            <Button variant="primary" icon={ctaIcon} iconSize={13} onClick={onCta}>
-              {ctaLabel}
-            </Button>
+            <div className="top-header-cta" ref={ctaRef}>
+              <Button
+                variant="primary"
+                icon={ctaIcon}
+                iconSize={13}
+                onClick={ctaMenu?.length ? () => setCtaMenuOpen((open) => !open) : onCta}
+                aria-haspopup={ctaMenu?.length ? 'menu' : undefined}
+                aria-expanded={ctaMenu?.length ? ctaMenuOpen : undefined}
+              >
+                {ctaLabel}
+              </Button>
+
+              {ctaMenu?.length > 0 && ctaMenuOpen && (
+                <div className="top-header-cta-menu" role="menu">
+                  {ctaMenu.map(({ label, description, icon: ItemIcon, onSelect }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      role="menuitem"
+                      className="top-header-cta-menu-item"
+                      onClick={() => { setCtaMenuOpen(false); onSelect(); }}
+                    >
+                      {ItemIcon && <ItemIcon size={15} className="top-header-cta-menu-icon" />}
+                      <span className="top-header-cta-menu-text">
+                        <span className="top-header-cta-menu-label">{label}</span>
+                        {description && (
+                          <span className="top-header-cta-menu-desc">{description}</span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           <LoginButton />

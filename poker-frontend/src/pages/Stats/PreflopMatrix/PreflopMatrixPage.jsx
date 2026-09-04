@@ -4,8 +4,17 @@ import { HandMatrix } from './HandMatrix';
 import { PreflopMatrixControls } from './PreflopMatrixControls';
 import { PreflopPositionMatrix } from '../PreflopPositionMatrix';
 import { computeWalk, getMatrixBucket } from '../../../utils/preflopWalk';
-import { SEATS_BY_SIZE } from '../../../utils/handGrid';
+import { SEATS_BY_SIZE, labelForScenario } from '../../../utils/handGrid';
 import './PreflopMatrixPage.css';
+
+// "BTN · vs Open (UTG)" / "UTG · RFI" - what the grid below is currently
+// showing, so a selected card that's scrolled out of view still says what
+// you're looking at.
+function nodeLabel(node) {
+  if (!node) return null;
+  const scenario = labelForScenario(node.scenario);
+  return `${node.position} · ${scenario}${node.facingPosition ? ` (${node.facingPosition})` : ''}`;
+}
 
 export function PreflopMatrixPage() {
   const { stats } = useStudyContext();
@@ -16,6 +25,12 @@ export function PreflopMatrixPage() {
   // split for having been in that seat facing that exact situation - not a
   // fixed "hero position" with opponents faked in around it.
   const [path, setPath] = useState([]);
+  // Which sequence card the grid is showing, or null for "follow the
+  // frontier" (see `frontierId` below). Only ever set by an explicit click
+  // on a card; every path change clears it back to null so committing an
+  // action walks forward on its own, the way it did before cards became
+  // selectable.
+  const [selectedId, setSelectedId] = useState(null);
   const [tableSize, setTableSize] = useState(6);
   const [minSampleSize, setMinSampleSize] = useState(0);
 
@@ -26,10 +41,34 @@ export function PreflopMatrixPage() {
   const matrixRoot = stats.preflopMatrix?.[String(tableSize)];
   const seats = SEATS_BY_SIZE[tableSize];
   const walk = computeWalk(path, seats);
+  const openSeats = walk.complete ? [] : walk.openSeats;
+
+  // Every card in the sequence bar as one ordered list: the decisions
+  // already committed, then whichever seats are still to act this round.
+  // `id` only has to stay stable while a card is on screen, which is all
+  // the selection below needs - a path change resets the selection anyway.
+  const nodes = [
+    ...path.map((step, index) => ({ ...step, id: `step-${index}`, index, decided: true })),
+    ...openSeats.map(seat => ({ ...seat, id: `open-${seat.position}`, decided: false }))
+  ];
+
+  // Default selection: the nearest still-open decision, or the last thing
+  // decided once the hand is settled. Falling back to it (rather than
+  // holding a stale id) is what makes the bar auto-advance after a click.
+  const frontierId = openSeats.length > 0
+    ? `open-${openSeats[0].position}`
+    : nodes[nodes.length - 1]?.id ?? null;
+  const activeId = nodes.some(n => n.id === selectedId) ? selectedId : frontierId;
+  const displayNode = nodes.find(n => n.id === activeId) || null;
+
+  function setPathAndFollow(next) {
+    setPath(next);
+    setSelectedId(null);
+  }
 
   function setTableSizeAndReset(size) {
     setTableSize(size);
-    setPath([]);
+    setPathAndFollow([]);
   }
 
   // Re-decides an already-committed step at `index`: truncates the path to
@@ -41,7 +80,7 @@ export function PreflopMatrixPage() {
     const truncated = path.slice(0, index);
     const w = computeWalk(truncated, seats);
     if (w.complete) return;
-    setPath([...truncated, { ...w.openSeats[0], action }]);
+    setPathAndFollow([...truncated, { ...w.openSeats[0], action }]);
   }
 
   // Commits `action` for `position`, one of the CURRENT round's openSeats -
@@ -51,40 +90,45 @@ export function PreflopMatrixPage() {
   // auto-fills fold for whichever open seats come before it, exactly as if
   // hero had clicked each one individually.
   function commitOpenSeat(position, action) {
-    const idx = walk.openSeats.findIndex(s => s.position === position);
+    const idx = openSeats.findIndex(s => s.position === position);
     if (idx === -1) return;
-    const autoFolds = walk.openSeats.slice(0, idx).map(s => ({ ...s, action: 'fold' }));
-    const chosen = { ...walk.openSeats[idx], action };
-    setPath([...path, ...autoFolds, chosen]);
+    const autoFolds = openSeats.slice(0, idx).map(s => ({ ...s, action: 'fold' }));
+    const chosen = { ...openSeats[idx], action };
+    setPathAndFollow([...path, ...autoFolds, chosen]);
+  }
+
+  // Picking an action always advances the line; picking the card itself
+  // only changes which node the grid is reading, leaving the line alone.
+  function pickAction(node, action) {
+    if (node.decided) redoStep(node.index, action);
+    else commitOpenSeat(node.position, action);
   }
 
   function resetWalk() {
-    setPath([]);
+    setPathAndFollow([]);
   }
 
-  // The node currently being displayed in the grid above: the nearest open
-  // decision if the hand isn't settled yet, otherwise whatever was decided
-  // last.
-  const displayNode = !walk.complete ? walk.openSeats[0] : path[path.length - 1];
-  const gridData = displayNode ? getMatrixBucket(matrixRoot, displayNode.scenario, displayNode.position, displayNode.facingPosition) : null;
+  const gridData = displayNode
+    ? getMatrixBucket(matrixRoot, displayNode.scenario, displayNode.position, displayNode.facingPosition)
+    : null;
 
   return (
     <div className="pfm-page">
       <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
 
       <PreflopMatrixControls
-        path={path}
-        openSeats={!walk.complete ? walk.openSeats : []}
+        nodes={nodes}
+        activeId={activeId}
         complete={walk.complete}
-        onRedoStep={redoStep}
-        onCommitOpenSeat={commitOpenSeat}
+        onSelectNode={setSelectedId}
+        onPickAction={pickAction}
         onReset={resetWalk}
         tableSize={tableSize} setTableSize={setTableSizeAndReset}
         minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
       />
 
       <div className="pfm-grid-wrap">
-        <HandMatrix data={gridData} minSampleSize={minSampleSize} />
+        <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
       </div>
 
       <PreflopPositionMatrix positional={stats.positional} />

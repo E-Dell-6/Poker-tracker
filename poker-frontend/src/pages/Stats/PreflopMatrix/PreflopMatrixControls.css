@@ -106,11 +106,26 @@
   flex-shrink: 0;
   min-width: 128px;
   font-family: var(--font-sans);
-  transition: border-color 0.18s ease, background 0.18s ease;
+  /* The whole card is a click target for "show me this seat's range". */
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
-/* The open/undecided node - awaiting a click on one of its 3 actions. */
-.pfm-node-card.active {
+/* A seat still awaiting a decision, vs one whose action is already
+   committed (which reads as decided from its highlighted action pill) -
+   a slightly stronger border, kept well short of the accent so it can't
+   be mistaken for the selection below. */
+.pfm-node-card--open {
+  border-color: var(--color-border-strong);
+}
+
+.pfm-node-card:hover {
+  background: var(--color-bg-elevated);
+}
+
+/* The selected node - the one the range grid below is reading. Exactly
+   one card carries this at a time. */
+.pfm-node-card--active {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
 }
@@ -129,10 +144,21 @@
   align-items: baseline;
 }
 
+/* The card's own select control (the card body clicks through to the same
+   handler) - a real button so a node can be selected from the keyboard. */
 .pfm-node-title {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text);
+  cursor: pointer;
+}
+
+.pfm-node-card--active .pfm-node-title {
+  color: var(--color-accent);
 }
 
 .pfm-node-actions {

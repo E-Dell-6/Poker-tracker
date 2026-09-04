@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, X, Star, Plus, Upload } from "lucide-react";
+import { Camera, X, Star, Plus, Upload, FileUp, FolderUp } from "lucide-react";
 import { Layout } from "../../components/Layout";
 import { useIsLoggedIn } from "../../hooks/useIsLoggedIn";
 import { useHandImport } from "../../hooks/useHandImport";
@@ -174,12 +174,16 @@ export function History() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedGame, setSelectedGame] = useState("All");
-  // Handles this page's own CTA-driven (file picker) upload. Dropping a
+  // Handles this page's own CTA-driven (file/folder picker) upload. Dropping a
   // file anywhere on the page is handled by Layout's own page-wide drop
   // zone (see onImportSettled below) - a separate instance, since Layout
   // has no visibility into this page's upload state.
   const { uploadStatus, setUploadStatus, error, setError, progress, uploadFiles } = useHandImport();
   const fileInputRef = useRef(null);
+  // Separate ref because an input carrying webkitdirectory can only select
+  // folders - it can't also serve the multi-file picker, so "Import hands"
+  // asks which one you want (see importMenu below) and opens that input.
+  const folderInputRef = useRef(null);
 
   const [renamingState, setRenamingState] = useState(null);
   const [usedPersonIds, setUsedPersonIds] = useState([]);
@@ -232,6 +236,21 @@ export function History() {
     await uploadFiles(event.target.files);
     event.target.value = null;
   };
+
+  const importMenu = [
+    {
+      label: "Choose files",
+      description: "One or more .csv / .txt hand histories",
+      icon: FileUp,
+      onSelect: () => fileInputRef.current.click(),
+    },
+    {
+      label: "Choose folder",
+      description: "Every hand history inside a folder",
+      icon: FolderUp,
+      onSelect: () => folderInputRef.current.click(),
+    },
+  ];
 
   // A page-wide drop (handled by Layout) uses its own separate upload
   // state, so this page's own uploadStatus/effect-based refetch never
@@ -297,7 +316,7 @@ export function History() {
       subtitle={subtitle}
       ctaLabel={uploadStatus === "uploading" ? "Processing..." : "Import hands"}
       ctaIcon={Upload}
-      onCta={() => fileInputRef.current.click()}
+      ctaMenu={importMenu}
       onImportSettled={handleImportSettled}
     >
       <div className="history-container">
@@ -310,14 +329,27 @@ export function History() {
           />
         )}
 
-        {/* webkitdirectory makes the native picker select a whole folder
-            (recursively, filtered down to .csv/.txt by screenFiles) rather
-            than individual files. `directory` covers the non-WebKit
-            spelling. Individual files are still importable via drag-and-drop
-            (Layout's page-wide drop zone). */}
+        {/* Two inputs, because one can't cover both cases: an input with
+            webkitdirectory accepts ONLY folders. The "Import hands" CTA
+            opens a menu that picks between them; both feed the same
+            handleFileUpload. (Drag-and-drop of either still works too, via
+            Layout's page-wide drop zone.) */}
         <input
           type="file"
           ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept=".csv,.txt"
+          multiple
+          className="visually-hidden-input"
+        />
+
+        {/* The attribute is lowercase-spelled for React's DOM property, and
+            `directory` covers the non-WebKit spelling. A folder picker
+            returns everything inside it, so no accept= here - screenFiles
+            filters it down to .csv/.txt. */}
+        <input
+          type="file"
+          ref={folderInputRef}
           onChange={handleFileUpload}
           webkitdirectory=""
           directory=""

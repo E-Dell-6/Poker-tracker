@@ -13,7 +13,7 @@ import "./Layout.css";
 // a page opts in simply by asking for the "Import hands" button.
 const IMPORT_CTA_LABEL = 'Import hands';
 
-export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, onImportSettled, children }) {
+export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu, onImportSettled, children }) {
   const isImportPage = ctaLabel === IMPORT_CTA_LABEL;
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const { uploadStatus, error, progress, uploadDroppedFiles } = useHandImport(onImportSettled);
@@ -62,7 +62,7 @@ export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, onImportSett
     >
       <Sidebar />
       <div className="app-layout-column">
-        {title && <TopHeader title={title} subtitle={subtitle} ctaLabel={displayedCtaLabel} ctaIcon={ctaIcon} onCta={onCta} />}
+        {title && <TopHeader title={title} subtitle={subtitle} ctaLabel={displayedCtaLabel} ctaIcon={ctaIcon} onCta={onCta} ctaMenu={ctaMenu} />}
         <main className="main-content">
           {children}
         </main>

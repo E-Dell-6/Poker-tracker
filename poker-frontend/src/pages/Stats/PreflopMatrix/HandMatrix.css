@@ -156,3 +156,12 @@
     font-size: 9px;
   }
 }
+
+/* Title + "which node am I looking at" subtitle, grouped so they stay
+   together on the header's left while the legend keeps its right edge. */
+.hm-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}

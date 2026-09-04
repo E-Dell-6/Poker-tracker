@@ -67,14 +67,15 @@ function Tooltip({ active }) {
 // offsuit - see handGrid.js's handToken. `data` is the already-resolved
 // flat { [token]: cell } slice for whatever hero-position/scenario/facing-
 // position combination the page has selected - this component itself is
-// scenario-agnostic. `cell` shape: {fold,call,raise,total,foldPct,callPct,
-// raisePct,confidence} (see statsEngine.js's finalizeMatrixCell) or
+// scenario-agnostic, and takes `subtitle` as a pre-formatted string rather
+// than a node to keep it that way. `cell` shape: {fold,call,raise,total,
+// foldPct,callPct,raisePct,confidence} (see statsEngine.js's finalizeMatrixCell) or
 // undefined for a hand hero has never held in this slice. Owns its own
 // `.matrix-table-card` chrome (title/legend/empty state) - same convention
 // every other Study card follows (BoardTexture, the position matrices,
 // HandClassBreakdown) - rather than a bare grid with no title the way this
 // used to render.
-export function HandMatrix({ data, minSampleSize }) {
+export function HandMatrix({ data, minSampleSize, subtitle }) {
   const [active, setActive] = useState(null);
   const hasAnyData = data && Object.keys(data).length > 0;
 
@@ -95,7 +96,14 @@ export function HandMatrix({ data, minSampleSize }) {
   return (
     <div className="matrix-table-card hand-matrix-card">
       <div className="matrix-table-header">
-        <h3 className="section-title">Preflop Range Matrix</h3>
+        <div className="hm-title-group">
+          <h3 className="section-title">Preflop Range Matrix</h3>
+          {/* Which sequence card the grid is reading (see
+              PreflopMatrixPage.jsx's nodeLabel) - the selected card is
+              highlighted in the bar above, but that card can be scrolled
+              out of view on a long line. */}
+          {subtitle && <span className="matrix-table-sub">{subtitle}</span>}
+        </div>
         <Legend />
       </div>
 
