@@ -21,6 +21,16 @@ import { HandSearchMenu } from './HandSearchMenu';
 // lets a single "Import hands" button offer both a file picker and a folder
 // picker - one <input type="file"> can't do both (webkitdirectory makes it
 // folders-only), so the choice has to be made before the picker opens.
+// The `from` value below is router state this app set itself, but it's
+// built out of location.pathname - which an attacker influences by sending
+// someone a crafted URL on this domain. "//evil.com" (or "/\evil.com",
+// which browsers normalize to the same thing) reads as a protocol-relative
+// URL, so navigating to it leaves the site entirely. Accept only a path
+// beginning with exactly one slash.
+function safeInternalPath(path, fallback = '/dashboard') {
+  return typeof path === 'string' && /^\/(?![/\\])/.test(path) ? path : fallback;
+}
+
 export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }) {
   const [query, setQuery] = useState('');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -109,7 +119,7 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }
                 // (stashed as router state below) rather than a raw
                 // navigate(-1) - reliable even if the Starred page's own tab
                 // switching or a refresh sits between the two clicks.
-                navigate(location.state?.from || '/dashboard');
+                navigate(safeInternalPath(location.state?.from));
               } else {
                 navigate('/starred', { state: { from: location.pathname + location.search } });
               }

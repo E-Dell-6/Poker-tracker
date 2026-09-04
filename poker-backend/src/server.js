@@ -17,6 +17,8 @@ import shareRouter from '../routes/shareRoute.js';
 import statsRouter from '../routes/statsRoute.js'
 import importRouter from '../routes/importRoute.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import verifyOrigin from '../middleware/verifyOrigin.js';
+import { ALLOWED_ORIGINS } from '../config/origins.js';
 import { resumeInterruptedJobs, sweepOrphanedStagingDirs } from '../services/importRunner.js';
 import { backfillMissingLedger } from '../services/handImportPipeline.js';
 import { STAGING } from '../config/limits.js';
@@ -35,15 +37,15 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(cors({
   credentials: true,
-  origin: [
-    'https://www.pokerflow.live',
-    'https://pokerflow.live',
-    'https://api.pokerflow.live',
-    'http://localhost:5173',
-  ],
+  origin: ALLOWED_ORIGINS,
 }));
 
-// Body size capped to stop large-payload DoS attempts. 
+// After cors (so preflights still get their answer) and before any route,
+// so no handler runs for a cross-site write. See middleware/verifyOrigin.js
+// for why CORS alone doesn't cover this.
+app.use(verifyOrigin);
+
+// Body size capped to stop large-payload DoS attempts.
 app.use(express.json({ limit: '1mb' }));
 
 // Routes

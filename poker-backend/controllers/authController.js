@@ -1,9 +1,17 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import userModel from '../model/User.js';
 import getTransporter from '../config/nodeMailer.js';
+import RevokedToken from '../model/RevokedToken.js';
 
 const MIN_PASSWORD_LENGTH = 10;
+
+// A real bcrypt hash (of a value nothing can log in with) used to keep the
+// failed-login path doing the same work as the successful one. Generated
+// once at startup rather than inlined as a constant so it always matches
+// the cost factor used elsewhere in this file.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
 
 // Basic type/shape guard. Prevents NoSQL injection payloads like
 // { "email": { "$ne": null } } from ever reaching a Mongoose query,
@@ -12,12 +20,46 @@ const isNonEmptyString = (value) => typeof value === 'string' && value.trim().le
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 
+// Math.random() is not a CSPRNG - its output is derived from an internal
+// state that can be recovered from previously observed values, and these
+// six digits are the entire proof of identity for a password reset. The
+// registration and reset flows both mint OTPs from the same helper, so
+// neither can drift back to the weak source.
+//
+// randomInt is rejection-sampled, so the digits stay uniform (the obvious
+// `% 900000` on a random integer does not).
+const generateOtp = () => String(crypto.randomInt(100000, 1000000));
+
+// SameSite=None is forced by the split-origin deployment (SPA on
+// pokerflow.live, API on api.pokerflow.live), which means the browser
+// attaches this cookie to cross-site requests. The CSRF consequence of
+// that is handled at the edge by middleware/verifyOrigin.js, not here.
+//
+// Everything except maxAge is shared with the logout path below: a cookie
+// is cleared by matching name/domain/path, and letting the two definitions
+// drift is how a logout silently stops clearing anything.
 const cookieOptions = {
     httpOnly: true,
     secure: true,
-    sameSite: 'none', // See note below re: CSRF if frontend/backend share a top-level domain
+    sameSite: 'none',
+};
+
+const sessionCookieOptions = {
+    ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
+// Tokens carry a `jti` (a unique id for this specific token) purely so
+// logout has something to revoke - see model/RevokedToken.js. Without it a
+// stateless JWT cannot be invalidated before its own expiry.
+const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+const issueSessionToken = (userId) =>
+    jwt.sign(
+        { id: userId, jti: crypto.randomUUID() },
+        process.env.JWT_SECRET,
+        { expiresIn: TOKEN_TTL_SECONDS }
+    );
 
 export const register = async (req, res) => {
     const { name, email, password } = req.body;
@@ -40,8 +82,8 @@ export const register = async (req, res) => {
         const user = new userModel({ name: name.trim(), email: normalizedEmail, password: hashedPassword });
         await user.save();
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.cookie('token', token, cookieOptions);
+        const token = issueSessionToken(user._id);
+        res.cookie('token', token, sessionCookieOptions);
 
         return res.json({ success: true });
 
@@ -64,13 +106,20 @@ export const login = async (req, res) => {
         const user = await userModel.findOne({ email: normalizedEmail });
         // Same generic message whether the email doesn't exist or the password
         // is wrong, so responses can't be used to enumerate registered emails.
-        const isMatch = user ? await bcrypt.compare(password, user.password) : false;
+        //
+        // The message alone isn't enough. Skipping bcrypt for an unknown
+        // email returned in ~0ms while a real account cost ~300ms at cost
+        // 10 - a gap that large is trivially measurable over a network and
+        // hands out exactly the user list the wording is trying to hide.
+        // Always pay the hash, comparing against a dummy when there's no
+        // user, so both paths take the same time.
+        const isMatch = await bcrypt.compare(password, user ? user.password : DUMMY_PASSWORD_HASH);
         if (!user || !isMatch) {
             return res.json({ success: false, message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.cookie('token', token, cookieOptions);
+        const token = issueSessionToken(user._id);
+        res.cookie('token', token, sessionCookieOptions);
 
         return res.json({ success: true });
 
@@ -80,13 +129,31 @@ export const login = async (req, res) => {
     }
 };
 
+// Clearing the cookie only tells a cooperating browser to stop sending the
+// token; it does nothing about a copy of that token held anywhere else.
+// Revoke it server-side as well, so the credential is dead everywhere and
+// not merely absent from this one browser.
 export const logout = async (req, res) => {
+    // The cookie goes regardless of what happens below - a user who clicks
+    // "log out" must never stay logged in on this device because a write
+    // failed.
+    res.clearCookie('token', cookieOptions);
+
     try {
-        res.clearCookie('token', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        });
+        const token = req.cookies?.token;
+        if (token) {
+            // Not jwt.verify: an expired or malformed token needs no
+            // revoking (it already fails auth), and throwing here would
+            // turn a routine logout into a 500.
+            const decoded = jwt.decode(token);
+            if (decoded?.jti && decoded?.exp) {
+                await RevokedToken.updateOne(
+                    { jti: decoded.jti },
+                    { $setOnInsert: { jti: decoded.jti, expiresAt: new Date(decoded.exp * 1000) } },
+                    { upsert: true }
+                );
+            }
+        }
         return res.json({ success: true, message: "Logged Out" });
 
     } catch (error) {
@@ -110,7 +177,7 @@ export const sendVerifyOtp = async (req, res) => {
             return res.json({ success: false, message: 'Account is already verified' });
         }
 
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otp = generateOtp();
 
         user.verifyOtp = otp;
         user.verifyOtpExpiredAt = Date.now() + 24 * 60 * 60 * 1000;
@@ -191,7 +258,7 @@ export const sendResetOtp = async (req, res) => {
             return res.json(genericResponse);
         }
 
-        const otp = String(Math.floor(100000 + Math.random() * 900000));
+        const otp = generateOtp();
 
         user.resetOtp = otp;
         user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;

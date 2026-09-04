@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import RevokedToken from "../model/RevokedToken.js";
 
 // Returns 401 on failure, not 200.
 //
@@ -17,6 +18,23 @@ const userAuth = async (req, res, next) => {
 
         if (!tokenDecode?.id) {
             return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
+        }
+
+        // A valid signature is no longer sufficient: a token the user has
+        // logged out of stays cryptographically valid until its own expiry,
+        // so the denylist is what makes logout take effect server-side.
+        // See model/RevokedToken.js.
+        //
+        // One indexed lookup on a collection that holds only unexpired,
+        // explicitly-revoked tokens - in the normal case it is empty.
+        //
+        // Tokens minted before jti existed have none, and can't be revoked
+        // individually; they simply age out within their remaining 7 days.
+        if (tokenDecode.jti) {
+            const revoked = await RevokedToken.exists({ jti: tokenDecode.jti });
+            if (revoked) {
+                return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
+            }
         }
 
         req.body = req.body || {};

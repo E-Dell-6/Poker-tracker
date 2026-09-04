@@ -6,6 +6,7 @@ import Person from '../model/People.js';
 import HandLedger from '../model/HandLedger.js';
 import ImportJob from '../model/ImportJob.js';
 import SharedHand from '../model/sharedHand.js';
+import RevokedToken from '../model/RevokedToken.js';
 
 // One-off index build. Run this deliberately rather than letting Mongoose
 // autoIndex do it on boot: these are built against a live collection and
@@ -30,6 +31,11 @@ const MODELS = [
   // The TTL index here is the one that expires public share links, so a
   // deployment missing it leaves those links live forever.
   ['SharedHand', SharedHand],
+  // Two load-bearing indexes. The unique one on jti is what makes logout
+  // idempotent; the TTL on expiresAt is what stops the denylist growing
+  // without bound. Missing them, the per-request revocation lookup in
+  // userAuth degrades to a collection scan and nothing is ever cleaned up.
+  ['RevokedToken', RevokedToken],
 ];
 
 async function main() {

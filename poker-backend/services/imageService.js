@@ -33,26 +33,6 @@ export function sniffImageType(buffer) {
   return null;
 }
 
-function findDuplicateInDir(incomingHash, incomingSize) {
-  let files;
-  try {
-    files = fs.readdirSync(uploadsDir);
-  } catch {
-    return null;
-  }
-
-  for (const filename of files) {
-    const filePath = path.join(uploadsDir, filename);
-    try {
-      const stat = fs.statSync(filePath);
-      if (stat.size !== incomingSize) continue;
-      const buffer = fs.readFileSync(filePath);
-      if (hashBuffer(buffer) === incomingHash) return filename;
-    } catch {}
-  }
-  return null;
-}
-
 // Returns { imageUrl, filename, duplicate } on success, or
 // { error: 'no-file' | 'invalid-type' } to let the controller pick the
 // right 400 message.
@@ -62,22 +42,29 @@ export function saveImage(buffer) {
     return { error: 'invalid-type' };
   }
 
-  const incomingHash = hashBuffer(buffer);
-  const incomingSize = buffer.length;
+  // Name the file after its own content hash. Deduplication is then a
+  // single stat() on a known path, rather than what this used to do: read
+  // and SHA-256 *every* file in the directory on every upload, which is an
+  // O(files-on-disk) burst of synchronous disk I/O per request and a
+  // steadily worsening DoS vector as the directory grows.
+  //
+  // The extension still comes from the sniffed type, never the client's.
+  const ext = ALLOWED_MIME_TO_EXT[sniffed];
+  const filename = `${hashBuffer(buffer)}${ext}`;
+  const filePath = path.join(uploadsDir, filename);
 
-  const duplicateFilename = findDuplicateInDir(incomingHash, incomingSize);
-  if (duplicateFilename) {
+  // Files uploaded before this change have timestamp names and won't be
+  // matched here, so a re-upload of one is stored once more under its hash
+  // name. That's a one-time cost on legacy images; every URL already handed
+  // out keeps working, because nothing is renamed or removed.
+  if (fs.existsSync(filePath)) {
     return {
-      imageUrl: `/uploads/profile-images/${duplicateFilename}`,
-      filename: duplicateFilename,
+      imageUrl: `/uploads/profile-images/${filename}`,
+      filename,
       duplicate: true,
       message: 'This image has already been uploaded.',
     };
   }
-
-  const ext = ALLOWED_MIME_TO_EXT[sniffed];
-  const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-  const filePath = path.join(uploadsDir, filename);
 
   fs.writeFileSync(filePath, buffer);
 
