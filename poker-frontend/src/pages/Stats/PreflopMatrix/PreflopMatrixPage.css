@@ -1,7 +1,10 @@
 .pfm-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  /* Tight throughout: this page's whole job is the 13x13 grid, and every
+     pixel spent above it comes straight out of the grid's height budget
+     (see HandMatrix.css's --hm-page-chrome). */
+  gap: 12px;
   /* One width for the whole page: the sequence bar, the range grid and the
      position matrix below it all share this edge. The grid used to be
      capped narrower and centred, which left it visibly inset from the two
@@ -11,8 +14,11 @@
   margin: 0 auto;
 }
 
+/* Rendered inside the sequence panel now (see PreflopMatrixControls) - it
+   describes the seat cards, and as a standalone line above the page it was
+   costing the grid ~30px of height for a sentence read once. */
 .pfm-lead {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--color-text-muted);
   margin: 0;
 }

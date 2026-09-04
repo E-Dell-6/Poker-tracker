@@ -26,7 +26,45 @@
    so this wins regardless of CSS import order - the page-wide ghost-state
    padding is too generous for a state living inside a card, not the page. */
 .hand-matrix-card .study-status-container {
-  padding: 60px 20px;
+  padding: 40px 20px;
+}
+
+/* Tighter than the shared .matrix-table-card padding (MatrixTableCard.css):
+   the grid is the only thing on this page worth vertical space. */
+.hand-matrix-card {
+  padding: 12px;
+  /* The card hugs the grid rather than spanning the page like the panels
+     above and below it. The grid is a fixed-aspect object (13 columns of
+     4:3 cells), so once its width is bounded by the height left in the
+     viewport, a full-width card would just wrap it in a wide empty margin.
+     Centred instead, which reads as deliberate. `+ 24px` is this card's own
+     horizontal padding. */
+  max-width: min(100%, max(484px, calc((100vh - var(--hm-page-chrome)) * var(--hm-cell-aspect) + 24px)));
+  margin: 0 auto;
+  width: 100%;
+  /* Everything stacked above and around the grid - the app's Study header,
+     .main-content's padding, the stakes/date filter row, the sequence
+     panel, this card's own header and padding, and ~16px of slack so the
+     card's bottom edge isn't flush against the viewport. Measured against
+     the real components, not guessed. The grid sizes itself against
+     whatever height is left (see .hand-matrix), so this is the one number
+     to retune if anything in that stack changes height. */
+  --hm-page-chrome: 460px;
+
+  /* Cell width : height. Every row is 1/aspect as tall as a column is
+     wide, so the grid's height is width/aspect and the max-width above is
+     just that inverted - the two MUST use the same number, hence the
+     variable. Slightly wider than tall, which both suits the hand tokens
+     (horizontal text) and buys grid width back at a fixed height. */
+  --hm-cell-aspect: 1.45;
+}
+
+.hand-matrix-card .matrix-table-header {
+  margin-bottom: 6px;
+}
+
+.hand-matrix-card .section-title {
+  font-size: 12px;
 }
 
 .hand-matrix-wrap {
@@ -35,23 +73,35 @@
 
 .hand-matrix {
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
+  grid-template-columns: repeat(13, minmax(0, 1fr));
   gap: 2px;
   background: var(--color-border);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
+  /* The grid has no height of its own - its 13 rows are 3/4 as tall as the
+     columns are wide (see .hm-cell's aspect-ratio), so its height is always
+     ~0.75x its width. Capping the WIDTH by the height that's left is
+     therefore the only way to make it fit the viewport, which is the whole
+     point: the full 13x13 should be readable without scrolling or zooming
+     out. That cap lives on .hand-matrix-card above, which the grid then
+     simply fills; the card's 484px floor stops a short window from
+     shrinking the tokens into illegibility - below that the page scrolls
+     again, which beats an unreadable grid. */
+  width: 100%;
 }
 
 .hm-cell {
   position: relative;
   /* Horizontally rectangular, not square - wide enough for the stacked
-     fold/call/raise bars to read as a clear proportion at a glance. */
-  aspect-ratio: 4 / 3;
+     fold/call/raise bars to read as a clear proportion at a glance. Set on
+     the card (see --hm-cell-aspect) because the card's max-width is derived
+     from it. */
+  aspect-ratio: var(--hm-cell-aspect);
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding: 4px 5px 0 0;
+  padding: 2px 3px 0 0;
   background: var(--color-bg-elevated);
   cursor: pointer;
   overflow: hidden;
@@ -75,11 +125,10 @@
   position: relative;
   z-index: 1;
   font-family: var(--font-mono);
-  /* Scales with the cells, which are themselves fluid (1fr columns) - at a
-     fixed 12px the token looked stranded in the roomier cells the grid got
-     when it went full page width. Floor/ceiling are the readable ends:
-     9px on a phone, 14px once .pfm-page hits its 1320px cap. */
-  font-size: clamp(9px, 1vw, 14px);
+  /* Scales with the cells, which are fluid in both directions (1fr columns
+     bounded by viewport height). Floor/ceiling are the readable ends for
+     the cell sizes that bound produces. */
+  font-size: clamp(8px, 0.7vw, 12px);
   font-weight: 600;
   color: var(--color-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);

@@ -155,6 +155,10 @@ export function PreflopMatrixControls({
           spans the full page width now (see PreflopMatrixPage.css), which
           left these squeezed against the far edge. */}
       <div className="pfm-controls-toolbar">
+        {/* Shares the toolbar row rather than taking a line of its own -
+            this panel sits under the grid now and every row it adds is a
+            row the grid loses. */}
+        <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
         <Tabs options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} />
         <button type="button" className="pfm-gear-btn" onClick={onReset} aria-label="Restart from UTG" title="Restart from UTG">
           <RotateCcw size={16} />

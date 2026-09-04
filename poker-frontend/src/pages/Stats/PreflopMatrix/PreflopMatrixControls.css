@@ -2,11 +2,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  padding: 10px 12px;
 }
 
 /* The seat cards, on their own now - nothing shares this row, so the
@@ -17,22 +17,34 @@
   gap: 12px;
 }
 
-/* Table-size tabs + reset/settings, grouped at the left under the cards so
-   the row reads in the same left-to-right order the cards do. */
+/* Caption on the left, table-size tabs + reset/settings on the right, all
+   on one row under the cards - three separate rows' worth of content in
+   the height of one. */
 .pfm-controls-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.pfm-controls-toolbar .pfm-lead {
+  margin-right: auto;
+}
+
+/* Shorter than the shared .ui-tab default (Tabs.css) - correct elsewhere,
+   but this row is spending height the grid below needs. */
+.pfm-controls-toolbar .ui-tab {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
 }
 
 .pfm-gear-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text-muted);
@@ -63,7 +75,7 @@
 .pfm-card-row {
   display: flex;
   align-items: stretch;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   flex: 1;
   min-width: 0;
@@ -106,15 +118,15 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 3px;
+  padding: 6px 8px;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   text-align: left;
   white-space: nowrap;
   flex-shrink: 0;
-  min-width: 128px;
+  min-width: 92px;
   font-family: var(--font-sans);
   /* The whole card is a click target for "show me this seat's range". */
   cursor: pointer;
@@ -161,7 +173,7 @@
   border: none;
   background: none;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--color-text);
   cursor: pointer;
@@ -174,7 +186,7 @@
 .pfm-node-actions {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 1px;
 }
 
 /* Every action row is a real button - clicking any of the 3 (not just the
@@ -183,13 +195,14 @@
 .pfm-node-action {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  border-radius: 6px;
+  gap: 5px;
+  padding: 0 4px;
+  border-radius: 4px;
   border: 1px solid transparent;
   background: none;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.55;
   color: var(--color-text-muted);
   cursor: pointer;
   text-align: left;
@@ -207,18 +220,20 @@
 }
 
 .pfm-node-action-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 2px;
   flex-shrink: 0;
 }
 
 .pfm-settings-panel {
   position: absolute;
-  top: calc(100% + 8px);
+  /* Opens UPWARD: this panel is the last thing on the page now, so a
+     dropdown hanging below it would open off the bottom of the viewport. */
+  bottom: calc(100% + 8px);
   /* Anchored under the gear button, which lives at the toolbar's left end
      (see .pfm-controls-toolbar). */
-  left: 20px;
+  left: 12px;
   width: 260px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-strong);

@@ -114,7 +114,11 @@ export function PreflopMatrixPage() {
 
   return (
     <div className="pfm-page">
-      <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
+      {/* Grid first, sequence bar underneath it: the grid is what this page
+          is for, so it gets the top of the viewport and every pixel of
+          height the bar doesn't need (see HandMatrix.css's
+          --hm-page-chrome). */}
+      <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
 
       <PreflopMatrixControls
         nodes={nodes}
@@ -126,8 +130,6 @@ export function PreflopMatrixPage() {
         tableSize={tableSize} setTableSize={setTableSizeAndReset}
         minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
       />
-
-      <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
 
       <PreflopPositionMatrix positional={stats.positional} />
     </div>
