@@ -7,6 +7,8 @@ import { classifyHoleCards } from '../utils/handClass.js';
 import { BSON } from 'mongodb';
 import HandLedger from '../model/HandLedger.js';
 import UserModel from '../model/User.js';
+import Person from '../model/People.js';
+import { recomputeStatsForPerson } from './statsService.js';
 
 // List view: deliberately excludes `hands` (each session can carry hundreds
 // of nested hand documents - players/actions/board/etc). The history page
@@ -209,23 +211,99 @@ export async function searchHands(userId, { gameType, result, filter, position, 
   return { hands: matched, count: matched.length };
 }
 
+// Narrows `opponentLinks` ({ opponentName: personId | null }) to the entries
+// safe to apply: a null (an explicit unlink) always survives, an id only if
+// it's a valid ObjectId belonging to THIS user. Without the ownership check
+// a client could point one of its seats at someone else's Person and have
+// that person's stats recomputed over hands they never played.
+//
+// One query for the whole map, not one per entry - the modal can send a
+// link for every opponent at the table at once.
+async function sanitizeOpponentLinks(userId, opponentLinks) {
+  const entries = Object.entries(opponentLinks || {});
+  if (entries.length === 0) return {};
+
+  const wanted = entries
+    .filter(([, personId]) => personId != null)
+    .map(([, personId]) => String(personId))
+    .filter(id => mongoose.isValidObjectId(id));
+
+  let owned = new Set();
+  if (wanted.length > 0) {
+    const found = await Person.find({ _id: { $in: wanted }, userId }).select('_id').lean();
+    owned = new Set(found.map(p => String(p._id)));
+  }
+
+  const sanitized = {};
+  for (const [name, personId] of entries) {
+    if (personId == null) sanitized[name] = null;
+    else if (owned.has(String(personId))) sanitized[name] = String(personId);
+  }
+  return sanitized;
+}
+
 // Returns null if the session doesn't exist (or isn't this user's).
-export async function updateSession(userId, sessionId, { date, gameType, opponentRenames, totalProfit, starred }) {
+//
+// `opponentRenames` ({ oldName: newName }) and `opponentLinks`
+// ({ name: personId | null }) are both keyed on the opponent name as the
+// CLIENT saw it, so the loop below captures each seat's name before
+// touching it and resolves both maps against that - applying the rename
+// first would leave the link lookup searching for a name that no longer
+// exists.
+//
+// Relinking a seat moves its hands from one Person to another, which
+// invalidates the cached PlayerStats doc of both, so each affected person
+// is recomputed after the save. Without this the linked player's profile
+// page stays empty until something else (an import) happens to recompute it.
+export async function updateSession(userId, sessionId, { date, gameType, opponentRenames, opponentLinks, totalProfit, starred }) {
   const session = await Session.findOne({ _id: sessionId, userId });
   if (!session) return null;
   if (date) session.date = new Date(date);
   if (gameType) session.gameType = gameType;
   if (totalProfit !== undefined) session.totalProfit = Number(totalProfit);
   if (starred !== undefined) session.starred = Boolean(starred);
-  if (opponentRenames && Object.keys(opponentRenames).length > 0 && session.hands?.length > 0) {
+
+  const links = await sanitizeOpponentLinks(userId, opponentLinks);
+  const hasLinks = Object.keys(links).length > 0;
+  const hasRenames = opponentRenames && Object.keys(opponentRenames).length > 0;
+
+  // Both the person losing the hands and the person gaining them need a
+  // recompute, so previous ids are collected before they're overwritten.
+  const affectedPersonIds = new Set();
+
+  if ((hasLinks || hasRenames) && session.hands?.length > 0) {
     session.hands.forEach((hand) => {
-      hand.players?.forEach((p) => { if (opponentRenames[p.name]) p.name = opponentRenames[p.name]; });
-      hand.winners = hand.winners?.map(name => opponentRenames[name] || name);
-      hand.actions?.forEach((a) => { if (a.player && opponentRenames[a.player]) a.player = opponentRenames[a.player]; });
+      hand.players?.forEach((p) => {
+        const original = p.name;
+        // Hero is identified by isHero, never by a linked Person (see
+        // PlayerStats.personId's comment), so hero seats are left alone
+        // even if a name collision put one in the maps.
+        if (!p.isHero && hasLinks && Object.prototype.hasOwnProperty.call(links, original)) {
+          const nextId = links[original];
+          if (p.personId) affectedPersonIds.add(String(p.personId));
+          if (nextId) affectedPersonIds.add(String(nextId));
+          p.personId = nextId ? new mongoose.Types.ObjectId(nextId) : null;
+        }
+        if (hasRenames && opponentRenames[original]) p.name = opponentRenames[original];
+      });
+      if (hasRenames) {
+        hand.winners = hand.winners?.map(name => opponentRenames[name] || name);
+        hand.actions?.forEach((a) => { if (a.player && opponentRenames[a.player]) a.player = opponentRenames[a.player]; });
+      }
     });
     session.markModified('hands');
   }
-  return session.save();
+
+  await session.save();
+
+  // Sequential, and awaited rather than backgrounded: an edit touches one
+  // or two people, and the caller closes a modal on the response - the
+  // player's page has to be right by then.
+  for (const personId of affectedPersonIds) {
+    await recomputeStatsForPerson(userId, personId);
+  }
+
+  return session;
 }
 
 // Returns null if the session or hand doesn't exist (or isn't this user's).

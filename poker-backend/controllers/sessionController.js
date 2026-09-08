@@ -1,3 +1,8 @@
+import fs from 'fs/promises';
+import path from 'path';
+import crypto from 'crypto';
+import { STAGING } from '../config/limits.js';
+import { assertDiskHeadroom } from '../services/importRunner.js';
 import * as sessionService from '../services/sessionService.js';
 import { processUpload, createLegacySessionViaUploadPath } from '../services/sessionImportService.js';
 
@@ -76,6 +81,46 @@ export async function createLegacySession(req, res) {
   }
 }
 
+// Creates the directory multer will write this request's files into, and
+// guarantees it is removed again however the request ends.
+//
+// Staged under STAGING.DIR rather than a new location on purpose: that
+// path is already proven writable at boot and already granted to the
+// service, so this needs no deployment change. sweepOrphanedStagingDirs
+// treats any directory there without a live job as garbage, which means
+// anything stranded by a crash mid-upload is collected at the next boot
+// for free.
+export async function prepareCsvUpload(req, res, next) {
+  // Same floor the import path enforces, for the same reason: mongod lives
+  // on this filesystem and a full disk corrupts it. This route used to
+  // buffer in memory and so never touched the disk at all - now that it
+  // stages up to 20x10MB per request, it has to respect the boundary the
+  // rest of the ingestion code already does.
+  try {
+    await assertDiskHeadroom();
+  } catch (err) {
+    return res.status(503).json({ error: err.message });
+  }
+
+  req.csvStagingDir = path.join(STAGING.DIR, `csv-${crypto.randomBytes(12).toString('hex')}`);
+  try {
+    await fs.mkdir(req.csvStagingDir, { recursive: true });
+  } catch (err) {
+    console.error(`[upload] staging dir unusable (${req.csvStagingDir}):`, err.message);
+    return res.status(503).json({ error: 'Uploads are temporarily unavailable. Please try again shortly.' });
+  }
+
+  // 'close' rather than 'finish': it fires for an aborted connection too,
+  // which is exactly the case that would otherwise leak a directory of
+  // half-uploaded files.
+  res.on('close', () => {
+    fs.rm(req.csvStagingDir, { recursive: true, force: true })
+      .catch(err => console.error('[upload] failed to clean staging dir:', err.message));
+  });
+
+  next();
+}
+
 // auth before multer now. NOTE: multer replaces req.body entirely once it
 // parses the multipart form, so we can't rely on req.body.userId (set by
 // userAuth) surviving past the upload.array() middleware. userAuth also
@@ -113,8 +158,8 @@ export async function resetSessions(req, res) {
 
 export async function updateSession(req, res) {
   try {
-    const { userId, date, gameType, opponentRenames, totalProfit, starred } = req.body;
-    const session = await sessionService.updateSession(userId, req.params.id, { date, gameType, opponentRenames, totalProfit, starred });
+    const { userId, date, gameType, opponentRenames, opponentLinks, totalProfit, starred } = req.body;
+    const session = await sessionService.updateSession(userId, req.params.id, { date, gameType, opponentRenames, opponentLinks, totalProfit, starred });
     if (!session) return res.status(404).json({ error: "Session not found" });
     res.json(session);
   } catch (error) {

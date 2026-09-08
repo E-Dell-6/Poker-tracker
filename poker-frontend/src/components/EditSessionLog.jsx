@@ -1,7 +1,7 @@
 import { uploadImage } from "../api/uploads";
 import { getPeoplePage, createPerson } from "../api/people";
 import { updateSession } from "../api/sessions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, X } from "lucide-react";
 import PersonPicker from "../pages/HandCreator/components/PersonPicker";
 import './EditSessionLog.css';
@@ -25,6 +25,12 @@ export function EditSessionLog({
   const [people, setPeople] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  // Ref, not just the state above: the Enter-key listener is re-registered
+  // only when editFormData changes, so the handler it holds can close over
+  // a stale `saving` and let a second submit through. The state drives the
+  // button; the ref does the guarding.
+  const savingRef = useRef(false);
 
   const showStatus = (type, text) => {
     setStatusMessage({ type, text });
@@ -61,16 +67,30 @@ export function EditSessionLog({
         id: sessionData._id,
         gameType: sessionData.gameType || "NLH",
         date: dateStr,
-        opponents: sessionData.opponents.map(name => ({
-          original: name,
-          current: name,
-          personId: null
+        // `initialPersonId` is the link as stored on the session's hands;
+        // `personId` tracks the edits made in this modal. Only rows where
+        // the two differ are sent as link changes on save, so opening the
+        // modal and saving without touching a picker can't clobber a link.
+        opponents: sessionData.opponents.map(opp => ({
+          original: opp.name,
+          current: opp.name,
+          personId: opp.personId ?? null,
+          initialPersonId: opp.personId ?? null
         })),
         totalProfit: sessionData.totalProfit || 0
       });
       setStatusMessage(null);
     }
   }, [isOpen, sessionData]);
+
+  // The picker's dropdown only offers starred players, and a <select>
+  // whose value matches no <option> renders blank instead of falling back
+  // to its "- not linked -" entry. So a row is only shown as linked when
+  // its person is in that list - which is what this picker means by
+  // "linked" anyway: attached to one of your starred players, not to the
+  // unstarred Person the importer auto-creates for every opponent.
+  const selectableId = (personId) =>
+    people.some(p => p._id === personId) ? personId : null;
 
   // Links opponent row `index` to an existing starred person (`personId`),
   // or back to its original session name when the picker is cleared
@@ -112,16 +132,27 @@ export function EditSessionLog({
   };
 
   const handleSaveChanges = async () => {
+    // The save recomputes stats for every person whose hands moved, so it
+    // isn't instant - and the Enter shortcut above makes a double submit
+    // easy. Guard rather than fire the request twice.
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
     try {
       const renameMap = {};
+      // Keyed on the original name, matching renameMap: the backend
+      // resolves both against the name each seat had before this save.
+      const linkMap = {};
       editFormData.opponents.forEach((opp) => {
         if (opp.original !== opp.current) renameMap[opp.original] = opp.current;
+        if (opp.personId !== opp.initialPersonId) linkMap[opp.original] = opp.personId;
       });
 
       const result = await updateSession(editFormData.id, {
         date: editFormData.date,
         gameType: editFormData.gameType,
         opponentRenames: renameMap,
+        opponentLinks: linkMap,
         totalProfit: Number(editFormData.totalProfit),
       });
       if (onSave) onSave(result.hand || result);
@@ -129,6 +160,9 @@ export function EditSessionLog({
     } catch (error) {
       console.error("Error saving changes", error);
       showStatus('error', 'There was an error saving changes');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
@@ -189,7 +223,7 @@ export function EditSessionLog({
                   <PersonPicker
                     people={people}
                     peopleLoading={peopleLoading}
-                    selectedId={opp.personId}
+                    selectedId={selectableId(opp.personId)}
                     defaultName={opp.original}
                     onLink={(personId) => handleLink(index, personId)}
                     onCreate={(name, file) => handleCreatePersonForRow(index, name, file)}
@@ -201,8 +235,10 @@ export function EditSessionLog({
         )}
 
         <div className="esl-actions">
-          <button className="esl-btn" onClick={onClose}>Cancel</button>
-          <button className="esl-btn esl-btn--primary" onClick={handleSaveChanges}>Save</button>
+          <button className="esl-btn" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="esl-btn esl-btn--primary" onClick={handleSaveChanges} disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </div>
     </div>

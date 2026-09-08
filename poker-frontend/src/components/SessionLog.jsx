@@ -79,13 +79,21 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
     return () => window.removeEventListener("click", handleClick);
   }, []);
 
+  // [{ name, personId }] - one entry per distinct opponent name, carrying
+  // the Person that name's seats are currently linked to (first seat wins;
+  // every seat with a given name in a session is the same player). The edit
+  // modal needs the existing link, not just the name, or it can't show a
+  // row as already linked.
   const getSessionOpponents = (hands) => {
     if (!hands?.length) return [];
-    const unique = new Set();
+    const byName = new Map();
     hands.forEach(hand => {
-      hand.players?.forEach(p => { if (!p.isHero) unique.add(p.name); });
+      hand.players?.forEach(p => {
+        if (p.isHero || byName.has(p.name)) return;
+        byName.set(p.name, { name: p.name, personId: p.personId ?? null });
+      });
     });
-    return Array.from(unique);
+    return Array.from(byName.values());
   };
 
   const handleSessionClick = (id) => {
@@ -133,6 +141,16 @@ export function SessionLog({ sessions, onSessionsChange, onHandClick, onToggleSt
   };
 
   const handleSaveEdit = (updated) => {
+    // A save can rename opponents and repoint their personId, so the hands
+    // cached for this session are now stale - drop them so the next expand
+    // or edit refetches. Without this, reopening the modal in the same page
+    // view rebuilds its opponent rows from pre-edit hands and the change
+    // looks like it didn't stick.
+    setHandsBySession(prev => {
+      const next = { ...prev };
+      delete next[updated._id];
+      return next;
+    });
     onSessionsChange?.(prev =>
       prev.map(s => s._id === updated._id ? updated : s)
           .sort((a, b) => new Date(b.date) - new Date(a.date))

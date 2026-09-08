@@ -1,3 +1,4 @@
+import fs from 'fs/promises';
 import LiveSession from '../model/LiveSession.js';
 import { importOneFile } from './handImportPipeline.js';
 import { createPersonResolver } from './personResolver.js';
@@ -30,9 +31,15 @@ export async function processUpload(userId, files) {
 
   for (const file of files) {
     try {
+      // Read one file at a time, rather than every file arriving already
+      // buffered. multer's memoryStorage held all of them at once, so a
+      // single request could pin 20 x 10MB of RSS before any work started
+      // - on a 1-2 core box that mongod shares. Peak is now one file.
+      const buffer = file.buffer ?? await fs.readFile(file.path);
+
       const result = await importOneFile({
         userId,
-        buffer: file.buffer,
+        buffer,
         filename: file.originalname,
         resolver,
       });
@@ -48,6 +55,12 @@ export async function processUpload(userId, files) {
       results.push(publicResult);
     } catch (fileError) {
       results.push({ filename: file.originalname, success: false, error: fileError.message });
+    } finally {
+      // Free each staged file as soon as it's done rather than waiting for
+      // the request to end, so a 20-file batch never has more than the
+      // unprocessed remainder on disk. The route removes the directory
+      // itself; this is about not holding the bytes any longer than needed.
+      if (file.path) await fs.rm(file.path, { force: true }).catch(() => {});
     }
   }
 

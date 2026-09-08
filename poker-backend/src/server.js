@@ -16,7 +16,7 @@ import liveSessionRouter from '../routes/liveSessionRoute.js';
 import shareRouter from '../routes/shareRoute.js';
 import statsRouter from '../routes/statsRoute.js'
 import importRouter from '../routes/importRoute.js';
-import { authLimiter } from '../middleware/rateLimiter.js';
+import { authLimiter, globalLimiter } from '../middleware/rateLimiter.js';
 import verifyOrigin from '../middleware/verifyOrigin.js';
 import { ALLOWED_ORIGINS } from '../config/origins.js';
 import { resumeInterruptedJobs, sweepOrphanedStagingDirs } from '../services/importRunner.js';
@@ -44,6 +44,11 @@ app.use(cors({
 // so no handler runs for a cross-site write. See middleware/verifyOrigin.js
 // for why CORS alone doesn't cover this.
 app.use(verifyOrigin);
+
+// Baseline flood protection for every route, including the two public ones
+// (/api/share/:shareId and the static /uploads tree) that had nothing at
+// all. Ahead of the routers so no handler runs for a request over the cap.
+app.use(globalLimiter);
 
 // Body size capped to stop large-payload DoS attempts.
 app.use(express.json({ limit: '1mb' }));

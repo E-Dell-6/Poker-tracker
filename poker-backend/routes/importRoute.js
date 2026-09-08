@@ -3,7 +3,7 @@ import multer from 'multer';
 import crypto from 'crypto';
 import path from 'path';
 import userAuth from '../middleware/userAuth.js';
-import { importLimiter } from '../middleware/rateLimiter.js';
+import { importLimiter, ingestLimiter } from '../middleware/rateLimiter.js';
 import { importFileFilter } from '../services/importValidation.js';
 import { UPLOAD } from '../config/limits.js';
 import {
@@ -51,7 +51,7 @@ router.post(
   stageFiles
 );
 
-router.post('/:id/start', userAuth, startImportJob);
+router.post('/:id/start', userAuth, ingestLimiter, startImportJob);
 // Before '/:id', or Express would read "active" as a job id.
 router.get('/active', userAuth, getActiveImportJob);
 router.get('/:id', userAuth, getImportJob);

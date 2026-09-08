@@ -52,7 +52,7 @@ async function drain() {
 
 // mongod shares this filesystem, and a full disk corrupts it. This is a
 // floor for the whole box, checked before a job commits to writing.
-async function assertDiskHeadroom() {
+export async function assertDiskHeadroom() {
   try {
     const stat = await fs.statfs(STAGING.DIR);
     const free = stat.bavail * stat.bsize;
