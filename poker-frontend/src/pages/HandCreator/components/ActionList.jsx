@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react';
 import ActionComposer from './ActionComposer';
 import ActionRow from './ActionRow';
 import { bettingHintText, bettingWarning } from '../hooks/useHandBuilder';
@@ -14,9 +13,6 @@ export default function ActionList({
   activeNextSeatConstraint,
   pot,
   onQuickAction,
-  onAddManual,
-  onChangeType,
-  onChangeAmount,
   onRemove,
 }) {
   const positionFor = (seat) => seatPositions.find((s) => s.seat === seat)?.position || '';
@@ -50,18 +46,12 @@ export default function ActionList({
                 isFolded={foldedSeats.has(seat)}
                 warning={warning}
                 hint={hint}
-                onChangeType={(value) => onChangeType(action.id, value)}
-                onChangeAmount={(value) => onChangeAmount(action.id, value)}
                 onRemove={() => onRemove(action.id)}
               />
             );
           })}
         </div>
       )}
-
-      <button type="button" className="al-manual-btn" onClick={onAddManual}>
-        <Plus size={14} /> Add action manually
-      </button>
     </div>
   );
 }

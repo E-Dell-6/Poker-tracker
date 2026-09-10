@@ -1,7 +1,5 @@
 export const STREETS = ['PREFLOP', 'FLOP', 'TURN', 'RIVER'];
 
-export const SELECTABLE_ACTION_TYPES = ['FOLD', 'CHECK', 'CALL', 'BET', 'RAISE'];
-
 export const AMOUNT_ACTIONS = new Set(['POST_SB', 'POST_BB', 'BET', 'RAISE', 'CALL']);
 
 export const FOLD_ACTIONS = new Set(['FOLD', 'MUCK']);

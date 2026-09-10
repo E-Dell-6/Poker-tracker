@@ -47,9 +47,7 @@ export default function HandCreator({ onSubmit }) {
           setActiveStreet={hb.setActiveStreet}
           actionsForStreet={hb.actionsForStreet}
           bettingMetaById={hb.bettingMetaById}
-          addAction={hb.addAction}
           addQuickAction={hb.addQuickAction}
-          updateAction={hb.updateAction}
           removeAction={hb.removeAction}
           activeNextSeat={hb.activeNextSeat}
           activeNextSeatConstraint={hb.activeNextSeatConstraint}

@@ -354,17 +354,6 @@ export function useHandBuilder({ onSubmit } = {}) {
     });
   };
 
-  const addAction = (street) => {
-    const seat = nextToActSeat(street);
-    const playerName =
-      hand.players.find((p) => p.seat === seat)?.name || hand.players[0]?.name || '';
-
-    setActions((prev) => [
-      ...prev,
-      { id: nextId(), street, actionType: 'FOLD', player: playerName, amount: 0 },
-    ]);
-  };
-
   // Preview the betting constraint a new action for `playerName` on `street`
   // would face right now: append a zero-amount dummy action and read the
   // meta computeBettingState derives for it before any amount is applied -
@@ -390,37 +379,6 @@ export function useHandBuilder({ onSubmit } = {}) {
       ...prev,
       { id: nextId(), street, actionType, player: playerName, amount: clampedAmount },
     ]);
-  };
-
-  const updateAction = (id, field, value) => {
-    setActions((prev) => {
-      const index = prev.findIndex((a) => a.id === id);
-      if (index === -1) return prev;
-
-      const applied = prev.map((a) => (a.id === id ? { ...a, [field]: value } : a));
-      const meta = computeBettingState(applied, hand.players, bigBlind);
-      const constraint = meta[index];
-      if (!constraint) return applied;
-
-      return applied.map((a) => {
-        if (a.id !== id) return a;
-        const next = { ...a };
-
-        if (field === 'actionType') {
-          if (!AMOUNT_ACTIONS.has(value)) {
-            next.amount = 0;
-          } else if (value === 'CALL') {
-            next.amount = constraint.callAmount;
-          } else if (value === 'BET' || value === 'RAISE') {
-            next.amount = constraint.minRaiseAmount;
-          }
-        } else if (field === 'amount') {
-          next.amount = Math.max(0, Math.min(Number(value) || 0, constraint.stackBefore));
-        }
-
-        return next;
-      });
-    });
   };
 
   const removeAction = (id) => {
@@ -658,9 +616,7 @@ export function useHandBuilder({ onSubmit } = {}) {
     proceedToActions,
     updatePlayerField,
     toggleWinner,
-    addAction,
     addQuickAction,
-    updateAction,
     removeAction,
     openCardSelector,
     closeCardSelector,

@@ -1,14 +1,12 @@
 import { Trash2 } from 'lucide-react';
-import { SELECTABLE_ACTION_TYPES, ACTION_LABELS, AMOUNT_ACTIONS } from '../constants';
+import { ACTION_LABELS, AMOUNT_ACTIONS } from '../constants';
 
-// One already-logged action: editable/removable fallback for fixing up
-// whatever the quick-action buttons produced (or for manual entry when
-// nothing about the quick flow fits, e.g. an odd MUCK).
-export default function ActionRow({ action, position, isFolded, warning, hint, onChangeType, onChangeAmount, onRemove }) {
-  const typeOptions = SELECTABLE_ACTION_TYPES.includes(action.actionType)
-    ? SELECTABLE_ACTION_TYPES
-    : [action.actionType, ...SELECTABLE_ACTION_TYPES];
-
+// One already-logged action, read-only. Actions are entered through the
+// ActionComposer's one-tap buttons, which is the only place betting
+// constraints (call amount, min raise, stack cap) are enforced - so the log
+// deliberately offers no way to retype a type or amount past those rules.
+// Fixing a mistake means deleting the action and re-entering it.
+export default function ActionRow({ action, position, isFolded, warning, hint, onRemove }) {
   return (
     <div className="ar-wrapper">
       <div className="ar-row">
@@ -17,21 +15,10 @@ export default function ActionRow({ action, position, isFolded, warning, hint, o
           {isFolded ? ' (folded)' : ''}
         </div>
 
-        <select value={action.actionType} onChange={(e) => onChangeType(e.target.value)}>
-          {typeOptions.map((type) => (
-            <option key={type} value={type}>
-              {ACTION_LABELS[type]}
-            </option>
-          ))}
-        </select>
+        <div className="ar-type">{ACTION_LABELS[action.actionType] || action.actionType}</div>
 
         {AMOUNT_ACTIONS.has(action.actionType) ? (
-          <input
-            type="number"
-            min="0"
-            value={action.amount}
-            onChange={(e) => onChangeAmount(Number(e.target.value))}
-          />
+          <div className="ar-amount">{action.amount}</div>
         ) : (
           <div className="ar-dash">—</div>
         )}

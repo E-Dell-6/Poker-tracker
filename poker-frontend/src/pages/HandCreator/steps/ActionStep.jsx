@@ -15,9 +15,7 @@ export default function ActionStep({
   setActiveStreet,
   actionsForStreet,
   bettingMetaById,
-  addAction,
   addQuickAction,
-  updateAction,
   removeAction,
   activeNextSeat,
   activeNextSeatConstraint,
@@ -149,9 +147,6 @@ export default function ActionStep({
         activeNextSeatConstraint={activeNextSeatConstraint}
         pot={currentPot}
         onQuickAction={(actionType, amount) => addQuickAction(activeStreet, actionType, amount)}
-        onAddManual={() => addAction(activeStreet)}
-        onChangeType={(id, value) => updateAction(id, 'actionType', value)}
-        onChangeAmount={(id, value) => updateAction(id, 'amount', value)}
         onRemove={removeAction}
       />
 
