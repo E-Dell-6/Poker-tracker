@@ -95,13 +95,20 @@ export function EditSessionLog({
   // Links opponent row `index` to an existing starred person (`personId`),
   // or back to its original session name when the picker is cleared
   // (PersonPicker's "— not linked —" option, id === null).
+  //
+  // Clearing restores the row to the state it was DISPLAYED in on open,
+  // not to a bare null: a row whose stored link is an unstarred person
+  // already reads "not linked" here (see selectableId), so clearing it
+  // must put that link back rather than silently detach the session's
+  // hands from the person the importer resolved them to.
   const handleLink = (index, personId) => {
     const newOpponents = [...editFormData.opponents];
+    const row = newOpponents[index];
     const person = people.find(p => p._id === personId);
     newOpponents[index] = {
-      ...newOpponents[index],
-      current: person ? person.name : newOpponents[index].original,
-      personId: person ? person._id : null
+      ...row,
+      current: person ? person.name : row.original,
+      personId: person ? person._id : (selectableId(row.initialPersonId) ? null : row.initialPersonId)
     };
     setEditFormData({ ...editFormData, opponents: newOpponents });
   };

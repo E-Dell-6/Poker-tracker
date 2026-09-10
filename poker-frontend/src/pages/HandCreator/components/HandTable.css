@@ -37,10 +37,15 @@
   position: absolute;
   inset: 0;
   z-index: 20;
+  /* The layer spans the whole table, so without this it swallows clicks
+     aimed at the lower-z board row underneath it (board cards then can't
+     be picked). Seats themselves opt back in below. */
+  pointer-events: none;
 }
 
 .ht-seats .sc-seat {
   position: absolute;
+  pointer-events: auto;
 }
 
 .ht-dealer-chip {
