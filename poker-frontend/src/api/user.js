@@ -15,3 +15,18 @@ export async function getStorageUsage() {
   const data = await res.json();
   return data?.success ? data.storage : null;
 }
+
+export async function updatePreferences(patch) {
+  const res = await apiFetch("/api/user/preferences", { method: "PATCH", body: patch });
+  return res.json();
+}
+
+export async function updateProfile({ name }) {
+  const res = await apiFetch("/api/user/profile", { method: "PATCH", body: { name } });
+  return res.json();
+}
+
+export async function deleteAccount({ password }) {
+  const res = await apiFetch("/api/user/account", { method: "DELETE", body: { password } });
+  return res.json();
+}

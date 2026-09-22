@@ -1,0 +1,263 @@
+/* ── PAGE ─────────────────────────────────────────────── */
+/* Mirrors .profile-page: same width, padding, rhythm and entrance, so
+   Settings and Profile read as siblings rather than two different apps. */
+.settings-page {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  padding: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+  animation: settingsFadeUp 0.45s ease both;
+}
+
+@keyframes settingsFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SECTION CARD ─────────────────────────────────────── */
+.settings-section {
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 24px 28px;
+  /* Anchor targets (#account) would otherwise sit flush under the header. */
+  scroll-margin-top: 24px;
+}
+
+.settings-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-section-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 20px;
+}
+
+/* ── ROWS ─────────────────────────────────────────────── */
+/* A labelled row with its control on the right. Wraps to stacked on narrow
+   viewports so a long email never squeezes its control off the card. */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.settings-row:first-of-type { border-top: none; padding-top: 0; }
+
+.settings-row-info { min-width: 0; flex: 1; }
+
+.settings-row-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.settings-row-value {
+  font-size: 0.95rem;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.settings-row-hint {
+  font-size: 12px;
+  color: var(--color-text-faint);
+  margin-top: 4px;
+}
+
+.settings-row-control { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ── FIELDS ───────────────────────────────────────────── */
+.settings-input {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--color-text);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.settings-input--error { border-color: var(--color-negative); }
+
+.settings-field { margin-bottom: 12px; }
+
+.settings-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.settings-form { max-width: 380px; margin-top: 4px; }
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.settings-btn {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.settings-btn:hover:not(:disabled) { border-color: var(--color-accent); }
+.settings-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.settings-btn--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.settings-btn--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.settings-btn--danger { color: var(--color-negative); border-color: var(--color-negative); }
+
+.settings-btn--danger:hover:not(:disabled) {
+  background: var(--color-negative-dim);
+  border-color: var(--color-negative);
+}
+
+/* ── MESSAGES ─────────────────────────────────────────── */
+.settings-error   { font-size: 12px; color: var(--color-negative); margin-top: 8px; }
+.settings-success  { font-size: 12px; color: var(--color-positive); margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+
+/* ── BADGES ───────────────────────────────────────────── */
+.settings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.settings-badge--verified {
+  color: var(--color-positive);
+  background: var(--color-positive-dim);
+}
+
+.settings-badge--unverified {
+  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+/* ── DANGER ZONE ──────────────────────────────────────── */
+.settings-section--danger { border-color: color-mix(in srgb, var(--color-negative) 35%, transparent); }
+.settings-section--danger .settings-section-title { color: var(--color-negative); }
+
+.settings-danger-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--color-negative) 35%, transparent);
+  border-radius: 12px;
+  background: var(--color-negative-dim);
+}
+
+.settings-danger-warning { font-size: 13px; color: var(--color-text); margin: 0 0 14px; }
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .settings-page { padding: 20px 16px; }
+  .settings-section { padding: 20px 18px; }
+  .settings-row { align-items: flex-start; flex-direction: column; }
+  .settings-row-control { width: 100%; }
+}
+
+/* ── ACCENT PICKER ────────────────────────────────────── */
+.accent-swatches { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 8px; }
+
+/* Each swatch carries its own data-accent, so --color-accent inside it
+   resolves to that preset rather than the active one - the button paints
+   itself and JS never needs to know a hex value. */
+.accent-swatch {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.accent-swatch:hover { transform: scale(1.08); border-color: transparent; }
+
+.accent-swatch.selected {
+  /* Ring drawn in the page background so it reads as a gap, not a second
+     color competing with the swatch. */
+  box-shadow: 0 0 0 3px var(--color-bg-elevated-hover), 0 0 0 5px var(--color-accent);
+}
+
+.accent-swatch:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+/* ── PREVIEW ──────────────────────────────────────────── */
+.accent-preview { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+
+.accent-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* Sample only - non-interactive, but it must not look switched off. */
+.accent-preview .settings-btn--primary:disabled { opacity: 1; cursor: default; }
+
+.accent-preview-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border: 1px solid var(--color-accent-border);
+}
+
+.accent-preview-pos { font-weight: 700; color: var(--color-positive); }
+.accent-preview-neg { font-weight: 700; color: var(--color-negative); }

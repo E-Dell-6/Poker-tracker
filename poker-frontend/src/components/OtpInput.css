@@ -1,0 +1,27 @@
+/* Moved out of LoginButton.css when the OTP boxes became shared with the
+   Settings page. The dropdown-specific wrappers (.lb-otp-section, -label,
+   -error) stayed behind - only the boxes themselves are reused. */
+.otp-inputs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.otp-input {
+  width: 32px;
+  height: 36px;
+  background: var(--color-bg-elevated);
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  text-align: center;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.otp-input:focus { border-color: var(--color-accent-hover); }
+.otp-input--error { border-color: var(--color-negative); }
+.otp-input:disabled { opacity: 0.5; }

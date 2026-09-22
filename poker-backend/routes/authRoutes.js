@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, logout, sendVerifyOtp, verifyEmail, isAuthenticated, sendResetOtp, resetPassword } from '../controllers/authController.js';
+import { register, login, logout, sendVerifyOtp, verifyEmail, isAuthenticated, sendResetOtp, resetPassword, changePassword } from '../controllers/authController.js';
 import userAuth from '../middleware/userAuth.js';
 
 const authRouter = express.Router();
@@ -12,5 +12,8 @@ authRouter.post('/verify-account', userAuth, verifyEmail);
 authRouter.post('/is-auth', userAuth, isAuthenticated);
 authRouter.post('/send-reset-otp', sendResetOtp);
 authRouter.post('/reset-password', resetPassword);
+// userAuth-gated and under authLimiter with the rest of /api/auth - exactly
+// the throttle a password-guessing endpoint wants.
+authRouter.post('/change-password', userAuth, changePassword);
 
 export default authRouter;

@@ -140,8 +140,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* Account row: profile, starred, settings. Settings is a
-          placeholder - there's no settings page yet. */}
+      {/* Account row: profile, starred, settings. */}
       <div className="sidebar-footer">
         <Link
           to="/profile"
@@ -172,14 +171,14 @@ export function Sidebar() {
           <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
         </button>
 
-        <button
-          type="button"
-          className="sidebar-footer-btn"
+        <Link
+          to="/settings"
+          className={`sidebar-footer-btn ${location.pathname === '/settings' ? 'active' : ''}`}
           title="Settings"
           aria-label="Settings"
         >
           <Settings size={16} />
-        </button>
+        </Link>
       </div>
 
       {/* Collapse toggle at bottom */}

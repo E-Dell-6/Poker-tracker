@@ -2,6 +2,7 @@ import { useState } from "react";
 import { User, Mail, Lock, ShieldCheck, EyeOff, Eye, Check, ArrowLeft } from "lucide-react";
 import "./Login.css";
 import { login, register, sendResetOtp, resetPassword } from "../../api/auth";
+import { MIN_PASSWORD_LENGTH } from "../../config";
 
 // ── Icons (defined outside to prevent remounting) ──
 const UserIcon = () => <User className="login-icon-svg" />;
@@ -87,7 +88,7 @@ export function Login() {
     if (!registerForm.email.trim()) errs.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(registerForm.email)) errs.email = "Invalid email";
     if (!registerForm.password) errs.password = "Password is required";
-    else if (registerForm.password.length < 6) errs.password = "At least 6 characters";
+    else if (registerForm.password.length < MIN_PASSWORD_LENGTH) errs.password = `At least ${MIN_PASSWORD_LENGTH} characters`;
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {
@@ -114,7 +115,7 @@ export function Login() {
     const errs = {};
     if (!resetForm.otp.trim()) errs.otp = "OTP is required";
     if (!resetForm.newPassword) errs.newPassword = "Password is required";
-    else if (resetForm.newPassword.length < 6) errs.newPassword = "At least 6 characters";
+    else if (resetForm.newPassword.length < MIN_PASSWORD_LENGTH) errs.newPassword = `At least ${MIN_PASSWORD_LENGTH} characters`;
     if (Object.keys(errs).length) return setErrors(errs);
     setLoading(true); setServerError("");
     try {

@@ -2,15 +2,13 @@ import { Layout } from "../../components/Layout";
 import { useState, useEffect, useMemo } from "react";
 import { Clock } from "lucide-react";
 import "./Profile.css";
-import { API_URL } from "../../config";
-import { getUserData, getStorageUsage } from "../../api/user";
+import { getUserData } from "../../api/user";
 import { getAllSessions } from "../../api/sessions";
 import { getLiveSessions } from "../../api/liveSessions";
 import { toMajorUnits } from "../../utils/formatMoney";
 import { CumulativeChart } from "../../components/CumulativeChart";
 import { EVGraph } from "../../components/EVGraph";
 import { ProfileSkeleton } from "./ProfileSkeleton";
-import { StorageCard } from "./StorageCard";
 
 const TIME_FILTERS = [
   { label: "30D",       value: 30   },
@@ -60,9 +58,6 @@ export function Profile() {
   const [user, setUser]             = useState(null);
   const [onlineSessions, setOnline] = useState([]);
   const [liveSessions,   setLive]   = useState([]);
-  // Absolute account total, not derived from the session lists - stays
-  // outside `stats` so the time/source filters never touch it.
-  const [storage, setStorage]       = useState(null);
   const [loading, setLoading]       = useState(true);
   const [timeFilter,   setTime]     = useState(null);
   const [sourceFilter, setSource]   = useState("all");
@@ -70,16 +65,14 @@ export function Profile() {
   useEffect(() => {
     (async () => {
       try {
-        const [uData, oData, lData, sData] = await Promise.all([
+        const [uData, oData, lData] = await Promise.all([
           getUserData(),
           getAllSessions().catch(() => []),
           getLiveSessions().catch(() => []),
-          getStorageUsage().catch(() => null),
         ]);
         if (uData?.userData) setUser(uData.userData);
         setOnline(Array.isArray(oData) ? oData : []);
         setLive(Array.isArray(lData)   ? lData  : []);
-        setStorage(sData ?? null);
       } catch (e) {
         console.error("Profile fetch:", e);
       } finally {
@@ -154,16 +147,13 @@ export function Profile() {
   const isUp = stats.totalProfit >= 0;
 
   return (
-    <Layout title="Profile" subtitle={user?.name ? `Account settings for ${user.name}` : undefined}>
+    <Layout title="Profile" subtitle={user?.name ? `Lifetime results for ${user.name}` : undefined}>
       <div className="profile-page">
 
         {/* ── HERO ── */}
         <div className="profile-hero">
           <div className="profile-avatar">
-            {user?.image
-              ? <img src={`${API_URL}${user.image}`} alt={user.name} />
-              : <span>{user?.name?.charAt(0).toUpperCase() ?? "?"}</span>
-            }
+            <span>{user?.name?.charAt(0).toUpperCase() ?? "?"}</span>
           </div>
           <div className="profile-hero-info">
             <h1 className="profile-name">{user?.name ?? "Player"}</h1>
@@ -269,12 +259,6 @@ export function Profile() {
             </div>
           </div>
         )}
-
-        {/* ── STORAGE ── */}
-        {/* Renders nothing when the fetch failed. Unfiltered by design: this
-            is how much of the account's import quota is spent, which the
-            30D/Online/Live selectors above have no bearing on. */}
-        <StorageCard storage={storage} />
 
       </div>
     </Layout>

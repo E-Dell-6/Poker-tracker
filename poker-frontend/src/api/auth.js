@@ -37,3 +37,11 @@ export async function verifyAccount(otp) {
 export async function logout() {
   await apiFetch("/api/auth/logout", { method: "POST" });
 }
+
+export async function changePassword({ currentPassword, newPassword }) {
+  const res = await apiFetch("/api/auth/change-password", {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  });
+  return res.json();
+}

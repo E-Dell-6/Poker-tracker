@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 import userModel from '../model/User.js';
 import getTransporter from '../config/nodeMailer.js';
 import RevokedToken from '../model/RevokedToken.js';
+import { isNonEmptyString, normalizeEmail } from '../utils/validate.js';
 
-const MIN_PASSWORD_LENGTH = 10;
+export const MIN_PASSWORD_LENGTH = 10;
 
 // A real bcrypt hash (of a value nothing can log in with) used to keep the
 // failed-login path doing the same work as the successful one. Generated
@@ -13,12 +14,9 @@ const MIN_PASSWORD_LENGTH = 10;
 // the cost factor used elsewhere in this file.
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
 
-// Basic type/shape guard. Prevents NoSQL injection payloads like
-// { "email": { "$ne": null } } from ever reaching a Mongoose query,
-// since only real strings are accepted for these fields.
-const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
-
-const normalizeEmail = (email) => email.trim().toLowerCase();
+// isNonEmptyString / normalizeEmail now come from utils/validate.js - the
+// same guards are needed by userController.js, and three near-identical
+// copies of a NoSQL-injection guard is how one of them drifts.
 
 // Math.random() is not a CSPRNG - its output is derived from an internal
 // state that can be recovered from previously observed values, and these
@@ -137,23 +135,10 @@ export const logout = async (req, res) => {
     // The cookie goes regardless of what happens below - a user who clicks
     // "log out" must never stay logged in on this device because a write
     // failed.
-    res.clearCookie('token', cookieOptions);
+    clearSessionCookie(res);
 
     try {
-        const token = req.cookies?.token;
-        if (token) {
-            // Not jwt.verify: an expired or malformed token needs no
-            // revoking (it already fails auth), and throwing here would
-            // turn a routine logout into a 500.
-            const decoded = jwt.decode(token);
-            if (decoded?.jti && decoded?.exp) {
-                await RevokedToken.updateOne(
-                    { jti: decoded.jti },
-                    { $setOnInsert: { jti: decoded.jti, expiresAt: new Date(decoded.exp * 1000) } },
-                    { upsert: true }
-                );
-            }
-        }
+        await revokeCurrentToken(req);
         return res.json({ success: true, message: "Logged Out" });
 
     } catch (error) {
@@ -313,6 +298,80 @@ export const resetPassword = async (req, res) => {
 
     } catch (error) {
         console.error('resetPassword error:', error);
+        return res.json({ success: false, message: 'Something went wrong, please try again' });
+    }
+};
+
+// Kills the token on the current request. Exported because both a password
+// change (below) and account deletion need it, and both need it for the same
+// reason: the credential that was in play when the action happened must not
+// outlive the action taken against it.
+//
+// Not jwt.verify - an expired or malformed token needs no revoking (it
+// already fails auth), and throwing here would turn a routine call into a 500.
+export const revokeCurrentToken = async (req) => {
+    const decoded = jwt.decode(req.cookies?.token);
+    if (decoded?.jti && decoded?.exp) {
+        await RevokedToken.updateOne(
+            { jti: decoded.jti },
+            { $setOnInsert: { jti: decoded.jti, expiresAt: new Date(decoded.exp * 1000) } },
+            { upsert: true }
+        );
+    }
+};
+
+// A cookie is cleared by matching name/domain/path, so this has to use the
+// same options object the cookie was set with - letting those drift is how a
+// logout silently stops clearing anything.
+export const clearSessionCookie = (res) => res.clearCookie('token', cookieOptions);
+
+export const issueSessionCookie = (res, userId) =>
+    res.cookie('token', issueSessionToken(userId), sessionCookieOptions);
+
+export const changePassword = async (req, res) => {
+    const { userId, currentPassword, newPassword } = req.body;
+
+    if (!isNonEmptyString(userId) || !isNonEmptyString(currentPassword) || !isNonEmptyString(newPassword)) {
+        return res.json({ success: false, message: 'Current and new password are required' });
+    }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+        return res.json({ success: false, message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
+    }
+    if (newPassword === currentPassword) {
+        return res.json({ success: false, message: 'New password must be different from the current one' });
+    }
+
+    try {
+        const user = await userModel.findById(userId);
+        // Same always-pay-the-hash shape as login(), for the same reason:
+        // skipping bcrypt on the no-user path returns in ~0ms where a real
+        // account costs ~300ms, and that gap is measurable over a network.
+        const isMatch = await bcrypt.compare(currentPassword, user ? user.password : DUMMY_PASSWORD_HASH);
+        if (!user || !isMatch) {
+            return res.json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        // Revoke the token this request arrived on and mint a fresh one, so
+        // the user stays signed in HERE while a stolen copy of the old cookie
+        // dies. A password change that left the old credential working would
+        // defeat the main reason people change passwords.
+        //
+        // TODO: this revokes the current session only. RevokedToken is a jti
+        // denylist with no per-user index, so "sign out of all other devices"
+        // isn't expressible without a tokenVersion/passwordChangedAt field on
+        // User plus a check in userAuth.js - and that check costs a user read
+        // on every authenticated request, on top of the RevokedToken lookup
+        // it already does.
+        await revokeCurrentToken(req);
+        issueSessionCookie(res, user._id);
+
+        return res.json({ success: true, message: 'Password updated' });
+
+    } catch (error) {
+        console.error('changePassword error:', error);
         return res.json({ success: false, message: 'Something went wrong, please try again' });
     }
 };

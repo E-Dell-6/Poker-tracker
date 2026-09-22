@@ -1,42 +1,20 @@
 /* PokerFlow design tokens - the single source of truth for color and font.
    Every other stylesheet in the app should reference these custom
    properties instead of hardcoding hex values or redeclaring its own
-   :root block. Changing the accent color (or any other token) here is
-   meant to be the ONLY edit needed to re-theme the whole app. */
+   :root block.
+
+   Two independent dimensions live here, set as data-attributes on <html>:
+     data-theme  - dark (light is a follow-up; see the note below)
+     data-accent - the brand color, user-selectable in Settings
+   They're kept separate so either can move without touching the other. */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+/* ── Theme-invariant tokens ──────────────────────────────
+   Typography, radii, and the colors tied to the felt rather than the app
+   chrome: a range matrix encodes three side-by-side actions and the player
+   tags encode player styles, so neither follows the background. */
 :root {
-  /* Backgrounds */
-  --color-bg: #0a0a0c;
-  --color-bg-elevated: #111114;
-  --color-bg-elevated-hover: #17171b;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-
-  /* Text */
-  --color-text: #f5f5f4;
-  --color-text-muted: #8b8b90;
-  --color-text-faint: #55565c;
-
-  /* Brand / accent - change this one value to re-theme every button,
-     active nav item, tag, and chart accent across the app. */
-  --color-accent: #f97316;
-  --color-accent-hover: #fb923c;
-  --color-accent-dim: rgba(249, 115, 22, 0.14);
-  --color-accent-border: rgba(249, 115, 22, 0.4);
-  --color-accent-contrast: #1a1006;
-
-  /* Semantic (profit/loss, positive/negative results) */
-  --color-positive: #4ade80;
-  --color-positive-dim: rgba(74, 222, 128, 0.12);
-  --color-negative: #f87171;
-  --color-negative-dim: rgba(248, 113, 113, 0.12);
-  /* "Approaching a limit" - the step between accent and negative, for
-     quota meters and the like. Shares a hex with --color-tag-nit, which is
-     about player styles; kept separate so either can move on its own. */
-  --color-warning: #f59e0b;
-
   /* Preflop range-matrix action colors (fold/call/raise) - deliberately
      distinct from --color-positive/--color-negative (profit semantics
      elsewhere in Study) and --color-accent (brand), since this grid encodes
@@ -60,3 +38,98 @@
   --radius-md: 10px;
   --radius-lg: 16px;
 }
+
+/* ── Theme sets ──────────────────────────────────────────
+   Bare :root carries dark as well as [data-theme="dark"], so a document with
+   no data-theme attribute at all - the pre-JS first paint, or a failed prefs
+   fetch - renders exactly what the app rendered before any of this existed.
+
+   A light block is NOT shipped yet: ~190 hardcoded colors (55 raw #fff, 135
+   rgba(255,255,255,...)) still sit in component CSS, and every one missed is
+   a white-on-white regression. Adding [data-theme="light"] here is the whole
+   of the plumbing work; the sweep is the real cost. */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --color-bg: #0a0a0c;
+  --color-bg-elevated: #111114;
+  --color-bg-elevated-hover: #17171b;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --color-text: #f5f5f4;
+  --color-text-muted: #8b8b90;
+  --color-text-faint: #55565c;
+
+  /* Semantic (profit/loss, positive/negative results) */
+  --color-positive: #4ade80;
+  --color-positive-dim: rgba(74, 222, 128, 0.12);
+  --color-negative: #f87171;
+  --color-negative-dim: rgba(248, 113, 113, 0.12);
+  /* "Approaching a limit" - the step between accent and negative, for
+     quota meters and the like. Shares a hex with --color-tag-nit, which is
+     about player styles; kept separate so either can move on its own. */
+  --color-warning: #f59e0b;
+}
+
+:root {
+  /* Base accent, and the fallback for a document with no data-accent at all -
+     the pre-JS first paint, or a viewer whose preference never loaded.
+
+     Declared BEFORE the presets on purpose. Every preset also outranks this
+     on specificity (:root[data-accent] is (0,2,0) against :root's (0,1,0)),
+     so either rule alone would be enough - but the original had neither and
+     silently pinned the accent to orange forever, so this is deliberately
+     correct under both. */
+  --color-accent: #f97316;
+  --color-accent-hover: #fb923c;
+  --color-accent-contrast: #1a1006;
+
+  /* Derived once, from whichever preset ends up winning. Custom-property
+     substitution is lazy, so these resolve at use time against the active
+     --color-accent no matter where they are declared. */
+  --color-accent-dim: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  --color-accent-border: color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+/* ── Accent presets ──────────────────────────────────────
+   Independent of theme, so the two attributes compose. Each preset declares
+   only the three values that can't be derived; --color-accent-dim and
+   -border are computed once in the :root block above.
+
+   --color-accent-contrast (text drawn ON the accent) is precomputed per
+   preset rather than derived: an arbitrary color has no correct contrast
+   partner, which is the same reason the API stores an accent KEY from a
+   fixed list instead of a color string.
+
+   Each preset is listed under TWO selectors, and both are load-bearing:
+
+     :root[data-accent=...]  themes the whole app. The :root prefix is what
+        makes it win: a bare [data-accent="teal"] scores (0,1,0), exactly
+        what :root scores, so the cascade falls through to source order -
+        which is how the first version of this file silently pinned the
+        accent to orange forever. (0,2,0) beats :root wherever it sits.
+
+     [data-accent=...]  paints a single element in that preset regardless of
+        the active accent - the swatches in Settings, which carry the
+        attribute themselves so their color has one home here rather than a
+        second copy in JS. Restricting the presets to :root alone made every
+        swatch render in the active accent instead of its own.
+
+   Specificity is per-selector, not per-list, so <html> still matches the
+   (0,2,0) form and an ordinary element matches the (0,1,0) one. */
+:root[data-accent="orange"],
+[data-accent="orange"] { --color-accent: #f97316; --color-accent-hover: #fb923c; --color-accent-contrast: #1a1006; }
+:root[data-accent="teal"],
+[data-accent="teal"] { --color-accent: #14b8a6; --color-accent-hover: #2dd4bf; --color-accent-contrast: #04211e; }
+:root[data-accent="violet"],
+[data-accent="violet"] { --color-accent: #8b5cf6; --color-accent-hover: #a78bfa; --color-accent-contrast: #140a2b; }
+:root[data-accent="blue"],
+[data-accent="blue"] { --color-accent: #3b82f6; --color-accent-hover: #60a5fa; --color-accent-contrast: #061229; }
+:root[data-accent="rose"],
+[data-accent="rose"] { --color-accent: #f43f5e; --color-accent-hover: #fb7185; --color-accent-contrast: #2b060f; }
+:root[data-accent="lime"],
+[data-accent="lime"] { --color-accent: #84cc16; --color-accent-hover: #a3e635; --color-accent-contrast: #131f04; }

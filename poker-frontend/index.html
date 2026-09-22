@@ -5,6 +5,29 @@
     <link rel="icon" type="image/x-icon" href="%BASE_URL%images/favicon1.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Poker Flow</title>
+    <script>
+      /* Applies the user's accent/theme BEFORE React mounts.
+
+         Preferences live on the User document; this reads a same-origin
+         cache of the last known values, written by ThemeContext whenever
+         they're fetched or saved. It exists purely so the first paint is
+         correct - an async fetch cannot beat the first frame, and a
+         wrong-accent flash on every page load is more visible than the
+         feature itself. This is a CACHE, not a source of truth.
+
+         A cold device with no cache falls through to the defaults baked
+         into theme.css's bare :root, which is what the app rendered before
+         any of this existed - so the worst case is no regression. */
+      try {
+        var p = JSON.parse(localStorage.getItem('pf:prefs') || '{}');
+        var d = document.documentElement;
+        if (p.accent) d.dataset.accent = p.accent;
+        var t = p.theme || 'dark';
+        d.dataset.theme = t === 'system'
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

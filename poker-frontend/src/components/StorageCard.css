@@ -1,0 +1,100 @@
+/* Self-contained since the card moved off the Profile page and onto Settings.
+   The shell, title and stat-tile rules below were borrowed from Profile.css's
+   .profile-live-card / .live-title / .live-grid / .live-stat while it lived
+   there; they're copied rather than shared because the Live Breakdown card
+   still uses those, and the two are now free to move independently. */
+.storage-card {
+  background: var(--color-bg-elevated-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: 24px 28px;
+}
+
+.storage-card-title {
+  font-family: var(--font-sans);
+  font-size: 1.1rem; font-weight: 700; color: var(--color-text); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.storage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.storage-stat {
+  text-align: center;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px 10px;
+}
+
+.storage-stat-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--color-text-muted); margin-bottom: 8px;
+}
+
+.storage-stat-value {
+  font-family: var(--font-sans);
+  font-size: 1.3rem; font-weight: 700; color: var(--color-accent);
+}
+
+/* ── HEADLINE / METER ─────────────────────────────────── */
+.storage-headline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.storage-used {
+  font-family: var(--font-sans);
+  font-size: 1.5rem; font-weight: 700; color: var(--color-text);
+}
+
+.storage-of { font-size: 0.85rem; color: var(--color-text-muted); }
+
+/* Pushed to the far end of the headline row, opposite the byte count. */
+.storage-pct {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 0.95rem; font-weight: 700;
+}
+.storage-pct.ok     { color: var(--color-text-muted); }
+.storage-pct.warn   { color: var(--color-warning); }
+.storage-pct.danger { color: var(--color-negative); }
+
+.storage-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.storage-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.storage-bar-fill.ok     { background: var(--color-accent); }
+.storage-bar-fill.warn   { background: var(--color-warning); }
+.storage-bar-fill.danger { background: var(--color-negative); }
+
+.storage-note {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--color-text-faint);
+}
+
+@media (max-width: 768px) {
+  .storage-card { padding: 20px 18px; }
+  .storage-grid { grid-template-columns: repeat(2, 1fr); }
+  .storage-used { font-size: 1.3rem; }
+  /* The auto margin would strand the percentage on its own line once the
+     headline wraps; let it sit beside the byte count instead. */
+  .storage-pct { margin-left: 0; }
+}

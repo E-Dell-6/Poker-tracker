@@ -1,25 +1,37 @@
-import { Link} from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
-import { Check, AlertTriangle, User, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Check, AlertTriangle, User, Mail, Settings } from "lucide-react";
 import "./LoginButton.css";
 import { getUserData } from "../api/user";
-import { logout, sendVerifyOtp, verifyAccount } from "../api/auth";
+import { logout } from "../api/auth";
+import { OtpInput } from "./OtpInput";
+import { useEmailVerification } from "../hooks/useEmailVerification";
 
 export function LoginButton() {
   const [userData, setUserData] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [verifyState, setVerifyState] = useState("idle");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [otpError, setOtpError] = useState("");
 
   const dropdownRef = useRef(null);
-  const otpRefs = useRef([]);
+
+  // The OTP boxes and the send/verify state machine are shared with the
+  // Settings page - see hooks/useEmailVerification.js.
+  const {
+    state: verifyState, otp, error: otpError, setOtp, sendOtp, verify, reset: resetVerify,
+  } = useEmailVerification({
+    onVerified: () => setUserData((u) => ({ ...u, isAccountVerified: true })),
+  });
 
   useEffect(() => {
     getUserData()
       .then((d) => { if (d.success) setUserData(d.userData); })
       .catch(() => {});
   }, []);
+
+  // Stable, because the outside-click effect below depends on it.
+  const closeDropdown = useCallback(() => {
+    setDropdownOpen(false);
+    resetVerify();
+  }, [resetVerify]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -29,14 +41,7 @@ export function LoginButton() {
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const closeDropdown = () => {
-    setDropdownOpen(false);
-    setVerifyState("idle");
-    setOtp(["", "", "", "", "", ""]);
-    setOtpError("");
-  };
+  }, [closeDropdown]);
 
   const handleButtonClick = () => {
     if (userData) setDropdownOpen((o) => !o);
@@ -47,68 +52,6 @@ export function LoginButton() {
     setUserData(null);
     closeDropdown();
     window.location.href = "/";
-  };
-
-  const handleSendOtp = async () => {
-    setVerifyState("sending");
-    setOtpError("");
-    try {
-      const data = await sendVerifyOtp();
-      if (data.success) {
-        setVerifyState("otp");
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
-      } else {
-        setOtpError(data.message);
-        setVerifyState("idle");
-      }
-    } catch {
-      setOtpError("Something went wrong.");
-      setVerifyState("idle");
-    }
-  };
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d?$/.test(value)) return;
-    const next = [...otp];
-    next[index] = value;
-    setOtp(next);
-    setOtpError("");
-    if (value && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (text.length === 6) {
-      setOtp(text.split(""));
-      otpRefs.current[5]?.focus();
-    }
-    e.preventDefault();
-  };
-
-  const handleVerifyOtp = async () => {
-    const code = otp.join("");
-    if (code.length < 6) { setOtpError("Please enter all 6 digits."); return; }
-    setVerifyState("verifying");
-    setOtpError("");
-    try {
-      const data = await verifyAccount(code);
-      if (data.success) {
-        setVerifyState("done");
-        setUserData((u) => ({ ...u, isAccountVerified: true }));
-      } else {
-        setOtpError(data.message);
-        setVerifyState("otp");
-      }
-    } catch {
-      setOtpError("Something went wrong.");
-      setVerifyState("otp");
-    }
   };
 
   if (!userData) {
@@ -148,14 +91,14 @@ export function LoginButton() {
 
           <div className="lb-divider" />
 
-          {/* Profile link */}
-          <Link
-            className="lb-menu-item"
-            to="/profile"
-            onClick={closeDropdown}
-          >
+          <Link className="lb-menu-item" to="/profile" onClick={closeDropdown}>
             <User size={14} />
             Profile
+          </Link>
+
+          <Link className="lb-menu-item" to="/settings" onClick={closeDropdown}>
+            <Settings size={14} />
+            Settings
           </Link>
 
           <div className="lb-divider" />
@@ -164,7 +107,7 @@ export function LoginButton() {
           {!userData.isAccountVerified && (
             <>
               {verifyState === "idle" && (
-                <button className="lb-menu-item lb-menu-item--verify" onClick={handleSendOtp}>
+                <button className="lb-menu-item lb-menu-item--verify" onClick={sendOtp}>
                   <Mail size={14} />
                   Verify Email
                 </button>
@@ -179,26 +122,17 @@ export function LoginButton() {
               {(verifyState === "otp" || verifyState === "verifying") && (
                 <div className="lb-otp-section">
                   <p className="lb-otp-label">Enter the 6-digit code sent to your email</p>
-                  <div className="lb-otp-inputs" onPaste={handleOtpPaste}>
-                    {otp.map((digit, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => (otpRefs.current[i] = el)}
-                        className={`lb-otp-input ${otpError ? "lb-otp-input--error" : ""}`}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(i, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                        disabled={verifyState === "verifying"}
-                      />
-                    ))}
-                  </div>
+                  <OtpInput
+                    value={otp}
+                    onChange={setOtp}
+                    onComplete={verify}
+                    disabled={verifyState === "verifying"}
+                    hasError={Boolean(otpError)}
+                  />
                   {otpError && <p className="lb-otp-error">{otpError}</p>}
                   <button
                     className="lb-confirm-btn"
-                    onClick={handleVerifyOtp}
+                    onClick={() => verify()}
                     disabled={verifyState === "verifying"}
                   >
                     {verifyState === "verifying" ? <span className="lb-spinner" /> : "Confirm"}

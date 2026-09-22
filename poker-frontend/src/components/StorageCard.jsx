@@ -1,10 +1,11 @@
 import { HardDrive } from "lucide-react";
-import { formatBytes } from "../../utils/formatBytes";
+import { formatBytes } from "../utils/formatBytes";
+import "./StorageCard.css";
 
 // What GET /api/user/storage reports: the running counters the import quota
-// is enforced against (see checkImportQuota in the backend). Unlike the rest
-// of the Profile page this is an absolute account total, so it deliberately
-// ignores the page's time and source filters.
+// is enforced against (see checkImportQuota in the backend). An absolute
+// account total, never filtered - it answers "how close am I to being
+// refused an import", which no time or source selector bears on.
 
 // Warn before the quota actually refuses an import, not at the wall.
 const WARN_PCT = 75;
@@ -49,8 +50,8 @@ export function StorageCard({ storage }) {
   const tone = level(Math.max(bytesPct, handsPct));
 
   return (
-    <div className="profile-live-card storage-card">
-      <div className="live-title"><HardDrive size={16} /> Storage</div>
+    <div className="storage-card">
+      <div className="storage-card-title"><HardDrive size={16} /> Storage</div>
 
       <div className="storage-headline">
         <span className="storage-used">{formatBytes(bytesUsed)}</span>
@@ -62,15 +63,15 @@ export function StorageCard({ storage }) {
         <div className={`storage-bar-fill ${tone}`} style={{ width: `${barWidth(bytesPct)}%` }} />
       </div>
 
-      <div className="live-grid storage-grid">
+      <div className="storage-grid">
         {[
           { label: "Hands Stored", val: handsUsed.toLocaleString() },
           { label: "Hand Limit",   val: handsLimit.toLocaleString() },
           { label: "Sessions",     val: sessionCount.toLocaleString() },
         ].map(({ label, val }) => (
-          <div className="live-stat" key={label}>
-            <div className="live-stat-label">{label}</div>
-            <div className="live-stat-value">{val}</div>
+          <div className="storage-stat" key={label}>
+            <div className="storage-stat-label">{label}</div>
+            <div className="storage-stat-value">{val}</div>
           </div>
         ))}
       </div>
