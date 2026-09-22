@@ -19,6 +19,34 @@ import "./History.css";
 const gameFilters = ["All", "NLH", "PLO", "Heads-Up"];
 const PAGE_SIZE = 50;
 
+// What the file picker will let you select.
+//
+// A mobile picker doesn't filter on the extension - it filters on the MIME
+// type its file provider reports, and for a hand history that type is
+// rarely the one you'd guess: a PokerNow .csv comes out of iOS Files as
+// text/comma-separated-values, out of Android's Downloads/Drive providers
+// as an Excel type or bare application/octet-stream. None of those match
+// ".csv,.txt", so the picker greyed out the only file the user was there
+// to upload. Naming the MIME types alongside the extensions covers the
+// providers that report an honest text type.
+//
+// The ones that report octet-stream can't be covered that way, and on a
+// phone there's no drag-and-drop to fall back to, so a touch device gets
+// no accept= at all (ACCEPT_ANY) - the same position the folder picker
+// below has always been in. Nothing is lost by it: screenFiles
+// (api/imports.js) rejects a non-.csv/.txt pick by name before any upload
+// starts, and the server re-checks both the extension and the file's
+// actual bytes, so accept= was never the gate - only a convenience.
+const IMPORT_ACCEPT =
+  ".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/csv,application/vnd.ms-excel";
+const ACCEPT_ANY = undefined;
+
+// Coarse pointer rather than a user-agent sniff or a width breakpoint:
+// the question is which picker the OS opens, and a device driven by a
+// finger is exactly the set that opens the OS file browser.
+const prefersUnfilteredPicker = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
+
 function EditSession({ renamingState, usedPersonIds, onSelect, onCancel }) {
   const [people, setPeople] = useState([]);
   const [search, setSearch] = useState("");
@@ -333,7 +361,7 @@ export function History() {
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
-          accept=".csv,.txt"
+          accept={prefersUnfilteredPicker() ? ACCEPT_ANY : IMPORT_ACCEPT}
           multiple
           className="visually-hidden-input"
         />

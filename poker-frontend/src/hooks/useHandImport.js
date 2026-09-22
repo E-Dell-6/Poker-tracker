@@ -254,9 +254,10 @@ export function useHandImport(onSettled) {
     }
   }, [onSettled, watchJob]);
 
-  // Click-driven picker (files or a folder). The input already filters by
-  // accept=, but a folder picker returns everything inside it, so
-  // screenFiles still does the real work.
+  // Click-driven picker (files or a folder). accept= on the input is only
+  // a hint - a folder picker returns everything inside it, and a mobile
+  // picker is handed no accept= at all (see History.jsx), so screenFiles
+  // does the real work in both cases.
   const uploadFiles = useCallback((fileList) => runImport(fileList), [runImport]);
 
   // Drop target. Walks into dropped directories, which the old
