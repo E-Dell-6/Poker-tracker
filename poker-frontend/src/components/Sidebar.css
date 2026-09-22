@@ -221,12 +221,15 @@
 }
 
 /* ── FOOTER (profile / starred / settings) ──────────────── */
+/* Sits directly above the collapse button, but deliberately isn't styled
+   like it - no divider rule of its own, and full-strength text colour
+   rather than the chevron's muted grey, so the two rows don't read as one
+   bar. */
 .sidebar-footer {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Collapsed there's no room for a row of three, so they stack. */
@@ -243,7 +246,7 @@
   border: none;
   border-radius: 8px;
   background: none;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
@@ -255,8 +258,8 @@
 }
 
 .sidebar-footer-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-accent);
 }
 
 .sidebar-footer-btn.active {
