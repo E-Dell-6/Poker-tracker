@@ -32,6 +32,10 @@
   --color-positive-dim: rgba(74, 222, 128, 0.12);
   --color-negative: #f87171;
   --color-negative-dim: rgba(248, 113, 113, 0.12);
+  /* "Approaching a limit" - the step between accent and negative, for
+     quota meters and the like. Shares a hex with --color-tag-nit, which is
+     about player styles; kept separate so either can move on its own. */
+  --color-warning: #f59e0b;
 
   /* Preflop range-matrix action colors (fold/call/raise) - deliberately
      distinct from --color-positive/--color-negative (profit semantics

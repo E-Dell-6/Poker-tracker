@@ -1,8 +1,8 @@
 import { Skeleton } from '../../components/ui/Skeleton';
 
 // Shaped like the loaded Profile page in Profile.jsx - a hero row (avatar
-// circle + name bar + PnL block), the stat-tile grid, and two chart cards
-// (Cumulative Profit, Profit vs. Expected Value).
+// circle + name bar + PnL block), the stat-tile grid, two chart cards
+// (Cumulative Profit, Profit vs. Expected Value), and the Storage card.
 export function ProfileSkeleton() {
   return (
     <div className="profile-page">
@@ -19,6 +19,7 @@ export function ProfileSkeleton() {
       </div>
       <Skeleton style={{ height: 280 }} />
       <Skeleton style={{ height: 280 }} />
+      <Skeleton style={{ height: 210 }} />
     </div>
   );
 }
