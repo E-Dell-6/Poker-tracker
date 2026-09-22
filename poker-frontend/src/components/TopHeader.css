@@ -92,9 +92,9 @@
 }
 
 /* Every page's primary CTA (Import hands, Recompute Stats, ...) shares
-   this floor so the button's width - and everything to its left, the star
-   button included - stays put across pages instead of shifting with
-   whichever label happens to be longest. Smaller than the base .ui-btn
+   this floor so the button's width - and everything to its left - stays
+   put across pages instead of shifting with whichever label happens to be
+   longest. Smaller than the base .ui-btn
    size - at full size, matching the longest label ("Recompute Stats") left
    the shorter ones looking stretched out with dead space. */
 .top-header-actions .ui-btn--primary {
@@ -103,32 +103,6 @@
   gap: 5px;
   font-size: 12px;
   justify-content: center;
-}
-
-.top-header-star-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-
-.top-header-star-btn:hover {
-  border-color: var(--color-accent-border);
-  color: var(--color-accent);
-}
-
-.top-header-star-btn.active {
-  background: var(--color-accent-dim);
-  border-color: var(--color-accent-border);
-  color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './TopHeader.css';
-import { Search, SlidersHorizontal, Star } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/Button';
 import { LoginButton } from './LoginButton';
 import { HandSearchMenu } from './HandSearchMenu';
@@ -21,16 +21,6 @@ import { HandSearchMenu } from './HandSearchMenu';
 // lets a single "Import hands" button offer both a file picker and a folder
 // picker - one <input type="file"> can't do both (webkitdirectory makes it
 // folders-only), so the choice has to be made before the picker opens.
-// The `from` value below is router state this app set itself, but it's
-// built out of location.pathname - which an attacker influences by sending
-// someone a crafted URL on this domain. "//evil.com" (or "/\evil.com",
-// which browsers normalize to the same thing) reads as a protocol-relative
-// URL, so navigating to it leaves the site entirely. Accept only a path
-// beginning with exactly one slash.
-function safeInternalPath(path, fallback = '/dashboard') {
-  return typeof path === 'string' && /^\/(?![/\\])/.test(path) ? path : fallback;
-}
-
 export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }) {
   const [query, setQuery] = useState('');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -38,8 +28,6 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }
   const inputRef = useRef(null);
   const ctaRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const isStarredPage = location.pathname === '/starred';
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -109,26 +97,6 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }
               <SlidersHorizontal size={14} />
             </button>
           </form>
-
-          <button
-            type="button"
-            className={`top-header-star-btn ${isStarredPage ? 'active' : ''}`}
-            onClick={() => {
-              if (isStarredPage) {
-                // Return to wherever the star button was clicked *from*
-                // (stashed as router state below) rather than a raw
-                // navigate(-1) - reliable even if the Starred page's own tab
-                // switching or a refresh sits between the two clicks.
-                navigate(safeInternalPath(location.state?.from));
-              } else {
-                navigate('/starred', { state: { from: location.pathname + location.search } });
-              }
-            }}
-            title="Starred"
-            aria-label="View starred hands, players, and sessions"
-          >
-            <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
-          </button>
 
           {ctaLabel && (
             <div className="top-header-cta" ref={ctaRef}>

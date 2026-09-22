@@ -220,6 +220,50 @@
   50% { opacity: 0.35; }
 }
 
+/* ── FOOTER (profile / starred / settings) ──────────────── */
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Collapsed there's no room for a row of three, so they stack. */
+.sidebar.collapsed .sidebar-footer {
+  flex-direction: column;
+}
+
+.sidebar-footer-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar.collapsed .sidebar-footer-btn {
+  flex: none;
+  width: 100%;
+}
+
+.sidebar-footer-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.sidebar-footer-btn.active {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+}
+
 /* ── COLLAPSE BUTTON ────────────────────────────────────── */
 .collapse-btn {
   width: 100%;

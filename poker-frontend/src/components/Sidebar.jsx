@@ -1,7 +1,7 @@
 import "./Sidebar.css";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, List, Users, BarChart2, Spade, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { LayoutDashboard, List, Users, BarChart2, Spade, ChevronLeft, ChevronRight, Clock, Star, User, Settings } from "lucide-react";
 import { useLiveSession } from "../context/LiveSessionContext";
 
 // Replayer is deliberately NOT a sidebar item - it's a full-screen,
@@ -23,6 +23,16 @@ const menuItems = [
     ]
   },
 ];
+
+// The `from` value below is router state this app set itself, but it's
+// built out of location.pathname - which an attacker influences by sending
+// someone a crafted URL on this domain. "//evil.com" (or "/\evil.com",
+// which browsers normalize to the same thing) reads as a protocol-relative
+// URL, so navigating to it leaves the site entirely. Accept only a path
+// beginning with exactly one slash.
+function safeInternalPath(path, fallback = '/dashboard') {
+  return typeof path === 'string' && /^\/(?![/\\])/.test(path) ? path : fallback;
+}
 
 function formatElapsed(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -56,7 +66,9 @@ function useActiveLiveSession() {
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const live = useActiveLiveSession();
+  const isStarredPage = location.pathname === '/starred';
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -127,6 +139,48 @@ export function Sidebar() {
           </div>
         </div>
       )}
+
+      {/* Account row: profile, starred, settings. Settings is a
+          placeholder - there's no settings page yet. */}
+      <div className="sidebar-footer">
+        <Link
+          to="/profile"
+          className={`sidebar-footer-btn ${location.pathname === '/profile' ? 'active' : ''}`}
+          title="Profile"
+          aria-label="Profile"
+        >
+          <User size={16} />
+        </Link>
+
+        <button
+          type="button"
+          className={`sidebar-footer-btn ${isStarredPage ? 'active' : ''}`}
+          onClick={() => {
+            if (isStarredPage) {
+              // Return to wherever the star button was clicked *from*
+              // (stashed as router state below) rather than a raw
+              // navigate(-1) - reliable even if the Starred page's own tab
+              // switching or a refresh sits between the two clicks.
+              navigate(safeInternalPath(location.state?.from));
+            } else {
+              navigate('/starred', { state: { from: location.pathname + location.search } });
+            }
+          }}
+          title="Starred"
+          aria-label="View starred hands, players, and sessions"
+        >
+          <Star size={16} fill={isStarredPage ? 'currentColor' : 'none'} />
+        </button>
+
+        <button
+          type="button"
+          className="sidebar-footer-btn"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings size={16} />
+        </button>
+      </div>
 
       {/* Collapse toggle at bottom */}
       <button
