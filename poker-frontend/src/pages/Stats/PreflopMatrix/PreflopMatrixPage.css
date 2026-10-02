@@ -18,13 +18,11 @@
 
 /* The grid with the side panel against its right edge. The grid card never
    grows past its height-derived max-width (see HandMatrix.css); the panel
-   takes whatever width is left, up to 420px, so on most screens the pair
-   spans exactly the action line's width above it. Past that - a very wide,
-   short window - the pair is centred. */
+   takes all the width left over, so the pair always spans exactly the
+   action line's width above it. */
 .pfm-workspace {
   display: flex;
   align-items: flex-start;
-  justify-content: center;
   gap: 12px;
 }
 
@@ -38,7 +36,6 @@
 
 .pfm-workspace .pfm-panel {
   flex: 1 0 300px;
-  max-width: 420px;
 }
 
 /* Too narrow for the grid's 484px floor and the panel side by side: the
@@ -58,7 +55,6 @@
   /* flex-basis would size its height in a column. */
   .pfm-workspace .pfm-panel {
     flex-basis: auto;
-    max-width: none;
   }
 }
 
