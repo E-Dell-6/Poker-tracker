@@ -1,5 +1,4 @@
 .pfm-controls {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -9,36 +8,40 @@
   padding: 10px 12px;
 }
 
-/* The seat cards, on their own now - nothing shares this row, so the
-   scrolling card strip gets the panel's full width. */
-.pfm-controls-row {
+/* Title + caption on the left, table size + reset on the right - the same
+   header shape as the cards below it (MatrixTableCard.css), so the line
+   reads as one of the page's panels rather than a loose toolbar. Wraps
+   onto two rows on a narrow page. */
+.pfm-controls-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-/* Caption on the left, table-size tabs + reset/settings on the right, all
-   on one row under the cards - three separate rows' worth of content in
-   the height of one. */
-.pfm-controls-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 6px 12px;
   flex-wrap: wrap;
 }
 
-.pfm-controls-toolbar .pfm-lead {
+/* Matches the grid card's title right below (HandMatrix.css). */
+.pfm-controls-header .section-title {
+  font-size: 12px;
+}
+
+.pfm-controls-header .pfm-lead {
   margin-right: auto;
 }
 
+.pfm-controls-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Shorter than the shared .ui-tab default (Tabs.css) - correct elsewhere,
-   but this row is spending height the grid below needs. */
-.pfm-controls-toolbar .ui-tab {
+   but this panel is spending height the grid below needs. */
+.pfm-controls-tools .ui-tab {
   padding: 0.25rem 0.65rem;
   font-size: 0.72rem;
 }
 
-.pfm-gear-btn {
+.pfm-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -53,22 +56,20 @@
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
 
-.pfm-gear-btn:hover,
-.pfm-gear-btn.active {
+.pfm-icon-btn:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
   background: var(--color-accent-dim);
 }
 
 /* ---------- node cards (reference-mockup style: bordered block, header
-   row, vertical action list with the dominant action as a highlighted
+   row, vertical action list with the chosen action as a highlighted
    pill) ---------- */
 
 .pfm-scroll-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1;
   min-width: 0;
 }
 
@@ -126,7 +127,8 @@
   text-align: left;
   white-space: nowrap;
   flex-shrink: 0;
-  min-width: 92px;
+  /* Wide enough for "Raise 100%" on one row. */
+  min-width: 100px;
   font-family: var(--font-sans);
   /* The whole card is a click target for "show me this seat's range". */
   cursor: pointer;
@@ -226,65 +228,24 @@
   flex-shrink: 0;
 }
 
-.pfm-settings-panel {
-  position: absolute;
-  /* Opens UPWARD: this panel is the last thing on the page now, so a
-     dropdown hanging below it would open off the bottom of the viewport. */
-  bottom: calc(100% + 8px);
-  /* Anchored under the gear button, which lives at the toolbar's left end
-     (see .pfm-controls-toolbar). */
-  left: 12px;
-  width: 260px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  padding: 14px 16px 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Hero's overall frequency for this action at this seat, right-aligned so
+   the three rows read as a column of numbers. */
+.pfm-node-action-pct {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-.pfm-settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.pfm-settings-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+/* How many hands the card's frequencies come from. Inset to line up with
+   the action rows' own text. */
+.pfm-node-hands {
+  padding: 0 5px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
 }
 
-.pfm-settings-close {
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  display: inline-flex;
-  padding: 2px;
-}
-
-.pfm-settings-close:hover {
-  color: var(--color-text);
-}
-
-.pfm-settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.pfm-settings-label {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.pfm-sample-slider {
-  width: 100%;
-  accent-color: var(--color-accent);
+.pfm-node-card--no-data .pfm-node-action-pct,
+.pfm-node-card--no-data .pfm-node-hands {
+  color: var(--color-text-faint);
 }

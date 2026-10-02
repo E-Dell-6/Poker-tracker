@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { useStudyContext } from '../StudyLayout';
 import { HandMatrix } from './HandMatrix';
 import { PreflopMatrixControls } from './PreflopMatrixControls';
+import { RangeSidePanel } from './RangeSidePanel';
 import { PreflopPositionMatrix } from '../PreflopPositionMatrix';
-import { computeWalk, getMatrixBucket } from '../../../utils/preflopWalk';
+import { computeWalk, getMatrixBucket, summarizeBucket } from '../../../utils/preflopWalk';
 import { SEATS_BY_SIZE, labelForScenario } from '../../../utils/handGrid';
 import './PreflopMatrixPage.css';
 
-// "BTN · vs Open (UTG)" / "UTG · RFI" - what the grid below is currently
-// showing, so a selected card that's scrolled out of view still says what
-// you're looking at.
+// "BTN · vs Open (UTG)" / "UTG · RFI" - what the grid is currently showing,
+// named in the side panel so a selected card that's scrolled out of view
+// still says what you're looking at.
 function nodeLabel(node) {
   if (!node) return null;
   const scenario = labelForScenario(node.scenario);
@@ -33,6 +34,13 @@ export function PreflopMatrixPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [tableSize, setTableSize] = useState(6);
   const [minSampleSize, setMinSampleSize] = useState(0);
+  // The hand under the cursor in the grid, and the one clicked to pin it -
+  // the side panel reads out the hovered one, falling back to the pinned
+  // one. A pin is a hand class rather than a cell of one particular node,
+  // so nothing below ever clears it: pin AJo, walk the line, and the panel
+  // keeps reading out AJo at every seat.
+  const [hoveredToken, setHoveredToken] = useState(null);
+  const [pinnedToken, setPinnedToken] = useState(null);
 
   // The backend aggregates preflopMatrix for 6/7/8/9-handed tables (see
   // statsEngine.js's tableSize gate) - switching sizes changes the whole
@@ -47,10 +55,17 @@ export function PreflopMatrixPage() {
   // already committed, then whichever seats are still to act this round.
   // `id` only has to stay stable while a card is on screen, which is all
   // the selection below needs - a path change resets the selection anyway.
+  // Each node also carries its own slice of stats.preflopMatrix (`bucket`)
+  // and hero's overall fold/call/raise split across it (`summary`): the
+  // line cards show every node's summary at once, the grid and side panel
+  // read the selected node's.
   const nodes = [
     ...path.map((step, index) => ({ ...step, id: `step-${index}`, index, decided: true })),
     ...openSeats.map(seat => ({ ...seat, id: `open-${seat.position}`, decided: false }))
-  ];
+  ].map(node => {
+    const bucket = getMatrixBucket(matrixRoot, node.scenario, node.position, node.facingPosition);
+    return { ...node, bucket, summary: summarizeBucket(bucket) };
+  });
 
   // Default selection: the nearest still-open decision, or the last thing
   // decided once the hand is settled. Falling back to it (rather than
@@ -108,18 +123,17 @@ export function PreflopMatrixPage() {
     setPathAndFollow([]);
   }
 
-  const gridData = displayNode
-    ? getMatrixBucket(matrixRoot, displayNode.scenario, displayNode.position, displayNode.facingPosition)
-    : null;
+  function togglePin(token) {
+    setPinnedToken(prev => (prev === token ? null : token));
+  }
+
+  const gridData = displayNode?.bucket ?? null;
+  const shownToken = hoveredToken ?? pinnedToken;
 
   return (
     <div className="pfm-page">
-      {/* Grid first, sequence bar underneath it: the grid is what this page
-          is for, so it gets the top of the viewport and every pixel of
-          height the bar doesn't need (see HandMatrix.css's
-          --hm-page-chrome). */}
-      <HandMatrix data={gridData} minSampleSize={minSampleSize} subtitle={nodeLabel(displayNode)} />
-
+      {/* Line on top, then the grid it selects with the side panel beside
+          it: you pick the spot, then read the range. */}
       <PreflopMatrixControls
         nodes={nodes}
         activeId={activeId}
@@ -128,8 +142,26 @@ export function PreflopMatrixPage() {
         onPickAction={pickAction}
         onReset={resetWalk}
         tableSize={tableSize} setTableSize={setTableSizeAndReset}
-        minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
       />
+
+      <div className="pfm-workspace">
+        <HandMatrix
+          data={gridData}
+          minSampleSize={minSampleSize}
+          pinnedToken={pinnedToken}
+          onHoverHand={setHoveredToken}
+          onTogglePin={togglePin}
+        />
+        <RangeSidePanel
+          spotLabel={nodeLabel(displayNode)}
+          summary={displayNode?.summary}
+          handToken={shownToken}
+          handCell={shownToken ? gridData?.[shownToken] : undefined}
+          isPinned={shownToken != null && shownToken === pinnedToken}
+          onUnpin={() => setPinnedToken(null)}
+          minSampleSize={minSampleSize} setMinSampleSize={setMinSampleSize}
+        />
+      </div>
 
       <PreflopPositionMatrix positional={stats.positional} />
     </div>

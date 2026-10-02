@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Settings, X, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tabs } from '../../../components/ui/Tabs';
 import { TABLE_SIZES } from '../../../utils/handGrid';
+import { ACTIONS, formatHandCount } from './rangeDisplay';
 import './PreflopMatrixControls.css';
-
-const ACTIONS = [
-  { key: 'fold', label: 'Fold', color: 'var(--color-action-fold)' },
-  { key: 'call', label: 'Call', color: 'var(--color-action-call)' },
-  { key: 'raise', label: 'Raise', color: 'var(--color-action-raise)' }
-];
 
 // One seat's decision node: header is JUST the position (no "vs X" / bet-
 // level text - the card's place in the sequence already says what it's
 // facing), then hero's own fold/call/raise options for having been in this
-// exact seat facing this exact situation.
+// exact seat facing this exact situation, each with how often hero actually
+// took it there, and the hand count those frequencies come from - so a
+// line can be read, and a spot with no data spotted, without opening it.
+// `node.summary` is preflopWalk.js's summarizeBucket for the node (see
+// PreflopMatrixPage.jsx); a node without one reads as having no hands.
 //
 // The card has two independent click targets, same as GTOWizard's node bar:
 // clicking the CARD selects it, pointing the range grid at that seat's
@@ -26,12 +25,15 @@ const ACTIONS = [
 // The card body is a plain div rather than a <button> because it contains
 // the action buttons, and nesting buttons is invalid HTML - the title is
 // the real focusable control, so selecting a node works from the keyboard
-// too.
+// too. The title's text is the position alone, which keeps its accessible
+// name exactly that (the hand count sits outside it, in the footer).
 function NodeCard({ node, isActive, onSelect, onPick }) {
+  const total = node.summary?.total ?? 0;
   const className = [
     'pfm-node-card',
     node.decided ? 'pfm-node-card--decided' : 'pfm-node-card--open',
-    isActive ? 'pfm-node-card--active' : ''
+    isActive ? 'pfm-node-card--active' : '',
+    total === 0 ? 'pfm-node-card--no-data' : ''
   ].filter(Boolean).join(' ');
 
   return (
@@ -57,10 +59,14 @@ function NodeCard({ node, isActive, onSelect, onPick }) {
             onClick={e => { e.stopPropagation(); onPick(a.key); }}
           >
             <span className="pfm-node-action-dot" style={{ background: a.color }} />
-            {a.label}
+            {a.label}{' '}
+            <span className="pfm-node-action-pct">
+              {total > 0 ? `${Math.round(node.summary[a.pctKey])}%` : '—'}
+            </span>
           </button>
         ))}
       </div>
+      <span className="pfm-node-hands">{total > 0 ? formatHandCount(total) : 'No hands'}</span>
     </div>
   );
 }
@@ -116,90 +122,48 @@ function ScrollableRow({ children }) {
   );
 }
 
+// The action line - the top of the page, above the grid and side panel it
+// drives (see PreflopMatrixPage.jsx). Display settings (min sample size)
+// live in the side panel now, next to the grid they affect.
 export function PreflopMatrixControls({
   nodes, activeId, complete, onSelectNode, onPickAction, onReset,
-  tableSize, setTableSize,
-  minSampleSize, setMinSampleSize
+  tableSize, setTableSize
 }) {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
   return (
     <div className="pfm-controls">
-      <div className="pfm-controls-row">
-        <ScrollableRow>
-          {/* The committed decisions followed by every seat still to act
-              this round, UTG->BB, all shown and clickable at once -
-              picking an action on one that isn't the very next seat (e.g.
-              BTN's Raise while UTG/HJ/CO are still undecided) auto-folds
-              whichever open seats come before it (see
-              PreflopMatrixPage.jsx's commitOpenSeat). */}
-          {nodes.map(node => (
-            <NodeCard
-              key={node.id}
-              node={node}
-              isActive={node.id === activeId}
-              onSelect={() => onSelectNode(node.id)}
-              onPick={action => onPickAction(node, action)}
-            />
-          ))}
-          {complete && (
-            <div className="pfm-node-card pfm-node-card--done">
-              <span>Hand complete</span>
-            </div>
-          )}
-        </ScrollableRow>
-      </div>
-
-      {/* Table size + the two panel-wide actions, on their own row under
-          the seat cards rather than crowded in beside them - the card row
-          spans the full page width now (see PreflopMatrixPage.css), which
-          left these squeezed against the far edge. */}
-      <div className="pfm-controls-toolbar">
-        {/* Shares the toolbar row rather than taking a line of its own -
-            this panel sits under the grid now and every row it adds is a
-            row the grid loses. */}
+      <div className="pfm-controls-header">
+        <h3 className="section-title">Action line</h3>
         <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
-        <Tabs options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} />
-        <button type="button" className="pfm-gear-btn" onClick={onReset} aria-label="Restart from UTG" title="Restart from UTG">
-          <RotateCcw size={16} />
-        </button>
-        <button
-          type="button"
-          className={`pfm-gear-btn ${settingsOpen ? 'active' : ''}`}
-          onClick={() => setSettingsOpen(o => !o)}
-          aria-label="Display settings"
-          title="Display settings"
-        >
-          <Settings size={16} />
-        </button>
+        <div className="pfm-controls-tools">
+          <Tabs options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} />
+          <button type="button" className="pfm-icon-btn" onClick={onReset} aria-label="Restart from UTG" title="Restart from UTG">
+            <RotateCcw size={16} />
+          </button>
+        </div>
       </div>
 
-      {settingsOpen && (
-        <div className="pfm-settings-panel">
-          <div className="pfm-settings-header">
-            <span className="pfm-settings-title">Display</span>
-            <button type="button" className="pfm-settings-close" onClick={() => setSettingsOpen(false)} aria-label="Close">
-              <X size={14} />
-            </button>
+      <ScrollableRow>
+        {/* The committed decisions followed by every seat still to act
+            this round, UTG->BB, all shown and clickable at once -
+            picking an action on one that isn't the very next seat (e.g.
+            BTN's Raise while UTG/HJ/CO are still undecided) auto-folds
+            whichever open seats come before it (see
+            PreflopMatrixPage.jsx's commitOpenSeat). */}
+        {nodes.map(node => (
+          <NodeCard
+            key={node.id}
+            node={node}
+            isActive={node.id === activeId}
+            onSelect={() => onSelectNode(node.id)}
+            onPick={action => onPickAction(node, action)}
+          />
+        ))}
+        {complete && (
+          <div className="pfm-node-card pfm-node-card--done">
+            <span>Hand complete</span>
           </div>
-
-          <div className="pfm-settings-field">
-            <label className="pfm-settings-label" htmlFor="pfm-sample-size">
-              Min sample size: <strong>{minSampleSize}</strong> hands
-            </label>
-            <input
-              id="pfm-sample-size"
-              type="range"
-              min="0"
-              max="50"
-              step="1"
-              value={minSampleSize}
-              onChange={e => setMinSampleSize(Number(e.target.value))}
-              className="pfm-sample-slider"
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </ScrollableRow>
     </div>
   );
 }

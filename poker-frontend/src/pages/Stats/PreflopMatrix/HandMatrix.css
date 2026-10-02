@@ -33,17 +33,17 @@
    the grid is the only thing on this page worth vertical space. */
 .hand-matrix-card {
   padding: 12px;
-  /* The card hugs the grid rather than spanning the page like the panels
-     above and below it. The grid is a fixed-aspect object (13 columns of
-     4:3 cells), so once its width is bounded by the height left in the
-     viewport, a full-width card would just wrap it in a wide empty margin.
-     Centred instead, which reads as deliberate. `+ 24px` is this card's own
-     horizontal padding. */
+  /* The card hugs the grid rather than filling its side of the workspace
+     row (see PreflopMatrixPage.css's .pfm-workspace). The grid is a
+     fixed-aspect object, so once its width is bounded by the height left
+     in the viewport, a wider card would just wrap it in an empty margin -
+     the side panel sits right against it instead. `+ 24px` is this card's
+     own horizontal padding. */
   max-width: min(100%, max(484px, calc((100vh - var(--hm-page-chrome)) * var(--hm-cell-aspect) + 24px)));
   margin: 0 auto;
   width: 100%;
-  /* Everything stacked above and around the grid - the app's Study header,
-     .main-content's padding, the stakes/date filter row, the sequence
+  /* Everything stacked above the grid - the app's Study header,
+     .main-content's padding, the stakes/date filter row, the action-line
      panel, this card's own header and padding, and ~16px of slack so the
      card's bottom edge isn't flush against the viewport. Measured against
      the real components, not guessed. The grid sizes itself against
@@ -65,10 +65,6 @@
 
 .hand-matrix-card .section-title {
   font-size: 12px;
-}
-
-.hand-matrix-wrap {
-  position: relative;
 }
 
 .hand-matrix {
@@ -147,66 +143,32 @@
   flex-shrink: 0;
 }
 
-/* ---------- tooltip ---------- */
-
-.hm-tooltip {
-  position: fixed;
-  transform: translate(-50%, calc(-100% - 10px));
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--color-text);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+/* Ring marking the hand the side panel is describing: faint for the one
+   under the cursor, accent for the pinned one (see HandMatrix.jsx) - the
+   panel sits beside the grid, so the grid has to say which cell it means.
+   Drawn as an overlay rather than an outline: .hm-bars is absolutely
+   positioned, so it would paint over the cell's own outline. */
+.hm-cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 2px solid transparent;
   pointer-events: none;
-  z-index: 20;
-  white-space: nowrap;
 }
 
-.hm-tooltip-token {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 4px;
+.hm-cell:hover::after {
+  border-color: color-mix(in srgb, var(--color-text) 60%, transparent);
 }
 
-.hm-tooltip-empty {
-  color: var(--color-text-faint);
-  font-style: italic;
+/* Same specificity as the hover rule and after it, so a hovered pinned
+   cell keeps its accent ring. */
+.hm-cell.hm-cell--pinned::after {
+  border-color: var(--color-accent);
 }
 
-.hm-tooltip-row {
-  display: flex;
-  gap: 10px;
-}
-
-.hm-tooltip-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.hm-tooltip-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  display: inline-block;
-}
-
-.hm-tooltip-n {
-  margin-top: 4px;
-  color: var(--color-text-muted);
-  font-size: 11px;
-}
-
-/* Title + "which node am I looking at" subtitle, grouped so they stay
-   together on the header's left while the legend keeps its right edge. */
-.hm-title-group {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
+/* An empty cell can be pinned too (the panel then says there are no hands
+   for it) - faded less than its neighbours so its ring still reads. */
+.hm-cell--pinned.hm-cell--empty {
+  opacity: 0.6;
 }

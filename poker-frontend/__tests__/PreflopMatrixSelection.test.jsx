@@ -22,7 +22,6 @@ function renderControls(overrides = {}) {
     onPickAction: vi.fn(),
     onReset: vi.fn(),
     tableSize: 6, setTableSize: vi.fn(),
-    minSampleSize: 0, setMinSampleSize: vi.fn(),
     ...overrides
   };
   render(<PreflopMatrixControls {...props} />);
@@ -80,6 +79,30 @@ describe('PreflopMatrixControls: node cards are selectable', () => {
   });
 });
 
+describe('PreflopMatrixControls: node cards show hero\'s frequencies', () => {
+  it('shows each action\'s frequency and the hand count behind them', () => {
+    const summary = { fold: 30, call: 0, raise: 10, total: 40, foldPct: 75, callPct: 0, raisePct: 25 };
+    renderControls({ nodes: [{ ...open('UTG'), summary }, open('HJ')] });
+
+    expect(within(card('UTG')).getByRole('button', { name: 'Fold 75%' })).toBeInTheDocument();
+    expect(within(card('UTG')).getByRole('button', { name: 'Call 0%' })).toBeInTheDocument();
+    expect(within(card('UTG')).getByRole('button', { name: 'Raise 25%' })).toBeInTheDocument();
+    expect(within(card('UTG')).getByText('40 hands')).toBeInTheDocument();
+  });
+
+  // A spot hero has never been in has no frequencies - "0%" would claim
+  // hero never took the action there, which the data doesn't say.
+  it('marks a node with no hands as having no data rather than 0%', () => {
+    const empty = { fold: 0, call: 0, raise: 0, total: 0, foldPct: 0, callPct: 0, raisePct: 0 };
+    renderControls({ nodes: [{ ...open('UTG'), summary: empty }, open('HJ')] });
+
+    for (const position of ['UTG', 'HJ']) {
+      expect(within(card(position)).getByRole('button', { name: 'Raise —' })).toBeInTheDocument();
+      expect(within(card(position)).getByText('No hands')).toBeInTheDocument();
+    }
+  });
+});
+
 // End-to-end through the real page: selecting a card has to actually
 // re-point the range grid, which is the whole reason the cards are
 // clickable.
@@ -93,8 +116,8 @@ describe('PreflopMatrixPage: the selected card drives the grid', () => {
   beforeEach(() => {
     mockFetch({
       ...statsFixture(),
-      // Two seats with deliberately different sample sizes, so the tooltip
-      // "n = " readout says which seat's slice the grid is showing.
+      // Two seats with deliberately different sample sizes, so the side
+      // panel's "n = " readout says which seat's slice the grid is showing.
       preflopMatrix: {
         6: {
           rfi: {
@@ -120,5 +143,100 @@ describe('PreflopMatrixPage: the selected card drives the grid', () => {
     // every seat's card is still on screen.
     expect(screen.getByRole('button', { name: 'UTG' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'BB' })).toBeInTheDocument();
+  });
+
+  it('shows each seat\'s own frequencies and hand count on its line card', async () => {
+    renderStudy('/study/range-matrix');
+    await waitFor(() => expect(screen.getByText(/UTG · RFI/)).toBeInTheDocument());
+
+    expect(within(card('UTG')).getByRole('button', { name: 'Raise 100%' })).toBeInTheDocument();
+    expect(within(card('UTG')).getByText('11 hands')).toBeInTheDocument();
+    expect(within(card('CO')).getByText('47 hands')).toBeInTheDocument();
+    expect(within(card('HJ')).getByText('No hands')).toBeInTheDocument();
+  });
+});
+
+describe('PreflopMatrixPage: side panel', () => {
+  function cell({ fold, call, raise }) {
+    const total = fold + call + raise;
+    const pct = n => Math.round((n / total) * 1000) / 10;
+    return { fold, call, raise, total, foldPct: pct(fold), callPct: pct(call), raisePct: pct(raise), confidence: 'high' };
+  }
+
+  beforeEach(() => {
+    mockFetch({
+      ...statsFixture(),
+      preflopMatrix: {
+        6: {
+          rfi: {
+            UTG: { AA: cell({ fold: 0, call: 0, raise: 11 }), '72o': cell({ fold: 9, call: 0, raise: 0 }) },
+            CO: { AA: cell({ fold: 0, call: 0, raise: 47 }) }
+          }
+        }
+      }
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function renderPage() {
+    renderStudy('/study/range-matrix');
+    await waitFor(() => expect(screen.getByText(/UTG · RFI/)).toBeInTheDocument());
+    return {
+      grid: document.querySelector('.hand-matrix'),
+      panel: document.querySelector('.pfm-panel')
+    };
+  }
+
+  it('summarises the selected spot across every hand in it', async () => {
+    const { panel } = await renderPage();
+
+    // UTG: 11 AA raises + 9 72o folds.
+    expect(within(panel).getByText('20 hands')).toBeInTheDocument();
+    expect(within(panel).getByText('55.0%')).toBeInTheDocument(); // raise
+    expect(within(panel).getByText('45.0%')).toBeInTheDocument(); // fold
+  });
+
+  it('reads out the hovered hand, and keeps a clicked one pinned until unpinned', async () => {
+    const user = userEvent.setup();
+    const { grid, panel } = await renderPage();
+    const aa = within(grid).getByText('AA');
+
+    await user.hover(aa);
+    expect(within(panel).getByText('AA')).toBeInTheDocument();
+    expect(within(panel).getByText(/n = 11/)).toBeInTheDocument();
+
+    await user.hover(panel);
+    expect(within(panel).queryByText('AA')).not.toBeInTheDocument();
+    expect(within(panel).getByText(/Hover a hand/)).toBeInTheDocument();
+
+    await user.click(aa);
+    expect(aa.closest('.hm-cell')).toHaveClass('hm-cell--pinned');
+    await user.hover(panel);
+    expect(within(panel).getByText('AA')).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole('button', { name: /Unpin/ }));
+    expect(within(panel).queryByText('AA')).not.toBeInTheDocument();
+    expect(aa.closest('.hm-cell')).not.toHaveClass('hm-cell--pinned');
+  });
+
+  // The point of pinning: follow one hand from seat to seat.
+  it('keeps the pinned hand across a change of selected seat', async () => {
+    const user = userEvent.setup();
+    const { grid, panel } = await renderPage();
+
+    await user.click(within(grid).getByText('AA'));
+    await user.click(screen.getByRole('button', { name: 'CO' }));
+
+    expect(within(panel).getByText('CO · RFI')).toBeInTheDocument();
+    expect(within(panel).getByText('AA')).toBeInTheDocument();
+    expect(within(panel).getByText(/n = 47/)).toBeInTheDocument();
+  });
+
+  it('hosts the min sample size setting', async () => {
+    const { panel } = await renderPage();
+    expect(within(panel).getByLabelText(/Min sample size/)).toHaveAttribute('type', 'range');
   });
 });

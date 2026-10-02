@@ -1,0 +1,164 @@
+/* Column beside the grid (see PreflopMatrixPage.css's .pfm-workspace), or
+   full width under it on a narrow page. Tighter than the shared
+   .matrix-table-card padding, same as the grid card it sits next to. */
+.pfm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.pfm-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pfm-panel-section + .pfm-panel-section {
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Holds the height of a full hand readout (token, bar, three rows, n) even
+   while it's only showing the hover hint, so the Display section under it
+   doesn't jump every time the cursor enters or leaves the grid. */
+.pfm-panel-section--hand {
+  min-height: 180px;
+}
+
+/* Same treatment as the stat tile labels (StatTile.css). */
+.pfm-panel-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.pfm-panel-spot {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pfm-panel-meta {
+  margin: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.pfm-panel-hint {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-text-faint);
+}
+
+/* ---------- fold/call/raise breakdown ---------- */
+
+.pfm-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pfm-breakdown-bar {
+  display: flex;
+  height: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.pfm-breakdown-bar > div {
+  flex-basis: 0;
+}
+
+.pfm-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.pfm-breakdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.pfm-breakdown-label {
+  flex: 1;
+  color: var(--color-text-muted);
+}
+
+.pfm-breakdown-pct {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Raw count behind the %, fixed-width so the % column stays aligned. */
+.pfm-breakdown-count {
+  min-width: 6ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--color-text-faint);
+}
+
+/* ---------- hand readout ---------- */
+
+.pfm-hand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pfm-hand-token {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.pfm-unpin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.pfm-unpin-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ---------- display settings ---------- */
+
+.pfm-panel-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.pfm-sample-slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
