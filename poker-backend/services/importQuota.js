@@ -69,8 +69,8 @@ export async function checkImportQuota(userId, incomingBytes = 0) {
   const user = await UserModel.findById(userId).select('storageBytes totalHands').lean();
   if (user) {
     if ((user.storageBytes || 0) >= QUOTA.TOTAL_BYTES_STORED) {
-      const gb = (QUOTA.TOTAL_BYTES_STORED / 1024 / 1024 / 1024).toFixed(0);
-      return { error: `You've reached your ${gb}GB storage limit. Delete some sessions to import more.` };
+      const mb = (QUOTA.TOTAL_BYTES_STORED / 1024 / 1024).toFixed(0);
+      return { error: `You've reached your ${mb}MB storage limit. Delete some sessions to import more.` };
     }
     if ((user.totalHands || 0) >= QUOTA.TOTAL_HANDS_STORED) {
       return { error: `You've reached the ${QUOTA.TOTAL_HANDS_STORED.toLocaleString()} hand limit. Delete some sessions to import more.` };

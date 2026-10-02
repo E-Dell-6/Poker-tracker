@@ -21,7 +21,7 @@ function pctOf(used, limit) {
 
 // Bar width only. A non-zero-but-tiny library gets a visible sliver so "some"
 // never looks identical to "none" - deliberately kept apart from the figure
-// above, since flooring the displayed number would report 25MB of 2GB as 2%.
+// above, since flooring the displayed number would report 2MB of 250MB as 0%.
 function barWidth(pct) {
   if (pct <= 0) return 0;
   return Math.max(2, pct);

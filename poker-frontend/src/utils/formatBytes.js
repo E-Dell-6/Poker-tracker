@@ -1,7 +1,7 @@
 // Binary units (1024-based) with the short KB/MB/GB labels, deliberately:
-// the backend's limits.js defines `MB = 1024 * 1024`, so a 2147483648-byte
-// quota has to read as "2 GB" here. Formatting it decimally would show
-// "2.15 GB" against a limit the server calls 2GB in its own error messages.
+// the backend's limits.js defines `MB = 1024 * 1024`, so a 262144000-byte
+// quota has to read as "250 MB" here. Formatting it decimally would show
+// "262.14 MB" against a limit the server calls 250MB in its own error messages.
 
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
 

@@ -41,7 +41,7 @@ export const QUOTA = {
   JOBS_PER_DAY: 10,
   BYTES_PER_DAY: 300 * MB,
   CONCURRENT_JOBS: 1,
-  TOTAL_BYTES_STORED: 2 * 1024 * MB,
+  TOTAL_BYTES_STORED: 250 * MB,
   TOTAL_HANDS_STORED: 1_000_000,
   // A malformed log full of junk names would otherwise mint an unbounded
   // number of Person docs, each of which is a row every later stats
