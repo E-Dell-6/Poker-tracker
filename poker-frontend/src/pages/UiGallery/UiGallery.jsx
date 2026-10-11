@@ -28,10 +28,10 @@ const SESSIONS = [
 
 const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
 
-// Tag style references - the live Tag next to four other directions taken
-// from real products, drawn with the same tags so they can be compared
-// directly. Only the Poker Flow one is a real component; the others are
-// prototypes that exist on this page until one is picked.
+// Tag style references - the live Tag (Notion-style) next to three other
+// directions, drawn with the same tags so they can be compared directly.
+// Only the Notion one is a real component; the others are prototypes that
+// exist on this page until one is picked.
 const SAMPLE_TAGS = [
   { label: 'Fish', color: '#22c55e' },
   { label: 'Nit', color: '#f59e0b' },
@@ -42,8 +42,7 @@ const SAMPLE_TAGS = [
 ];
 
 const TAG_REFERENCES = [
-  { key: 'native', site: 'Poker Flow', note: 'Pill like the tabs, faint tint and hairline border in the tag colour. In use now.' },
-  { key: 'notion', site: 'Notion', note: 'Muted colour blocks with light text, square-ish corners.' },
+  { key: 'notion', site: 'Notion', note: 'Muted colour blocks, light text. In use now.' },
   { key: 'trello', site: 'Trello', note: 'Solid, saturated labels; black or white text, whichever reads better.' },
   { key: 'jira', site: 'Jira', note: 'Uppercase bold lozenges on a faint tint, like status labels.' },
   { key: 'edge', site: 'Discord', note: 'Neutral block with a colour edge, like Discord\'s embeds.' },
@@ -60,7 +59,7 @@ function readableTextOn(hex) {
 }
 
 function ReferenceTag({ style, label, color }) {
-  if (style === 'native') return <Tag label={label} color={color} />;
+  if (style === 'notion') return <Tag label={label} color={color} />;
   return (
     <span
       className={`uig-proto uig-proto--${style}`}
@@ -165,7 +164,7 @@ export default function UiGallery() {
         </div>
       </Section>
 
-      <Section title="Tags" note="Pills like the tabs, with the accent's recipe applied to each tag's colour: a 14% tint, a 40% hairline border, lighter text (4.8:1 or better for every colour). Plain tags match a secondary button.">
+      <Section title="Tags" note="Styled after Notion's select tags: each colour blended into a deep, muted block with light text (5.8:1 or better for every colour in the picker). Plain tags stay grey.">
         <div className="uig-row">
           <span className="uig-label">sm</span>
           {SAMPLE_TAGS.slice(0, 4).map((tag) => <Tag key={tag.label} label={tag.label} color={tag.color} />)}
@@ -184,7 +183,7 @@ export default function UiGallery() {
 
       <Section
         title="Tag style references"
-        note="The app's own style next to four directions taken from real products, drawn with the same tags. Say which one you want and it becomes the Tag everywhere."
+        note="Four directions taken from real products, drawn with the same tags. Notion is what the app uses now; say which one you want and it becomes the Tag everywhere."
       >
         <div className="uig-grid uig-grid--wide">
           {TAG_REFERENCES.map((ref) => (
