@@ -15,7 +15,7 @@ const FEATURES = [
 ];
 
 // ── Field component (defined outside Login to prevent remounting) ──
-const Field = ({ id, label, icon, type, placeholder, value, onChange, error, toggle, showToggle, autoComplete, aside }) => (
+const Field = ({ id, label, icon, type, placeholder, value, onChange, error, hint, toggle, showToggle, autoComplete, aside }) => (
   <div className="login-field">
     <div className="login-label-row">
       <label className="login-label" htmlFor={id}>{label}</label>
@@ -31,7 +31,7 @@ const Field = ({ id, label, icon, type, placeholder, value, onChange, error, tog
         value={value}
         autoComplete={autoComplete}
         aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : undefined}
+        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
       {toggle && (
@@ -45,7 +45,9 @@ const Field = ({ id, label, icon, type, placeholder, value, onChange, error, tog
         </button>
       )}
     </div>
-    {error && <span id={`${id}-error`} className="login-error-msg">{error}</span>}
+    {error
+      ? <span id={`${id}-error`} className="login-error-msg">{error}</span>
+      : hint && <span id={`${id}-hint`} className="login-hint">{hint}</span>}
   </div>
 );
 
@@ -271,7 +273,8 @@ export function Login() {
                         autoComplete="email"
                         value={registerForm.email} onChange={(v) => handleChange(setRegisterForm, "email", v)} error={errors.email} />
                       <Field id="register-password" label="Password" icon={<Lock className="login-input-icon" aria-hidden="true" />} type={showPassword ? "text" : "password"}
-                        placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`} autoComplete="new-password"
+                        placeholder="Create a password" autoComplete="new-password"
+                        hint={`At least ${MIN_PASSWORD_LENGTH} characters`}
                         value={registerForm.password} onChange={(v) => handleChange(setRegisterForm, "password", v)}
                         error={errors.password} toggle={() => setShowPassword(s => !s)} showToggle={showPassword} />
                       <SubmitButton loading={loading}>Create account</SubmitButton>
@@ -293,7 +296,8 @@ export function Login() {
                         autoComplete="one-time-code"
                         value={resetForm.otp} onChange={(v) => handleChange(setResetForm, "otp", v)} error={errors.otp} />
                       <Field id="reset-password" label="New password" icon={<Lock className="login-input-icon" aria-hidden="true" />} type={showPassword ? "text" : "password"}
-                        placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`} autoComplete="new-password"
+                        placeholder="Create a new password" autoComplete="new-password"
+                        hint={`At least ${MIN_PASSWORD_LENGTH} characters`}
                         value={resetForm.newPassword} onChange={(v) => handleChange(setResetForm, "newPassword", v)}
                         error={errors.newPassword} toggle={() => setShowPassword(s => !s)} showToggle={showPassword} />
                       <SubmitButton loading={loading}>Reset password</SubmitButton>
