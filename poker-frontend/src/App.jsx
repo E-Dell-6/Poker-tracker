@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { HomePage } from './pages/HomePage/HomePage';
 import { History } from './pages/History/History';
@@ -16,6 +17,11 @@ import { LiveSessionProvider } from './context/LiveSessionContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ImportProvider } from './context/ImportContext';
 import { ImportStatus } from './components/ImportStatus';
+
+// Dev-only preview of the shared UI components (components/ui) at /dev/ui.
+// import.meta.env.DEV is replaced with `false` in production builds, so the
+// page and its chunk never ship.
+const UiGallery = import.meta.env.DEV ? lazy(() => import('./pages/UiGallery/UiGallery')) : null;
 
 function HandReplayRoute() {
   const [searchParams] = useSearchParams();
@@ -58,6 +64,9 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
             <Route path='/hand-creator' element={<HandCreator />}/>
+            {UiGallery && (
+              <Route path="/dev/ui" element={<Suspense fallback={null}><UiGallery /></Suspense>} />
+            )}
           </Routes>
 
           {/* Outside <Routes>: the import status card belongs to no page. */}

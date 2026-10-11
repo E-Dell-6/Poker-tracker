@@ -135,7 +135,7 @@ export function PreflopMatrixControls({
         <h3 className="section-title">Action line</h3>
         <p className="pfm-lead">Walk any preflop line - every card is hero's own history for that seat</p>
         <div className="pfm-controls-tools">
-          <Tabs options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} />
+          <Tabs size="sm" options={TABLE_SIZES.map(n => ({ key: n, label: `${n}-max` }))} active={tableSize} onChange={setTableSize} aria-label="Table size" />
           <button type="button" className="pfm-icon-btn" onClick={onReset} aria-label="Restart from UTG" title="Restart from UTG">
             <RotateCcw size={16} />
           </button>

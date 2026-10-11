@@ -1,0 +1,82 @@
+/* The box shared by Input and Select: surface-1, a visible border, 44px
+   tall. Hover strengthens the border, focus anywhere inside adds the accent
+   halo, .is-invalid turns it red. */
+.ui-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+
+.ui-control:hover {
+  border-color: color-mix(in srgb, var(--color-text) 28%, transparent);
+}
+
+.ui-control:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-dim);
+}
+
+.ui-control.is-invalid {
+  border-color: color-mix(in srgb, var(--color-negative) 70%, transparent);
+}
+
+.ui-control.is-invalid:focus-within {
+  box-shadow: 0 0 0 3px var(--color-negative-dim);
+}
+
+.ui-control.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-control.is-disabled:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* The native element inside fills the box and stays unstyled. Text is 16px:
+   anything smaller makes iOS Safari zoom the page on focus. */
+.ui-control-native {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--leading-md);
+}
+
+.ui-control-native::placeholder {
+  color: var(--color-text-faint);
+  opacity: 1;
+}
+
+.ui-control-native:disabled {
+  cursor: not-allowed;
+}
+
+/* Compact controls for toolbars: shorter, and 14px text where the iOS zoom
+   can't happen (fine pointers). */
+.ui-control--sm {
+  min-height: 36px;
+}
+
+@media (pointer: fine) {
+  .ui-control--sm .ui-control-native {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+}

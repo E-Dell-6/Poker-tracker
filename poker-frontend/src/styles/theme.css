@@ -152,10 +152,19 @@
   --color-accent: #f97316;
   --color-accent-hover: #fb923c;
   --color-accent-contrast: #1a1006;
+}
 
-  /* Derived once, from whichever preset ends up winning. Custom-property
-     substitution is lazy, so these resolve at use time against the active
-     --color-accent no matter where they are declared. */
+/* Derived from whichever accent is in effect. These are declared on every
+   element that sets an accent, not just :root: a var() inside a custom
+   property is substituted on the element that declares it, and children
+   inherit the finished value. Declared on :root alone, a [data-accent]
+   element (a Settings swatch, the /dev/ui preview) would get its own
+   --color-accent but the page's dim, border and focus colors.
+
+   Declared BEFORE the presets so the violet preset's --color-accent-text
+   override wins on source order. */
+:root,
+[data-accent] {
   --color-accent-dim: color-mix(in srgb, var(--color-accent) 14%, transparent);
   --color-accent-border: color-mix(in srgb, var(--color-accent) 40%, transparent);
 
@@ -170,8 +179,8 @@
 
 /* ── Accent presets ──────────────────────────────────────
    Independent of theme, so the two attributes compose. Each preset declares
-   only the three values that can't be derived; --color-accent-dim and
-   -border are computed once in the :root block above.
+   only the three values that can't be derived; --color-accent-dim, -border,
+   -text and --focus-ring come from the block above.
 
    --color-accent-contrast (text drawn ON the accent) is precomputed per
    preset rather than derived: an arbitrary color has no correct contrast

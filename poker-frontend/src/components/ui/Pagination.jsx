@@ -13,6 +13,7 @@ export function Pagination({ page, totalPages, onPageChange }) {
     <div className="ui-pagination">
       <Button
         variant="secondary"
+        size="sm"
         icon={ChevronLeft}
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
@@ -22,6 +23,7 @@ export function Pagination({ page, totalPages, onPageChange }) {
       <span className="ui-pagination-label">Page {page} of {totalPages}</span>
       <Button
         variant="secondary"
+        size="sm"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
       >

@@ -1,5 +1,6 @@
 .ui-table-wrap {
   overflow-x: auto;
+  background: var(--color-surface-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 }
@@ -8,11 +9,12 @@
   border-collapse: collapse;
   width: 100%;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
 }
 
 .ui-table-cell {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   text-align: left;
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
@@ -21,21 +23,30 @@
 .ui-table-cell.align-right { text-align: right; }
 .ui-table-cell.align-center { text-align: center; }
 
+/* Header: small uppercase labels on the table's own surface, set off by a
+   stronger rule rather than a filled band. */
 .ui-table thead .ui-table-cell {
-  font-size: 11px;
-  font-weight: 700;
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-label);
   color: var(--color-text-muted);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom-color: var(--color-border-strong);
 }
 
 .ui-table tbody tr:last-child .ui-table-cell {
   border-bottom: none;
 }
 
+.ui-table tbody .ui-table-cell {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
 .ui-table tbody tr:hover .ui-table-cell {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--color-surface-2);
 }
 
 .ui-table-row--clickable {
