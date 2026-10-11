@@ -158,9 +158,9 @@ export function Profile() {
           <div className="profile-hero-info">
             <h1 className="profile-name">{user?.name ?? "Player"}</h1>
             <div className="profile-badges">
-              <span className="badge">{stats.totalSessions} sessions</span>
-              {stats.onlineHands > 0 && <span className="badge">{stats.onlineHands.toLocaleString()} online hands</span>}
-              {stats.liveMs > 0      && <span className="badge"><Clock size={12} /> {fmtDuration(stats.liveMs)} live</span>}
+              <span className="profile-badge">{stats.totalSessions} sessions</span>
+              {stats.onlineHands > 0 && <span className="profile-badge">{stats.onlineHands.toLocaleString()} online hands</span>}
+              {stats.liveMs > 0      && <span className="profile-badge"><Clock size={12} /> {fmtDuration(stats.liveMs)} live</span>}
             </div>
           </div>
           <div className={`hero-pnl ${isUp ? "pos" : "neg"}`}>
@@ -201,9 +201,9 @@ export function Profile() {
             ...(sourceFilter !== "online" && stats.liveMs > 0 ? [{ label: "Live Time", val: fmtDuration(stats.liveMs) }] : []),
             { label: "Sessions",     val: stats.totalSessions },
           ].map(({ label, val, cls }) => (
-            <div className="pstat" key={label}>
-              <div className="pstat-label">{label}</div>
-              <div className={`pstat-value ${cls ?? ""}`}>{val}</div>
+            <div className="profile-stat" key={label}>
+              <div className="profile-stat-label">{label}</div>
+              <div className={`profile-stat-value ${cls ?? ""}`}>{val}</div>
             </div>
           ))}
         </div>

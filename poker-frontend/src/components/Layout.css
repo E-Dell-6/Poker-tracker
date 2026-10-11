@@ -45,5 +45,7 @@
   width: 100%;
   min-height: 0;
   overflow-y: auto;
-  padding: 32px;
+  /* Was overridden by App.css (now deleted) - keep its value until the shell
+     is restyled in stage 2. */
+  padding: 20px 40px;
 }

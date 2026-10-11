@@ -22,8 +22,8 @@ export default function CardMenu({ onSelect }) {
               className={`card-tile ${suit.color}`}
               onClick={() => onSelect(value, index)}
             >
-              <span className="rank">{rank}</span>
-              <span className="suit">{suit.label}</span>
+              <span className="card-tile-rank">{rank}</span>
+              <span className="card-tile-suit">{suit.label}</span>
             </button>
           );
         })

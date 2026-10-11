@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { HomePage } from './pages/HomePage/HomePage';
 import { History } from './pages/History/History';
-import './App.css'
 import { HandReplayer, PublicHandViewer } from './pages/HandReplayer/HandReplayer';
 import { Clock } from './pages/Clock/Clock';
 import { Players } from './pages/Players/Players';

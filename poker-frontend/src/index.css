@@ -1,5 +1,19 @@
 @import './styles/theme.css';
 
+/* ── Reset ──
+   Lived in pages/Login/Login.css until the UI refresh; it applied app-wide
+   anyway because App.jsx imports Login eagerly. */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
 :root {
   font-family: var(--font-sans);
   line-height: 1.5;
@@ -30,6 +44,12 @@ svg.lucide {
   flex-shrink: 0;
 }
 
+/* Profit/loss colouring. Tests assert these exact class names, and many
+   components use them bare, so they are a deliberate global utility (they
+   used to leak from Profile.css). */
+.pos { color: var(--color-positive); }
+.neg { color: var(--color-negative); }
+
 /* Utility for spinning loading icons (e.g. <Loader2 className="spin" />) */
 .spin {
   animation: app-spin 1s linear infinite;
@@ -45,12 +65,16 @@ body {
   background-color: var(--color-bg);
 }
 
+/* Every h1 in the app sets its own font-size; only the tight leading is
+   shared. (The 3.2em size here was a Vite template leftover.) */
 h1 {
-  font-size: 3.2em;
   line-height: 1.1;
 }
 
-button {
+/* Fallback look for a bare <button>. Wrapped in :where() so it has zero
+   specificity - any class on a button overrides it without a fight. It goes
+   away once every button uses ui/Button (UI refresh, stage 3). */
+:where(button) {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
@@ -62,6 +86,9 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+/* Hover/focus keep their element specificity on purpose: they currently beat
+   a class's own border-color, and changing that is a visual change for the
+   page-by-page stage, not this foundation pass. */
 button:hover {
   border-color: var(--color-accent);
 }

@@ -274,18 +274,18 @@ export function Clock() {
 
             <div className="clock-actions">
               {!isClocked ? (
-                <button className="btn btn-primary" onClick={handleClockIn} disabled={isRestoring}>
-                  <Play size={16} className="btn-icon" fill="currentColor" />
+                <button className="clock-btn clock-btn-primary" onClick={handleClockIn} disabled={isRestoring}>
+                  <Play size={16} className="clock-btn-icon" fill="currentColor" />
                   Clock In
                 </button>
               ) : (
                 <>
-                  <button className="btn btn-secondary" onClick={() => setShowBuyInForm(true)}>
-                    <Plus size={16} className="btn-icon" />
+                  <button className="clock-btn clock-btn-secondary" onClick={() => setShowBuyInForm(true)}>
+                    <Plus size={16} className="clock-btn-icon" />
                     Add Buy-In
                   </button>
-                  <button className="btn btn-danger" onClick={handleClockOutClick}>
-                    <Square size={16} className="btn-icon" fill="currentColor" />
+                  <button className="clock-btn clock-btn-danger" onClick={handleClockOutClick}>
+                    <Square size={16} className="clock-btn-icon" fill="currentColor" />
                     Clock Out
                   </button>
                 </>
@@ -335,8 +335,8 @@ export function Clock() {
                   {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
-                  <button className="btn btn-ghost" onClick={() => setShowSessionForm(false)}>Cancel</button>
-                  <button className="btn btn-primary" onClick={handleSaveSession} disabled={isSaving}>
+                  <button className="clock-btn clock-btn-ghost" onClick={() => setShowSessionForm(false)}>Cancel</button>
+                  <button className="clock-btn clock-btn-primary" onClick={handleSaveSession} disabled={isSaving}>
                     {isSaving ? "Starting..." : "Start Session"}
                   </button>
                 </div>
@@ -368,8 +368,8 @@ export function Clock() {
                   {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
-                  <button className="btn btn-ghost" onClick={() => setShowBuyInForm(false)}>Cancel</button>
-                  <button className="btn btn-primary" onClick={handleAddBuyIn}>Add Buy-In</button>
+                  <button className="clock-btn clock-btn-ghost" onClick={() => setShowBuyInForm(false)}>Cancel</button>
+                  <button className="clock-btn clock-btn-primary" onClick={handleAddBuyIn}>Add Buy-In</button>
                 </div>
               </div>
             </div>
@@ -409,9 +409,9 @@ export function Clock() {
                   {saveError && <p className="modal-info">{saveError}</p>}
                 </div>
                 <div className="modal-footer">
-                  <button className="btn btn-ghost" onClick={() => setShowClockOutForm(false)}>Cancel</button>
+                  <button className="clock-btn clock-btn-ghost" onClick={() => setShowClockOutForm(false)}>Cancel</button>
                   <button
-                    className="btn btn-danger"
+                    className="clock-btn clock-btn-danger"
                     onClick={handleConfirmClockOut}
                     disabled={isSaving || formData.cashOut === "" || isNaN(parseFloat(formData.cashOut))}
                   >

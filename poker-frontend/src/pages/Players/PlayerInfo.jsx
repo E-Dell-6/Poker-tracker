@@ -108,14 +108,14 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
                 {currentPlayer.tags && currentPlayer.tags.map((tag, index) => (
                     <div
                         key={index}
-                        className="tag"
+                        className="player-tag"
                         style={{ backgroundColor: tag.color }}
                     >
                         {tag.label}
                     </div>
                 ))}
                 <button
-                    className="tag create-tag-btn"
+                    className="player-tag create-tag-btn"
                     onClick={() => setIsTagMenuOpen(true)}
                 >
                     + Add Tag

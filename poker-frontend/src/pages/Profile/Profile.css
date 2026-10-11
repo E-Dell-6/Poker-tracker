@@ -64,7 +64,7 @@
 
 .profile-badges { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.badge {
+.profile-badge {
   font-size: 12px; font-weight: 600; color: var(--color-text-muted);
   background: var(--color-bg-elevated); border: 1px solid var(--color-border);
   padding: 4px 12px; border-radius: 100px;
@@ -82,10 +82,6 @@
   font-family: var(--font-sans);
   font-size: 2rem; font-weight: 900; line-height: 1;
 }
-
-/* ── COLORS ───────────────────────────────────────────── */
-.pos { color: var(--color-positive); }
-.neg { color: var(--color-negative); }
 
 /* ── FILTERS ──────────────────────────────────────────── */
 .profile-filters { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -123,7 +119,7 @@
   gap: 10px;
 }
 
-.pstat {
+.profile-stat {
   background: var(--color-bg-elevated-hover);
   border: 1px solid var(--color-border);
   border-radius: 16px;
@@ -132,14 +128,14 @@
   transition: transform 0.18s, border-color 0.18s;
 }
 
-.pstat:hover { transform: translateY(-3px); border-color: var(--color-accent-border); }
+.profile-stat:hover { transform: translateY(-3px); border-color: var(--color-accent-border); }
 
-.pstat-label {
+.profile-stat-label {
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.6px; color: var(--color-text-muted); margin-bottom: 9px;
 }
 
-.pstat-value {
+.profile-stat-value {
   font-family: var(--font-sans);
   font-size: 1.7rem; font-weight: 700; color: var(--color-accent); line-height: 1;
 }

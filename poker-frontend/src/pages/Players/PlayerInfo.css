@@ -95,7 +95,7 @@
   margin-bottom: 28px;
 }
 
-.tag {
+.player-tag {
   padding: 6px 14px;
   border-radius: 100px;
   color: #fff;
@@ -109,7 +109,7 @@
   transition: transform 0.2s;
 }
 
-.tag:hover { transform: translateY(-2px); }
+.player-tag:hover { transform: translateY(-2px); }
 
 .create-tag-btn {
   background: rgba(255,255,255,0.06) !important;
