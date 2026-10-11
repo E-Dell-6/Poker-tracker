@@ -1,14 +1,15 @@
 import './Tag.css';
 
-// A small label chip.
+// A small label chip, styled after Notion's select tags: a compact rounded
+// rectangle filled with a deep, muted version of the tag's colour, with
+// light text and no border.
 // - color: any CSS colour - player tags pass the one picked in TagMenu.jsx
-//   (Person.tags is [{label, color}]). The chip gets a faint wash of it and
-//   the text a lighter shade of it, which keeps every colour in the picker
-//   at 5:1 or better.
-// - variant: 'positive' | 'negative' | 'live' colour the chip the same way
-//   with the app's green or red (live also gets a dot); 'neutral', the
-//   default, is a plain grey chip.
-// - size: 'sm' (22px, default - tables, lists) or 'md' (28px - headers,
+//   (Person.tags is [{label, color}]). It's blended 40% into the darkest
+//   surface, which keeps the label at 5.8:1 or better for every colour in
+//   the picker.
+// - variant: 'positive' | 'negative' | 'live' use the app's green or red
+//   the same way (live also gets a dot); 'neutral', the default, is grey.
+// - size: 'sm' (20px, default - tables, lists) or 'md' (24px - headers,
 //   like the player profile).
 export function Tag({ label, color, variant = 'neutral', size = 'sm', children }) {
   const tone = color ? 'colored' : variant;

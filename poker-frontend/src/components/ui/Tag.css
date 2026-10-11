@@ -1,14 +1,20 @@
-/* Neutral by default: a grey chip with a hairline border. */
+/* Styled after Notion's select tags. The fill is the tag colour blended
+   into surface-3 (40% for coloured tags, 30% of the faint grey for neutral
+   ones), so every colour lands as a deep, muted block - close to Notion's
+   own dark palette - and full-strength text stays readable on all of them.
+   The fill is opaque, so a tag looks the same on any surface. */
 .ui-tag {
+  --tag-color: var(--color-text-faint);
+  --tag-mix: 30%;
+
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 22px;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-2);
-  color: var(--color-text-secondary);
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--tag-color) var(--tag-mix), var(--color-surface-3));
+  color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
@@ -16,24 +22,11 @@
   white-space: nowrap;
 }
 
-.ui-tag--md {
-  gap: var(--space-2);
-  min-height: 28px;
-  padding: 0 var(--space-3);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-
-/* Coloured: a faint wash of --tag-color, text a lighter shade of it, no
-   border. The text is mixed toward the theme's text colour rather than
-   white, so it stays readable if a light theme is added. */
 .ui-tag--colored,
 .ui-tag--positive,
 .ui-tag--negative,
 .ui-tag--live {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--tag-color) 16%, transparent);
-  color: color-mix(in srgb, var(--tag-color) 65%, var(--color-text));
+  --tag-mix: 40%;
 }
 
 .ui-tag--positive,
@@ -45,15 +38,17 @@
   --tag-color: var(--color-negative);
 }
 
+.ui-tag--md {
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
 .ui-tag-dot {
   flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--tag-color);
-}
-
-.ui-tag--md .ui-tag-dot {
-  width: 8px;
-  height: 8px;
+  background: var(--color-positive);
 }

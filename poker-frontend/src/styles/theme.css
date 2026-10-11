@@ -35,6 +35,7 @@
 
   /* Radii. Pills (999px) are for tags and tabs only - buttons and inputs
      use --radius-md. */
+  --radius-xs: 4px;   /* tags */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
