@@ -66,7 +66,7 @@ app.use('/api/share', shareRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/imports', importRouter);
 
-app.listen(PORT, '0.0.0.0', async () => {
+app.listen(PORT, process.env.HOST || '0.0.0.0', async () => {
     console.log(`🚀 Server started on port: ${PORT}`);
     if (!process.env.MONGO_URI) {
         console.error("MONGO_URI is missing");

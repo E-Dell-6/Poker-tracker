@@ -6,7 +6,7 @@ import getTransporter from '../config/nodeMailer.js';
 import RevokedToken from '../model/RevokedToken.js';
 import { isNonEmptyString, normalizeEmail } from '../utils/validate.js';
 
-export const MIN_PASSWORD_LENGTH = 10;
+export const MIN_PASSWORD_LENGTH = 6;
 
 // A real bcrypt hash (of a value nothing can log in with) used to keep the
 // failed-login path doing the same work as the successful one. Generated

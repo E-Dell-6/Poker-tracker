@@ -33,3 +33,13 @@ Many poker players rely on notes apps or spreadsheets to track sessions, which l
 - Containerizing applications with Docker
 - Deploying and debugging applications on Microsoft Azure
 - Managing production issues such as routing errors, environment configuration, and container revisions
+
+## Local Development on a Remote Server
+
+`npm run dev` from the repo root starts the backend on `127.0.0.1:1111` and Vite on `localhost:5173`. Vite proxies `/api` and `/uploads` to the backend, so only the frontend port needs forwarding:
+
+```bash
+ssh -L 5173:localhost:5173 user@your-server
+```
+
+Then open http://localhost:5173 on your laptop. Leave `VITE_API_URL` unset in dev.
