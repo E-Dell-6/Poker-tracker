@@ -1,3 +1,4 @@
+/* Neutral by default: a grey chip with a hairline border. */
 .ui-tag {
   display: inline-flex;
   align-items: center;
@@ -23,23 +24,36 @@
   line-height: var(--leading-sm);
 }
 
+/* Coloured: a faint wash of --tag-color, text a lighter shade of it, no
+   border. The text is mixed toward the theme's text colour rather than
+   white, so it stays readable if a light theme is added. */
+.ui-tag--colored,
+.ui-tag--positive,
+.ui-tag--negative,
+.ui-tag--live {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--tag-color) 16%, transparent);
+  color: color-mix(in srgb, var(--tag-color) 65%, var(--color-text));
+}
+
+.ui-tag--positive,
+.ui-tag--live {
+  --tag-color: var(--color-positive);
+}
+
+.ui-tag--negative {
+  --tag-color: var(--color-negative);
+}
+
 .ui-tag-dot {
   flex-shrink: 0;
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--tag-color);
 }
 
 .ui-tag--md .ui-tag-dot {
   width: 8px;
   height: 8px;
-}
-
-.ui-tag--positive .ui-tag-dot,
-.ui-tag--live .ui-tag-dot {
-  background: var(--color-positive);
-}
-
-.ui-tag--negative .ui-tag-dot {
-  background: var(--color-negative);
 }

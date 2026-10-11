@@ -122,7 +122,7 @@ export default function UiGallery() {
         </div>
       </Section>
 
-      <Section title="Tags" note="Neutral chips; colour lives only in the dot, so every tag colour stays readable.">
+      <Section title="Tags" note="A faint wash of the tag's colour with the text in a lighter shade of it (5:1 or better for every colour). Plain tags stay grey.">
         <div className="uig-row">
           <span className="uig-label">sm</span>
           <Tag color="#22c55e">Fish</Tag>

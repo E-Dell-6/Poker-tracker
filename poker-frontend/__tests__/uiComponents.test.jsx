@@ -47,21 +47,24 @@ describe('Tabs', () => {
 });
 
 describe('Tag', () => {
-  it('puts a picked colour in the dot only, leaving the text neutral', () => {
+  it('colours the chip with the picked colour', () => {
     render(<Tag label="Fish" color="#22c55e" />);
     const tag = screen.getByText('Fish');
-    expect(tag).not.toHaveAttribute('style');
-    expect(tag.querySelector('.ui-tag-dot')).toHaveStyle({ background: '#22c55e' });
+    expect(tag).toHaveClass('ui-tag--colored');
+    expect(tag.style.getPropertyValue('--tag-color')).toBe('#22c55e');
   });
 
-  it('draws a dot for semantic variants but not for neutral tags', () => {
+  it('keeps plain tags grey, and only LIVE gets a dot', () => {
     render(
       <>
         <Tag variant="live">LIVE</Tag>
+        <Tag color="#22c55e">Fish</Tag>
         <Tag>NL50</Tag>
       </>
     );
+    expect(screen.getByText('NL50')).toHaveClass('ui-tag--neutral');
     expect(screen.getByText('LIVE').querySelector('.ui-tag-dot')).toBeInTheDocument();
+    expect(screen.getByText('Fish').querySelector('.ui-tag-dot')).not.toBeInTheDocument();
     expect(screen.getByText('NL50').querySelector('.ui-tag-dot')).not.toBeInTheDocument();
   });
 });
