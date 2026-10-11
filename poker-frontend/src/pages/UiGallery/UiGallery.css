@@ -146,11 +146,21 @@
   line-height: var(--leading-xs);
 }
 
+/* Notion: the colour blended 40% into surface-3, light text, no border. */
+.uig-proto--notion {
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tag-color) 40%, var(--color-surface-3));
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
 /* Trello: solid saturated label, black or white text. */
 .uig-proto--trello {
   min-height: 22px;
   padding: 0 var(--space-2);
-  border-radius: var(--radius-xs);
+  border-radius: 4px;
   background: var(--tag-color);
   color: var(--tag-text);
   font-weight: var(--weight-semibold);
@@ -173,7 +183,7 @@
   min-height: 22px;
   padding: 0 var(--space-2) 0 6px;
   border-left: 3px solid var(--tag-color);
-  border-radius: var(--radius-xs);
+  border-radius: 4px;
   background: var(--color-surface-3);
   color: var(--color-text);
   font-weight: var(--weight-medium);

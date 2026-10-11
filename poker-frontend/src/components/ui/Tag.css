@@ -1,24 +1,22 @@
-/* Styled after Notion's select tags. The fill is the tag colour blended
-   into surface-3 (40% for coloured tags, 30% of the faint grey for neutral
-   ones), so every colour lands as a deep, muted block - close to Notion's
-   own dark palette - and full-strength text stays readable on all of them.
-   The fill is opaque, so a tag looks the same on any surface. */
+/* Built from the app's own ingredients so tags sit naturally next to tabs
+   and buttons: a pill (like .ui-tab), 600-weight text, and for coloured
+   tags the accent recipe applied to the tag's colour - a 14% tint, a 40%
+   hairline border, and text that's 70% the colour (lighter, for contrast).
+   Neutral tags match a secondary button. */
 .ui-tag {
-  --tag-color: var(--color-text-faint);
-  --tag-mix: 30%;
-
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 20px;
-  padding: 0 6px;
-  border-radius: var(--radius-xs);
-  background: color-mix(in srgb, var(--tag-color) var(--tag-mix), var(--color-surface-3));
-  color: var(--color-text);
+  min-height: 22px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
 
@@ -26,7 +24,9 @@
 .ui-tag--positive,
 .ui-tag--negative,
 .ui-tag--live {
-  --tag-mix: 40%;
+  border-color: color-mix(in srgb, var(--tag-color) 40%, transparent);
+  background: color-mix(in srgb, var(--tag-color) 14%, transparent);
+  color: color-mix(in srgb, var(--tag-color) 70%, var(--color-text));
 }
 
 .ui-tag--positive,
@@ -39,8 +39,9 @@
 }
 
 .ui-tag--md {
-  min-height: 24px;
-  padding: 0 var(--space-2);
+  gap: var(--space-2);
+  min-height: 26px;
+  padding: 0 var(--space-3);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
 }
@@ -50,5 +51,5 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-positive);
+  background: var(--tag-color);
 }
