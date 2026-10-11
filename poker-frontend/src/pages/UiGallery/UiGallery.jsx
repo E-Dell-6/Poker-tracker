@@ -28,10 +28,7 @@ const SESSIONS = [
 
 const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
 
-// Tag style references - the live Tag (Notion-style) next to three other
-// directions, drawn with the same tags so they can be compared directly.
-// Only the Notion one is a real component; the others are prototypes that
-// exist on this page until one is picked.
+// Sample player tags (colours from TagMenu.jsx's picker).
 const SAMPLE_TAGS = [
   { label: 'Fish', color: '#22c55e' },
   { label: 'Nit', color: '#f59e0b' },
@@ -40,35 +37,6 @@ const SAMPLE_TAGS = [
   { label: 'Calls too much', color: '#2563eb' },
   { label: 'Bluffs rivers', color: '#8b5cf6' },
 ];
-
-const TAG_REFERENCES = [
-  { key: 'notion', site: 'Notion', note: 'Muted colour blocks, light text. In use now.' },
-  { key: 'trello', site: 'Trello', note: 'Solid, saturated labels; black or white text, whichever reads better.' },
-  { key: 'jira', site: 'Jira', note: 'Uppercase bold lozenges on a faint tint, like status labels.' },
-  { key: 'edge', site: 'Discord', note: 'Neutral block with a colour edge, like Discord\'s embeds.' },
-];
-
-// Black or white, whichever has more contrast on a hex colour.
-function readableTextOn(hex) {
-  const channel = (i) => {
-    const c = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  const lum = 0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2);
-  return (lum + 0.05) / 0.05 > 1.05 / (lum + 0.05) ? '#0a0a0c' : '#ffffff';
-}
-
-function ReferenceTag({ style, label, color }) {
-  if (style === 'notion') return <Tag label={label} color={color} />;
-  return (
-    <span
-      className={`uig-proto uig-proto--${style}`}
-      style={{ '--tag-color': color, '--tag-text': readableTextOn(color) }}
-    >
-      {label}
-    </span>
-  );
-}
 
 function Section({ title, note, children }) {
   return (
@@ -178,28 +146,6 @@ export default function UiGallery() {
           <Tag size="md" color="#22c55e">Fish</Tag>
           <Tag size="md" color="#2563eb">Calls too much</Tag>
           <Tag size="md">Cash</Tag>
-        </div>
-      </Section>
-
-      <Section
-        title="Tag style references"
-        note="Four directions taken from real products, drawn with the same tags. Notion is what the app uses now; say which one you want and it becomes the Tag everywhere."
-      >
-        <div className="uig-grid uig-grid--wide">
-          {TAG_REFERENCES.map((ref) => (
-            <Card key={ref.key}>
-              <CardHeader title={ref.site} subtitle={ref.note} titleAs="h3" />
-              <div className="uig-ref-row">
-                <span className="uig-ref-name">FishyMcFish</span>
-                <span className="uig-ref-tags">
-                  {SAMPLE_TAGS.slice(0, 2).map((tag) => <ReferenceTag key={tag.label} style={ref.key} {...tag} />)}
-                </span>
-              </div>
-              <div className="uig-ref-cloud">
-                {SAMPLE_TAGS.map((tag) => <ReferenceTag key={tag.label} style={ref.key} {...tag} />)}
-              </div>
-            </Card>
-          ))}
         </div>
       </Section>
 
