@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { Search } from 'lucide-react';
 import { Button } from '../src/components/ui/Button.jsx';
 import { Tabs } from '../src/components/ui/Tabs.jsx';
+import { Tag } from '../src/components/ui/Tag.jsx';
 import { Field } from '../src/components/ui/Field.jsx';
 import { Input } from '../src/components/ui/Input.jsx';
 import { Select } from '../src/components/ui/Select.jsx';
@@ -42,6 +43,26 @@ describe('Tabs', () => {
     expect(screen.getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'false');
     await userEvent.click(screen.getByRole('button', { name: '7d' }));
     expect(onChange).toHaveBeenCalledWith('7d');
+  });
+});
+
+describe('Tag', () => {
+  it('puts a picked colour in the dot only, leaving the text neutral', () => {
+    render(<Tag label="Fish" color="#22c55e" />);
+    const tag = screen.getByText('Fish');
+    expect(tag).not.toHaveAttribute('style');
+    expect(tag.querySelector('.ui-tag-dot')).toHaveStyle({ background: '#22c55e' });
+  });
+
+  it('draws a dot for semantic variants but not for neutral tags', () => {
+    render(
+      <>
+        <Tag variant="live">LIVE</Tag>
+        <Tag>NL50</Tag>
+      </>
+    );
+    expect(screen.getByText('LIVE').querySelector('.ui-tag-dot')).toBeInTheDocument();
+    expect(screen.getByText('NL50').querySelector('.ui-tag-dot')).not.toBeInTheDocument();
   });
 });
 

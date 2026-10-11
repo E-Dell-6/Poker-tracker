@@ -1,33 +1,45 @@
 .ui-tag {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 6px;
   min-height: 22px;
   padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  border: 1px solid currentColor;
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
   font-family: var(--font-sans);
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
 
-.ui-tag--positive,
-.ui-tag--live {
-  color: var(--color-positive);
-  background: var(--color-positive-dim);
-  border-color: color-mix(in srgb, var(--color-positive) 40%, transparent);
+.ui-tag--md {
+  gap: var(--space-2);
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 
-.ui-tag--negative {
-  color: var(--color-negative);
-  background: var(--color-negative-dim);
-  border-color: color-mix(in srgb, var(--color-negative) 40%, transparent);
+.ui-tag-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
-.ui-tag--neutral {
-  color: var(--color-text-secondary);
-  background: var(--color-surface-2);
-  border-color: var(--color-border-strong);
+.ui-tag--md .ui-tag-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.ui-tag--positive .ui-tag-dot,
+.ui-tag--live .ui-tag-dot {
+  background: var(--color-positive);
+}
+
+.ui-tag--negative .ui-tag-dot {
+  background: var(--color-negative);
 }

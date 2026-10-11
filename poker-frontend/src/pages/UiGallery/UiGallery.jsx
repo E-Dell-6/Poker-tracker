@@ -122,14 +122,23 @@ export default function UiGallery() {
         </div>
       </Section>
 
-      <Section title="Tags">
+      <Section title="Tags" note="Neutral chips; colour lives only in the dot, so every tag colour stays readable.">
         <div className="uig-row">
-          <Tag variant="positive">+$240.50</Tag>
-          <Tag variant="negative">−$85.00</Tag>
-          <Tag variant="live">LIVE</Tag>
-          <Tag variant="neutral">NL50</Tag>
-          <Tag color="#4ade80">Fish</Tag>
+          <span className="uig-label">sm</span>
+          <Tag color="#22c55e">Fish</Tag>
           <Tag color="#f59e0b">Nit</Tag>
+          <Tag color="#ef4444">Maniac</Tag>
+          <Tag color="#64748b">Reg</Tag>
+          <Tag variant="live">LIVE</Tag>
+          <Tag variant="positive">BTN +4.2</Tag>
+          <Tag variant="negative">SB −12.8</Tag>
+          <Tag>NL50</Tag>
+        </div>
+        <div className="uig-row">
+          <span className="uig-label">md</span>
+          <Tag size="md" color="#22c55e">Fish</Tag>
+          <Tag size="md" color="#2563eb">Calls too much</Tag>
+          <Tag size="md">Cash</Tag>
         </div>
       </Section>
 
