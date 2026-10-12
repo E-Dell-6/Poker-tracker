@@ -1,11 +1,12 @@
 import { Layout } from '../../components/Layout';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Loader2 } from 'lucide-react';
 import { Outlet, useOutletContext } from 'react-router-dom';
 import { formatSignedMajorUnits } from '../../utils/formatMoney';
 import { useHeroStats, TIME_FILTERS } from '../../hooks/useHeroStats';
 import { StatTile } from '../../components/ui/StatTile';
 import { GhostChart } from '../../components/ui/GhostChart';
 import { Tabs } from '../../components/ui/Tabs';
+import { Select } from '../../components/ui/Select';
 import { StudyPageSkeleton } from './StudyPageSkeleton';
 import './MatrixTableCard.css';
 import './Stats.css';
@@ -113,7 +114,8 @@ export function StudyLayout() {
         ) : (
           <div className="stats-container">
             <div className="study-filter-bar">
-              <select
+              <Select
+                size="sm"
                 className="study-filter-select"
                 value={stakesFilter}
                 onChange={e => setStakesFilter(e.target.value)}
@@ -123,9 +125,20 @@ export function StudyLayout() {
                 {Object.keys(baseStats.byStakes || {}).map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
-              </select>
-              <Tabs options={TIME_FILTERS} active={daysFilter} onChange={setDaysFilter} />
-              {filterLoading && stats && <span className="study-filter-updating">Updating…</span>}
+              </Select>
+              <Tabs
+                variant="segmented"
+                size="sm"
+                options={TIME_FILTERS}
+                active={daysFilter}
+                onChange={setDaysFilter}
+                aria-label="Time range"
+              />
+              {filterLoading && stats && (
+                <span className="study-filter-updating" role="status">
+                  <Loader2 size={14} className="spin" aria-hidden="true" /> Updating
+                </span>
+              )}
             </div>
 
             {stats.totalHands === 0 ? (

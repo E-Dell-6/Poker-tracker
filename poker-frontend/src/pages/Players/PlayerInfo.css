@@ -95,35 +95,40 @@
   margin-bottom: 28px;
 }
 
-.tag {
-  padding: 6px 14px;
-  border-radius: 100px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.3px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  border: none;
-  cursor: default;
-  transition: transform 0.2s;
-}
-
-.tag:hover { transform: translateY(-2px); }
-
+/* Same chip shape as the tags beside it, dashed so it reads as an action. */
 .create-tag-btn {
-  background: rgba(255,255,255,0.06) !important;
-  border: 1px dashed var(--color-accent-border) !important;
-  color: var(--color-accent) !important;
-  font-size: 12px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s !important;
+  transition:
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
 }
 
 .create-tag-btn:hover {
-  background: var(--color-accent-dim) !important;
-  border-color: var(--color-accent) !important;
-  transform: translateY(-2px);
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-text) 32%, transparent);
+  background: var(--color-surface-2);
+}
+
+.create-tag-btn:focus {
+  outline: none;
+}
+
+.create-tag-btn:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 /* ── NOTES ──────────────────────────────────────────────── */

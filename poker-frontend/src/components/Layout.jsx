@@ -20,6 +20,10 @@ const IMPORT_CTA_LABEL = 'Import hands';
 export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu, children }) {
   const isImportPage = ctaLabel === IMPORT_CTA_LABEL;
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  // Phone-sized screens only: the sidebar is a drawer, opened from the
+  // header's menu button. Each page renders its own Layout, so navigating
+  // anywhere closes it by remounting with this back at false.
+  const [navOpen, setNavOpen] = useState(false);
   const { uploadStatus, uploadDroppedFiles } = useImport();
 
   const handleDragEnter = (event) => {
@@ -64,11 +68,24 @@ export function Layout({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu, chi
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <Sidebar />
+      <Sidebar mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
       <div className="app-layout-column">
-        {title && <TopHeader title={title} subtitle={subtitle} ctaLabel={displayedCtaLabel} ctaIcon={ctaIcon} onCta={onCta} ctaMenu={ctaMenu} />}
+        {title && (
+          <TopHeader
+            title={title}
+            subtitle={subtitle}
+            ctaLabel={displayedCtaLabel}
+            ctaIcon={ctaIcon}
+            onCta={onCta}
+            ctaMenu={ctaMenu}
+            navOpen={navOpen}
+            onOpenNav={() => setNavOpen(true)}
+          />
+        )}
         <main className="main-content">
-          {children}
+          {/* Caps the page at --content-max-width and centres it; the header
+              uses the same width, so their edges line up. */}
+          <div className="main-content-inner">{children}</div>
         </main>
       </div>
 

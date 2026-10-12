@@ -1,45 +1,139 @@
+/* Variants only set the --btn-* colours below; size classes set height,
+   padding and type. Buttons use --radius-md - pills are for tags and tabs. */
 .ui-btn {
+  --btn-bg: transparent;
+  --btn-fg: var(--color-text);
+  --btn-border: transparent;
+  --btn-bg-hover: var(--btn-bg);
+  --btn-fg-hover: var(--btn-fg);
+  --btn-border-hover: var(--btn-border);
+
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
+  cursor: pointer;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-.ui-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.ui-btn--primary {
-  background: var(--color-accent);
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent-contrast);
-}
-
-.ui-btn--primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-}
-
-.ui-btn--secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-}
-
-.ui-btn--secondary:hover:not(:disabled) {
-  background: var(--color-accent-dim);
-  color: var(--color-accent);
-  border-color: var(--color-accent-border);
+.ui-btn:hover:not(:disabled) {
+  background: var(--btn-bg-hover);
+  border-color: var(--btn-border-hover);
+  color: var(--btn-fg-hover);
 }
 
 .ui-btn:active:not(:disabled) {
   transform: translateY(1px);
+}
+
+/* index.css outlines every focused <button>; these use the focus ring. */
+.ui-btn:focus {
+  outline: none;
+}
+
+.ui-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* border-color: index.css's button:hover would otherwise paint an accent
+   border on a disabled button. */
+.ui-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-color: var(--btn-border);
+}
+
+/* ── Variants ── */
+.ui-btn--primary {
+  --btn-bg: var(--color-accent);
+  --btn-fg: var(--color-accent-contrast);
+  --btn-border: var(--color-accent);
+  --btn-bg-hover: var(--color-accent-hover);
+  --btn-border-hover: var(--color-accent-hover);
+}
+
+.ui-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.ui-btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ui-btn--secondary {
+  --btn-bg: var(--color-surface-2);
+  --btn-border: var(--color-border-strong);
+  --btn-bg-hover: var(--color-surface-3);
+  --btn-border-hover: color-mix(in srgb, var(--color-text) 28%, transparent);
+}
+
+.ui-btn--ghost {
+  --btn-fg: var(--color-text-secondary);
+  --btn-bg-hover: var(--color-surface-2);
+  --btn-fg-hover: var(--color-text);
+}
+
+.ui-btn--danger {
+  --btn-bg: var(--color-negative-dim);
+  --btn-fg: var(--color-negative);
+  --btn-border: color-mix(in srgb, var(--color-negative) 40%, transparent);
+  --btn-bg-hover: color-mix(in srgb, var(--color-negative) 22%, transparent);
+  --btn-border-hover: color-mix(in srgb, var(--color-negative) 60%, transparent);
+}
+
+/* ── Sizes (md is the base above) ── */
+.ui-btn--sm {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.ui-btn--lg {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
+  line-height: var(--leading-md);
+}
+
+.ui-btn--icon-only {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+/* ── Loading: hide the label but keep its width, spinner on top ── */
+.ui-btn--loading {
+  color: transparent;
+}
+
+.ui-btn--loading:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.ui-btn-spinner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--btn-fg);
 }

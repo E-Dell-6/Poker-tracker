@@ -2,13 +2,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin: 20px 0 4px;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-1);
 }
 
 .ui-pagination-label {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }

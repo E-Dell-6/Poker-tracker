@@ -1,45 +1,62 @@
+/* container-type lets the value step down a size in narrow tiles (Study's
+   grid goes down to 150px) instead of overflowing. */
 .ui-stat-tile {
-  background: var(--color-bg-elevated);
+  container-type: inline-size;
+  background: var(--color-surface-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  padding: var(--space-5);
 }
 
 .ui-stat-tile-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .ui-stat-tile-label {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-label);
   color: var(--color-text-muted);
 }
 
 .ui-stat-tile-icon {
+  flex-shrink: 0;
   color: var(--color-text-faint);
 }
 
 .ui-stat-tile-value {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 28px;
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-  line-height: 1.1;
 }
 
+@container (max-width: 190px) {
+  .ui-stat-tile-value {
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+  }
+}
+
+/* Compound selectors on purpose: the bare .pos/.neg utilities in index.css
+   load first and would lose to .ui-stat-tile-value's own colour. */
 .ui-stat-tile-value.pos { color: var(--color-positive); }
 .ui-stat-tile-value.neg { color: var(--color-negative); }
-.ui-stat-tile-value.accent { color: var(--color-accent); }
+.ui-stat-tile-value.accent { color: var(--color-accent-text); }
 
 .ui-stat-tile-delta {
-  margin-top: 6px;
-  font-size: 12px;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   color: var(--color-text-muted);
 }
 

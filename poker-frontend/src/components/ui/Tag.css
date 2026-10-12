@@ -1,22 +1,54 @@
+/* Styled after Notion's select tags. The fill is the tag colour blended
+   into surface-3 (40% for coloured tags, 30% of the faint grey for neutral
+   ones), so every colour lands as a deep, muted block - close to Notion's
+   own dark palette - and full-strength text stays readable on all of them.
+   The fill is opaque, so a tag looks the same on any surface. */
 .ui-tag {
+  --tag-color: var(--color-text-faint);
+  --tag-mix: 30%;
+
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 10px;
-  border-radius: 999px;
-  border: 1px solid currentColor;
+  gap: 6px;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--tag-color) var(--tag-mix), var(--color-surface-3));
+  color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.6;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-medium);
   white-space: nowrap;
 }
 
-.ui-tag--positive { color: var(--color-positive); background: var(--color-positive-dim); border-color: color-mix(in srgb, var(--color-positive) 40%, transparent); }
-.ui-tag--negative { color: var(--color-negative); background: var(--color-negative-dim); border-color: color-mix(in srgb, var(--color-negative) 40%, transparent); }
+.ui-tag--colored,
+.ui-tag--positive,
+.ui-tag--negative,
 .ui-tag--live {
-  color: var(--color-positive);
-  background: var(--color-positive-dim);
-  border-color: color-mix(in srgb, var(--color-positive) 40%, transparent);
+  --tag-mix: 40%;
 }
-.ui-tag--neutral { color: var(--color-text-muted); background: rgba(255, 255, 255, 0.05); border-color: var(--color-border-strong); }
+
+.ui-tag--positive,
+.ui-tag--live {
+  --tag-color: var(--color-positive);
+}
+
+.ui-tag--negative {
+  --tag-color: var(--color-negative);
+}
+
+.ui-tag--md {
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.ui-tag-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-positive);
+}

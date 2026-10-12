@@ -1,0 +1,23 @@
+/* The <select> covers the whole box (padding moves onto it), so a click
+   anywhere opens it - including over the chevron, which ignores pointers. */
+.ui-select {
+  padding: 0;
+}
+
+.ui-select-native {
+  appearance: none;
+  padding: 0 var(--space-8) 0 var(--space-3);
+  cursor: pointer;
+}
+
+.ui-select-native option {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}
+
+.ui-select-chevron {
+  position: absolute;
+  right: var(--space-3);
+  pointer-events: none;
+  color: var(--color-text-muted);
+}

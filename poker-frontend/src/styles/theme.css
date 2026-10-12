@@ -33,10 +33,61 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Radii */
+  /* Radii. Pills (999px) are for tags and tabs only - buttons and inputs
+     use --radius-md. */
+  --radius-xs: 4px;   /* tags */
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Spacing - a 4px scale. Use these for padding, margin and gap instead of
+     raw px, so the rhythm of every page comes from one place. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
+  /* Type scale: size + matching line-height. Inputs always use --text-md
+     (16px) - anything smaller makes iOS Safari zoom the page on focus. */
+  --text-xs: 12px;   --leading-xs: 16px;    /* labels, meta */
+  --text-sm: 13px;   --leading-sm: 18px;    /* table cells, secondary */
+  --text-base: 14px; --leading-base: 20px;  /* default UI */
+  --text-md: 16px;   --leading-md: 24px;    /* inputs, body, large buttons */
+  --text-lg: 18px;   --leading-lg: 26px;    /* card titles */
+  --text-xl: 24px;   --leading-xl: 32px;    /* page titles */
+  --text-2xl: 30px;  --leading-2xl: 36px;   /* stat values */
+  --text-3xl: 44px;  --leading-3xl: 48px;   /* hero (login) */
+
+  /* Only the weights the Google Fonts import above actually loads. */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-tight: -0.02em;  /* headings 24px and up */
+  --tracking-label: 0.04em;   /* uppercase labels */
+
+  /* Motion. Exits should use --dur-fast even when the entrance is slower. */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 280ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Stacking layers. Anything that needs to sit above the app picks one of
+     these instead of inventing a bigger number. */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 1000;
+  --z-modal: 1010;
+  --z-toast: 1100;
 }
 
 /* ── Theme sets ──────────────────────────────────────────
@@ -52,17 +103,31 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Backgrounds */
+  /* Backgrounds. surface-1/2 are the new names for bg-elevated(-hover);
+     the old names stay as aliases until every stylesheet is migrated. */
   --color-bg: #0a0a0c;
-  --color-bg-elevated: #111114;
-  --color-bg-elevated-hover: #17171b;
+  --color-surface-1: #111114;  /* cards, inputs */
+  --color-surface-2: #17171b;  /* hover, raised */
+  --color-surface-3: #1e1e24;  /* menus, modals, popovers */
+  --color-bg-elevated: var(--color-surface-1);
+  --color-bg-elevated-hover: var(--color-surface-2);
+  --color-scrim: rgba(0, 0, 0, 0.64);
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.16);
 
-  /* Text */
+  /* Text. Every text color here is at least 4.5:1 on bg and surface-1.
+     --color-text-faint was #55565c (2.7:1), which failed for real text. */
   --color-text: #f5f5f4;
+  --color-text-secondary: #a1a1a8;
   --color-text-muted: #8b8b90;
-  --color-text-faint: #55565c;
+  --color-text-faint: #7c7d84;
+
+  /* Elevation. Shadows barely read on a near-black page, so cards rely on
+     borders at rest and only menus/modals get a real shadow. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--color-border);
 
   /* Semantic (profit/loss, positive/negative results) */
   --color-positive: #4ade80;
@@ -73,6 +138,7 @@
      quota meters and the like. Shares a hex with --color-tag-nit, which is
      about player styles; kept separate so either can move on its own. */
   --color-warning: #f59e0b;
+  --color-info: #60a5fa;
 }
 
 :root {
@@ -87,18 +153,35 @@
   --color-accent: #f97316;
   --color-accent-hover: #fb923c;
   --color-accent-contrast: #1a1006;
+}
 
-  /* Derived once, from whichever preset ends up winning. Custom-property
-     substitution is lazy, so these resolve at use time against the active
-     --color-accent no matter where they are declared. */
+/* Derived from whichever accent is in effect. These are declared on every
+   element that sets an accent, not just :root: a var() inside a custom
+   property is substituted on the element that declares it, and children
+   inherit the finished value. Declared on :root alone, a [data-accent]
+   element (a Settings swatch, the /dev/ui preview) would get its own
+   --color-accent but the page's dim, border and focus colors.
+
+   Declared BEFORE the presets so the violet preset's --color-accent-text
+   override wins on source order. */
+:root,
+[data-accent] {
   --color-accent-dim: color-mix(in srgb, var(--color-accent) 14%, transparent);
   --color-accent-border: color-mix(in srgb, var(--color-accent) 40%, transparent);
+
+  /* Accent used as TEXT on a surface (links, active labels). Same as the
+     accent for every preset except violet, which is too dark for text on
+     surface-2 (4.2:1) and overrides it below. */
+  --color-accent-text: var(--color-accent);
+
+  /* Keyboard focus: a soft accent halo plus a crisp 1px edge. */
+  --focus-ring: 0 0 0 3px var(--color-accent-dim), 0 0 0 1px var(--color-accent);
 }
 
 /* ── Accent presets ──────────────────────────────────────
    Independent of theme, so the two attributes compose. Each preset declares
-   only the three values that can't be derived; --color-accent-dim and
-   -border are computed once in the :root block above.
+   only the three values that can't be derived; --color-accent-dim, -border,
+   -text and --focus-ring come from the block above.
 
    --color-accent-contrast (text drawn ON the accent) is precomputed per
    preset rather than derived: an arbitrary color has no correct contrast
@@ -126,7 +209,7 @@
 :root[data-accent="teal"],
 [data-accent="teal"] { --color-accent: #14b8a6; --color-accent-hover: #2dd4bf; --color-accent-contrast: #04211e; }
 :root[data-accent="violet"],
-[data-accent="violet"] { --color-accent: #8b5cf6; --color-accent-hover: #a78bfa; --color-accent-contrast: #140a2b; }
+[data-accent="violet"] { --color-accent: #8b5cf6; --color-accent-hover: #a78bfa; --color-accent-contrast: #0b0518; --color-accent-text: #a78bfa; }
 :root[data-accent="blue"],
 [data-accent="blue"] { --color-accent: #3b82f6; --color-accent-hover: #60a5fa; --color-accent-contrast: #061229; }
 :root[data-accent="rose"],

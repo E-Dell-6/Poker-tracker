@@ -34,13 +34,6 @@
   gap: 6px;
 }
 
-/* Shorter than the shared .ui-tab default (Tabs.css) - correct elsewhere,
-   but this panel is spending height the grid below needs. */
-.pfm-controls-tools .ui-tab {
-  padding: 0.25rem 0.65rem;
-  font-size: 0.72rem;
-}
-
 .pfm-icon-btn {
   display: inline-flex;
   align-items: center;

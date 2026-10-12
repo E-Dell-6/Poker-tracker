@@ -29,5 +29,5 @@
   box-shadow: 0 0 8px rgba(255,255,255,.3);
 }
 
-.rank { line-height: 1; }
-.suit { opacity: .8; font-size: 14px; }
+.card-tile-rank { line-height: 1; }
+.card-tile-suit { opacity: .8; font-size: 14px; }

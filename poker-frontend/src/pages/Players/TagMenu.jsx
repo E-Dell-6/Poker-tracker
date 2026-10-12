@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './TagMenu.css';
 import { addPersonTag } from '../../api/people';
+import { Tag } from '../../components/ui/Tag';
 
 const PRESET_COLORS = [
   '#ef4444', 
@@ -86,13 +87,8 @@ export function TagMenu({ player, onClose, onTagCreated }) {
           </div>
 
           <div className="tag-preview">
-            <span>Preview:</span>
-            <div 
-              className="tag preview-tag"
-              style={{ backgroundColor: selectedColor }}
-            >
-              {tagLabel || 'Tag Label'}
-            </div>
+            <span className="tag-preview-label">Preview:</span>
+            <Tag size="md" label={tagLabel || 'Tag label'} color={selectedColor} />
           </div>
 
           <div className="form-actions">

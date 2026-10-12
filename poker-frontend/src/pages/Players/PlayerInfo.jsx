@@ -3,7 +3,8 @@ import { TagMenu } from './TagMenu';
 import { PlayerStats } from './PlayerStats';
 import { PlayerStarred } from './PlayerStarred';
 import { useState, useRef, useEffect } from 'react';
-import { Loader2, Camera, Pencil } from 'lucide-react';
+import { Loader2, Camera, Pencil, Plus } from 'lucide-react';
+import { Tag } from '../../components/ui/Tag';
 import { API_URL } from '../../config';
 import { uploadImage } from '../../api/uploads';
 import { updatePerson, updatePersonNotes } from '../../api/people';
@@ -106,19 +107,14 @@ export function PlayerInfo({ player, onPlayerUpdate }) {
 
             <div className="tags-list">
                 {currentPlayer.tags && currentPlayer.tags.map((tag, index) => (
-                    <div
-                        key={index}
-                        className="tag"
-                        style={{ backgroundColor: tag.color }}
-                    >
-                        {tag.label}
-                    </div>
+                    <Tag key={index} size="md" label={tag.label} color={tag.color} />
                 ))}
                 <button
-                    className="tag create-tag-btn"
+                    type="button"
+                    className="create-tag-btn"
                     onClick={() => setIsTagMenuOpen(true)}
                 >
-                    + Add Tag
+                    <Plus size={14} aria-hidden="true" /> Add tag
                 </button>
             </div>
 

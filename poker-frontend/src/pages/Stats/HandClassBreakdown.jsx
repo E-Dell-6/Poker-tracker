@@ -1,57 +1,85 @@
-import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts';
+import { useRef, useState } from 'react';
+import { MousePointerClick, X } from 'lucide-react';
 import { Table, TableHead, TableBody, TableRow, TableCell } from '../../components/ui/Table';
+import { Card, CardHeader } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   CATEGORY_ORDER, CATEGORY_LABEL, CONTEXT_ORDER,
   sortHandEntries, ProfitValue, RateValue, PositionBadges, Toggle, toggleInSet
 } from './handClassShared';
 import { HandClassLeaks } from './HandClassLeaks';
-import './MatrixTableCard.css'; // .matrix-table-card/.matrix-table-header/.matrix-table-sub
 import './HandClassBreakdown.css';
 
-const AXIS_TICK = { fontSize: 11, fill: 'var(--color-text-muted)' };
-const TOOLTIP_STYLE = {
-  background: 'var(--color-bg-elevated)',
-  border: '1px solid var(--color-border)',
-  borderRadius: 8,
-  fontSize: 12,
-  color: 'var(--color-text)'
-};
-// recharts' Tooltip only applies `contentStyle`'s color to the outer
-// wrapper div - the label/item text nodes inside get their own default
-// (near-black) color unless these are set explicitly too.
-const TOOLTIP_TEXT_STYLE = { color: 'var(--color-text)' };
-// Highlights the hovered bar itself (via recharts' `activeBar`) instead of
-// the default `cursor` rectangle, which spans the full category band -
-// wider/taller than the bar and visually disconnected from its shape.
-const ACTIVE_BAR = { stroke: 'var(--color-accent)', strokeWidth: 2, fillOpacity: 0.9 };
+// Same breakpoint as the app shell's drawer: at or under it the detail
+// panel opens in a dialog instead of beside the table.
+const NARROW = '(width <= 900px)';
 
-// Detail panel for one specific hand - shows its preflop-context breakdown,
-// with every position shown as an inline badge (see handClassShared's
-// PositionBadges) instead of a further click-to-expand level.
-function HandDetailPanel({ token, handData, onClose }) {
+// A small diverging bar next to each bb/100 figure: it grows right from the
+// centre line when positive, left when negative, scaled to the largest
+// |bb/100| on screen. Purely visual - the number beside it carries the
+// value, so it's hidden from screen readers.
+function WinRateBar({ bb100, max }) {
+  const width = bb100 == null || !max ? 0 : Math.min(1, Math.abs(bb100) / max) * 50;
+  return (
+    <span className="hcb-bar" aria-hidden="true">
+      {width > 0 && (
+        <span
+          className={`hcb-bar-fill ${bb100 >= 0 ? 'hcb-bar-fill--pos' : 'hcb-bar-fill--neg'}`}
+          style={{ width: `${width}%` }}
+        />
+      )}
+    </span>
+  );
+}
+
+function RateCell({ bucket, max }) {
+  return (
+    <span className="hcb-rate-cell">
+      <RateValue bucket={bucket} />
+      <WinRateBar bb100={bucket?.hands ? bucket.bb100 : null} max={max} />
+    </span>
+  );
+}
+
+// One hand's breakdown by preflop action, each with its positions as
+// inline badges (see handClassShared's PositionBadges). Shown beside the
+// table on wide screens and inside a Modal on narrow ones - there the
+// Modal's own title and close button replace this header.
+function HandDetailPanel({ token, handData, onClose, inModal = false }) {
   const contexts = CONTEXT_ORDER
     .map(([key, label]) => [key, label, handData.contexts?.[key]])
     .filter(([, , ctxData]) => ctxData && ctxData.hands > 0);
 
   return (
     <div className="hcb-detail-panel">
-      <div className="hcb-detail-header">
-        <div className="hcb-detail-title">
-          <span className="hcb-detail-token">{token}</span>
-          <span className="hcb-detail-category">{CATEGORY_LABEL[handData.category]}</span>
+      {!inModal && (
+        <div className="hcb-detail-header">
+          <div>
+            <div className="hcb-detail-token">{token}</div>
+            <div className="hcb-detail-category">{CATEGORY_LABEL[handData.category]}</div>
+          </div>
+          <Button variant="ghost" size="sm" icon={X} aria-label="Close" onClick={onClose} />
         </div>
-        <div className="hcb-detail-summary">
-          <span>{handData.hands} hands</span>
-          <RateValue bucket={handData} />
-          <ProfitValue bucket={handData} />
-        </div>
-        <button type="button" className="hcb-detail-close" onClick={onClose} aria-label="Close">
-          <X size={16} />
-        </button>
-      </div>
+      )}
 
+      <dl className="hcb-detail-summary">
+        <div>
+          <dt>Hands</dt>
+          <dd className="hcb-value-mono">{handData.hands}</dd>
+        </div>
+        <div>
+          <dt>bb/100</dt>
+          <dd><RateValue bucket={handData} /></dd>
+        </div>
+        <div>
+          <dt>Net</dt>
+          <dd><ProfitValue bucket={handData} /></dd>
+        </div>
+      </dl>
+
+      <h3 className="hcb-detail-section">By preflop action</h3>
       {contexts.length === 0 ? (
         <p className="hcb-detail-empty">No preflop-action breakdown recorded for this hand.</p>
       ) : (
@@ -75,124 +103,118 @@ function HandDetailPanel({ token, handData, onClose }) {
 
 // Two-level table over stats.byHandClass/byHandClassCategory (see
 // statsEngine.js's handClass-related helpers): category -> specific hand,
-// each carrying its own bb/100 win rate and net $ figure. Clicking a hand
-// (here or in the Biggest Leaks list above) opens a detail panel below the
-// table with its preflop-context/position breakdown, instead of drilling
-// further into the table itself.
+// each with its bb/100 win rate (plus a bar) and net $. Clicking a hand -
+// here or in Biggest Leaks above - shows its breakdown in the side panel.
 export function HandClassBreakdown({ byHandClass, byHandClassCategory }) {
   const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [selectedHand, setSelectedHand] = useState(null);
-  const detailPanelRef = useRef(null);
+  const workspaceRef = useRef(null);
+  const narrow = useMediaQuery(NARROW);
 
   const categoriesWithData = CATEGORY_ORDER.filter(([key]) => (byHandClassCategory?.[key]?.hands ?? 0) > 0);
+  if (categoriesWithData.length === 0) return null;
 
   const selectedHandData = selectedHand ? byHandClass?.[selectedHand] : null;
 
-  // Brings the detail panel into view when it's (re)opened - matters most
-  // when it was triggered from a Biggest Leaks row, which can be far above
-  // the table the panel renders below.
-  useEffect(() => {
-    if (selectedHandData) detailPanelRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
-  }, [selectedHand, selectedHandData]);
-
-  if (categoriesWithData.length === 0) return null;
-
+  // From Biggest Leaks: open the hand's category and, on wide screens,
+  // bring the table + panel into view (they can be far below the leak).
   function handleSelectHand(token) {
     const handData = byHandClass?.[token];
     if (handData) setExpandedCategories(prev => new Set(prev).add(handData.category));
     setSelectedHand(token);
+    if (!narrow) workspaceRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
-  const chartData = categoriesWithData.map(([key, label]) => ({
-    key, label,
-    bb100: byHandClassCategory[key].bb100 ?? 0,
-    currency: byHandClassCategory[key].currency
-  }));
-
-  const rows = [];
+  // Rows on screen, so bars are scaled against what's actually visible.
+  const visible = [];
   for (const [catKey, catLabel] of categoriesWithData) {
-    const catData = byHandClassCategory[catKey];
-    const catExpanded = expandedCategories.has(catKey);
-    rows.push(
-      <TableRow
-        key={catKey}
-        className="hcb-row hcb-row--category"
-        onClick={() => setExpandedCategories(toggleInSet(expandedCategories, catKey))}
-      >
-        <TableCell><Toggle expanded={catExpanded} /><strong>{catLabel}</strong></TableCell>
-        <TableCell align="right"><span className="hcb-value-mono">{catData.hands}</span></TableCell>
-        <TableCell align="right"><RateValue bucket={catData} /></TableCell>
-        <TableCell align="right"><ProfitValue bucket={catData} /></TableCell>
-      </TableRow>
-    );
-
-    if (!catExpanded) continue;
-
+    visible.push({ kind: 'category', key: catKey, label: catLabel, data: byHandClassCategory[catKey] });
+    if (!expandedCategories.has(catKey)) continue;
     const handEntries = sortHandEntries(
       catKey,
       Object.entries(byHandClass || {}).filter(([, v]) => v.category === catKey && v.hands > 0)
     );
-
     for (const [token, handData] of handEntries) {
-      rows.push(
-        <TableRow
-          key={token}
-          className={`hcb-row hcb-row--hand ${token === selectedHand ? 'hcb-row--hand--selected' : ''}`}
-          onClick={() => setSelectedHand(token === selectedHand ? null : token)}
-        >
-          <TableCell><span className="hcb-indent-1">{token}</span></TableCell>
-          <TableCell align="right"><span className="hcb-value-mono">{handData.hands}</span></TableCell>
-          <TableCell align="right"><RateValue bucket={handData} /></TableCell>
-          <TableCell align="right"><ProfitValue bucket={handData} /></TableCell>
-        </TableRow>
-      );
+      visible.push({ kind: 'hand', key: token, label: token, data: handData });
     }
   }
+  const maxRate = Math.max(0, ...visible.map(row => Math.abs(row.data.bb100 ?? 0)));
+
+  const rows = visible.map(row => (row.kind === 'category' ? (
+    <TableRow
+      key={row.key}
+      className="hcb-row hcb-row--category"
+      onClick={() => setExpandedCategories(toggleInSet(expandedCategories, row.key))}
+    >
+      <TableCell><Toggle expanded={expandedCategories.has(row.key)} />{row.label}</TableCell>
+      <TableCell align="right"><span className="hcb-value-mono">{row.data.hands}</span></TableCell>
+      <TableCell align="right"><RateCell bucket={row.data} max={maxRate} /></TableCell>
+      <TableCell align="right"><ProfitValue bucket={row.data} /></TableCell>
+    </TableRow>
+  ) : (
+    <TableRow
+      key={row.key}
+      className={`hcb-row hcb-row--hand ${row.key === selectedHand ? 'hcb-row--hand--selected' : ''}`}
+      onClick={() => setSelectedHand(row.key === selectedHand ? null : row.key)}
+    >
+      <TableCell><span className="hcb-hand-token">{row.label}</span></TableCell>
+      <TableCell align="right"><span className="hcb-value-mono">{row.data.hands}</span></TableCell>
+      <TableCell align="right"><RateCell bucket={row.data} max={maxRate} /></TableCell>
+      <TableCell align="right"><ProfitValue bucket={row.data} /></TableCell>
+    </TableRow>
+  )));
+
+  const closePanel = () => setSelectedHand(null);
 
   return (
     <>
       <HandClassLeaks byHandClass={byHandClass} onSelectHand={handleSelectHand} />
 
-      <div className="matrix-table-card hand-class-breakdown">
-        <div className="matrix-table-header">
-          <h3 className="section-title">Win rate by hand class</h3>
-          <span className="matrix-table-sub">bb/100 · played hands only</span>
-        </div>
+      <div className="hcb-workspace" ref={workspaceRef}>
+        <Card className="hand-class-breakdown">
+          <CardHeader
+            title="Win rate by hand class"
+            subtitle="bb/100 on hands you played. Open a category to see its hands; pick a hand for its breakdown."
+          />
+          <Table>
+            <TableHead>
+              <TableCell header>Hand class</TableCell>
+              <TableCell header align="right">Hands</TableCell>
+              <TableCell header align="right">bb/100</TableCell>
+              <TableCell header align="right">Net $</TableCell>
+            </TableHead>
+            <TableBody>{rows}</TableBody>
+          </Table>
+        </Card>
 
-        <ResponsiveContainer width="100%" height={Math.max(140, categoriesWithData.length * 36)}>
-          <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 24 }}>
-            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="label" tick={AXIS_TICK} axisLine={false} tickLine={false} width={110} />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              itemStyle={TOOLTIP_TEXT_STYLE}
-              labelStyle={TOOLTIP_TEXT_STYLE}
-              cursor={false}
-              formatter={v => [`${v >= 0 ? '+' : ''}${v.toFixed(1)} bb/100`, 'Win rate']}
-            />
-            <Bar dataKey="bb100" radius={[0, 4, 4, 0]} activeBar={ACTIVE_BAR}>
-              {chartData.map(d => <Cell key={d.key} fill={d.bb100 >= 0 ? 'var(--color-positive)' : 'var(--color-negative)'} />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-
-        <Table>
-          <TableHead>
-            <TableCell header>Hand class</TableCell>
-            <TableCell header align="right">Hands</TableCell>
-            <TableCell header align="right">bb/100</TableCell>
-            <TableCell header align="right">Net $</TableCell>
-          </TableHead>
-          <TableBody>{rows}</TableBody>
-        </Table>
-        <p className="hcb-note">Click a category for individual hands, a hand for its preflop-action and position breakdown.</p>
-
-        {selectedHandData && (
-          <div ref={detailPanelRef}>
-            <HandDetailPanel token={selectedHand} handData={selectedHandData} onClose={() => setSelectedHand(null)} />
-          </div>
+        {!narrow && (
+          <aside className="hcb-side">
+            {selectedHandData ? (
+              <Card>
+                <HandDetailPanel token={selectedHand} handData={selectedHandData} onClose={closePanel} />
+              </Card>
+            ) : (
+              <Card className="hcb-panel-placeholder">
+                <MousePointerClick size={20} aria-hidden="true" />
+                <p>Pick a hand to see how it plays by preflop action and position.</p>
+              </Card>
+            )}
+          </aside>
         )}
       </div>
+
+      {narrow && (
+        <Modal
+          open={Boolean(selectedHandData)}
+          onClose={closePanel}
+          title={selectedHand}
+          description={selectedHandData ? CATEGORY_LABEL[selectedHandData.category] : undefined}
+        >
+          {selectedHandData && (
+            <HandDetailPanel token={selectedHand} handData={selectedHandData} onClose={closePanel} inModal />
+          )}
+        </Modal>
+      )}
     </>
   );
 }

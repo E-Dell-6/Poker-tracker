@@ -1,203 +1,226 @@
-.hand-class-breakdown {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  margin: 24px 0;
+/* ── Table + detail panel, side by side on wide screens ── */
+.hcb-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: var(--space-4);
+  scroll-margin-top: var(--space-4);
 }
 
-.hand-class-breakdown .matrix-table-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+/* Follows the table down as it scrolls (main-content is the scroller). */
+.hcb-side {
+  position: sticky;
+  top: 0;
 }
 
-.hand-class-breakdown .matrix-table-header .section-title {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  margin: 0;
+@media (width <= 1200px) {
+  .hcb-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hcb-side {
+    position: static;
+  }
 }
 
-.hand-class-breakdown .matrix-table-sub {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-}
-
-.hand-class-breakdown .ui-table-wrap {
-  margin-top: 16px;
-}
-
-/* Category rows anchor each group: bold, roomier, and separated from the
-   group above by a hairline so a long expanded list still reads as
-   distinct chunks instead of one undifferentiated wall of rows. */
+/* ── Rows ── */
+/* Category rows anchor each group: semibold on a raised surface. */
 .hcb-row--category .ui-table-cell {
-  padding-top: 14px;
-  padding-bottom: 14px;
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--color-surface-2);
+  font-weight: var(--weight-semibold);
 }
+
 .hcb-row--category:not(:first-child) .ui-table-cell {
   border-top: 1px solid var(--color-border);
 }
-.hcb-row--category strong {
-  font-size: 14px;
-}
 
-/* The one remaining nested level (specific hand) gets denser padding, a
-   smaller/quieter typeface, and an accent-colored gutter on the label cell
-   as the "belongs to a parent category" cue. */
+/* Specific hands: smaller, indented, quieter. */
 .hcb-row--hand .ui-table-cell {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  font-size: 13px;
-}
-.hcb-row--hand .ui-table-cell:first-child {
-  box-shadow: inset 3px 0 0 var(--color-accent-border);
-}
-.hcb-row--hand:hover .ui-table-cell {
-  background: rgba(255, 255, 255, 0.045);
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 
-/* The selected hand row (whose detail panel is open below the table) gets
-   a persistent accent highlight, not just a hover state, so it stays
-   obvious which hand the panel refers to. */
-.hcb-row--hand--selected .ui-table-cell {
+.hcb-hand-token {
+  padding-left: var(--space-6);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+}
+
+/* The hand whose breakdown is showing keeps an accent highlight and gutter. */
+.ui-table tbody .hcb-row--hand--selected .ui-table-cell {
   background: var(--color-accent-dim);
 }
+
 .hcb-row--hand--selected .ui-table-cell:first-child {
   box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
-.hcb-indent-1 { padding-left: 18px; }
-
-.hcb-note {
-  font-size: 11px;
-  color: var(--color-text-faint);
-  font-style: italic;
-  margin: 10px 2px 0;
+/* ── bb/100 with its diverging bar ── */
+.hcb-rate-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }
 
-/* ---------- detail panel ---------- */
+.hcb-bar {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-3);
+}
 
-.hcb-detail-panel {
-  margin-top: 16px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-elevated-hover);
-  padding: 16px;
+/* Centre line: positive bars grow right of it, negative ones left. */
+.hcb-bar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--color-border-strong);
+}
+
+.hcb-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.hcb-bar-fill--pos {
+  left: 50%;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: var(--color-positive);
+}
+
+.hcb-bar-fill--neg {
+  right: 50%;
+  border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+  background: var(--color-negative);
+}
+
+@media (width <= 640px) {
+  .hcb-bar {
+    display: none;
+  }
+}
+
+/* ── Side panel ── */
+.hcb-panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.hcb-panel-placeholder p {
+  max-width: 240px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 
 .hcb-detail-header {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.hcb-detail-title {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .hcb-detail-token {
   font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--color-text);
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-bold);
 }
 
 .hcb-detail-category {
-  font-size: 12px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
   color: var(--color-text-muted);
 }
 
+/* Three figures in a row: label above value. */
 .hcb-detail-summary {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 13px;
-  color: var(--color-text-muted);
-  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
 }
 
-.hcb-detail-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--color-border);
+.hcb-detail-summary > div {
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
+  background: var(--color-surface-2);
 }
-.hcb-detail-close:hover {
-  color: var(--color-text);
-  border-color: var(--color-border-strong);
+
+.hcb-detail-summary dt {
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-text-muted);
+}
+
+.hcb-detail-summary dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  line-height: var(--leading-md);
+  font-weight: var(--weight-semibold);
+}
+
+.hcb-detail-section {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-text-muted);
 }
 
 .hcb-detail-empty {
-  font-size: 12px;
-  color: var(--color-text-faint);
-  font-style: italic;
-  margin: 12px 2px 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-muted);
 }
 
 .hcb-detail-contexts {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
 }
 
 .hcb-detail-context {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .hcb-detail-context-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-size: 13px;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
 }
 
 .hcb-detail-context-label {
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: var(--weight-semibold);
 }
 
 .hcb-detail-context-hands {
+  margin-right: auto;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
-  margin-right: auto;
-}
-
-/* ---------- responsive ---------- */
-
-@media (max-width: 640px) {
-  .hcb-detail-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .hcb-detail-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-  }
-  .hcb-detail-panel {
-    position: relative;
-  }
-  .hcb-detail-summary {
-    margin-left: 0;
-  }
 }

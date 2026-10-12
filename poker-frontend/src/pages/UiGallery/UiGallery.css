@@ -1,0 +1,125 @@
+.uig {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: 1120px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-10);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.uig-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.uig-title {
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.uig-lead {
+  margin-top: var(--space-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  color: var(--color-text-muted);
+}
+
+.uig-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.uig-section-title {
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.uig-section-note {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-muted);
+}
+
+.uig-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.uig-label {
+  width: 64px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--color-text-faint);
+}
+
+.uig-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-4);
+}
+
+.uig-grid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.uig-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5) var(--space-6);
+}
+
+.uig-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.uig-text {
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  color: var(--color-text-secondary);
+}
+
+.uig-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.uig-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.uig-study-hands {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .uig {
+    padding: var(--space-6) var(--space-4) var(--space-9);
+  }
+}

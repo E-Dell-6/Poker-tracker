@@ -1,276 +1,232 @@
-
-/* ── Nav wrapper ── */
+/* ── Account button + popover (top right of every page header) ── */
 .lb-nav {
   position: relative;
   display: inline-flex;
   align-items: center;
   font-family: var(--font-sans);
-  z-index: 999;
-  justify-self: end;
 }
 
-/* ── Base button ── */
+/* Logged out: a primary button, same size as the header CTA. */
 .lb-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
-  border: none;
-  border-radius: 10px;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: 14px;
-  font-weight: 700;
   font-family: var(--font-sans);
-  cursor: pointer;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-semibold);
   text-decoration: none;
-  transition: opacity 0.2s, transform 0.1s;
   white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
 }
 
 .lb-button:hover {
-  opacity: 0.88;
-  transform: translateY(-1px);
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-accent-contrast);
 }
 
-/* ── Logged-in variant ── */
+.lb-button:focus {
+  outline: none;
+}
+
+.lb-button:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* Logged in: avatar + name, styled like a secondary button. */
 .lb-button--user {
-  padding: 6px 12px 6px 6px;
-  background: var(--color-bg-elevated);
-  border: 1.5px solid var(--color-border);
+  padding: 0 var(--space-2) 0 var(--space-1);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-text);
 }
 
 .lb-button--user:hover {
-  border-color: var(--color-accent-hover);
-  background: var(--color-bg-elevated-hover);
-  opacity: 1;
-  transform: translateY(-1px);
+  background: var(--color-surface-3);
+  border-color: color-mix(in srgb, var(--color-text) 28%, transparent);
+  color: var(--color-text);
+}
+
+.lb-avatar,
+.lb-dropdown-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-weight: var(--weight-bold);
 }
 
 .lb-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--color-accent-contrast);
-  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  font-size: var(--text-sm);
 }
 
 .lb-name {
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 700;
-  max-width: 120px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .lb-chevron {
-  color: var(--color-text-muted);
   display: flex;
-  align-items: center;
-  transition: transform 0.2s;
+  color: var(--color-text-muted);
+  transition: transform var(--dur-base) var(--ease-out);
 }
 
 .lb-chevron--open {
   transform: rotate(180deg);
 }
 
-/* ── Dropdown ── */
+/* ── Popover ── */
 .lb-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--space-2));
   right: 0;
-  min-width: 220px;
-  background: var(--color-bg-elevated);
-  border: 1.5px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  z-index: 1000;
-  animation: lb-drop-in 0.18s ease;
+  z-index: var(--z-dropdown);
+  width: 260px;
+  padding: var(--space-1);
+  background: var(--color-surface-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+  animation: lb-drop-in var(--dur-fast) var(--ease-out);
 }
 
 @keyframes lb-drop-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
 }
 
-/* ── Dropdown header ── */
 .lb-dropdown-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 14px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
 }
 
 .lb-dropdown-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--color-accent-contrast);
-  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  font-size: var(--text-md);
 }
 
 .lb-dropdown-name {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-semibold);
   color: var(--color-text);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.3;
 }
 
-.lb-badge {
-  font-size: 10px;
-  font-weight: 700;
-  border-radius: 20px;
-  padding: 2px 7px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 3px;
-}
-
-.lb-badge--verified {
-  background: rgba(74, 222, 128, 0.12);
-  color: var(--color-positive);
-  border: 1px solid rgba(74, 222, 128, 0.3);
-}
-
-.lb-badge--unverified {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.25);
-}
-
-/* ── Divider ── */
 .lb-divider {
   height: 1px;
+  margin: var(--space-1) 0;
   background: var(--color-border);
-  margin: 0;
 }
 
-/* ── Menu items ── */
 .lb-menu-item {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 11px 14px;
-  background: none;
+  min-height: 36px;
+  padding: 0 var(--space-3);
   border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
   text-align: left;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.lb-menu-item--verify {
-  color: var(--color-accent);
-}
-
-.lb-menu-item--verify:hover {
-  background: var(--color-accent-dim);
-}
-
-.lb-menu-item--logout {
+.lb-menu-item svg {
+  flex-shrink: 0;
   color: var(--color-text-muted);
+}
+
+.lb-menu-item:hover,
+.lb-menu-item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.lb-menu-item:focus {
+  outline: none;
+}
+
+.lb-menu-item--verify,
+.lb-menu-item--verify svg,
+.lb-menu-item--verify:hover {
+  color: var(--color-warning);
+}
+
+.lb-menu-item--logout,
+.lb-menu-item--logout svg,
+.lb-menu-item--logout:hover {
+  color: var(--color-negative);
 }
 
 .lb-menu-item--logout:hover {
   background: var(--color-negative-dim);
-  color: var(--color-negative);
 }
 
-/* ── OTP section ── */
-.lb-otp-sending {
+/* ── Email verification ── */
+.lb-otp-status,
+.lb-otp-done {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.lb-otp-status {
   color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.lb-otp-section {
-  padding: 10px 14px 12px;
-}
-
-.lb-otp-label {
-  color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.lb-otp-error {
-  color: var(--color-negative);
-  font-size: 11px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.lb-confirm-btn {
-  width: 100%;
-  padding: 9px;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
-  border: none;
-  border-radius: 8px;
-  color: var(--color-accent-contrast);
-  font-size: 13px;
-  font-weight: 800;
-  font-family: var(--font-sans);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 36px;
-  transition: opacity 0.2s;
-}
-
-.lb-confirm-btn:hover:not(:disabled) {
-  opacity: 0.85;
-}
-
-.lb-confirm-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .lb-otp-done {
-  padding: 10px 14px;
+  font-weight: var(--weight-semibold);
   color: var(--color-positive);
-  font-size: 13px;
-  font-weight: 700;
+}
+
+.lb-otp-section {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 
-/* ── Spinner ── */
-.lb-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: lb-spin 0.7s linear infinite;
-  display: inline-block;
+.lb-otp-label {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-muted);
 }
 
-@keyframes lb-spin {
-  to { transform: rotate(360deg); }
+.lb-otp-error {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-negative);
+}
+
+.lb-otp-error--standalone {
+  padding: 0 var(--space-3) var(--space-2);
 }
