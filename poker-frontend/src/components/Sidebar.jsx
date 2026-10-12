@@ -152,6 +152,17 @@ export function Sidebar({ mobileOpen = false, onMobileClose }) {
           <button type="button" className="sidebar-close" onClick={closeMobile} aria-label="Close navigation">
             <X size={18} />
           </button>
+          {/* Desktop only (the drawer has the close button instead). */}
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+          </button>
         </div>
 
         <nav className="sidebar-nav" aria-label="Main">
@@ -223,7 +234,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }) {
           </div>
         )}
 
-        {/* Account row: profile, starred, settings - and the collapse toggle. */}
+        {/* Account row: profile, starred, settings. */}
         <div className="sidebar-footer">
           <Link
             to="/profile"
@@ -266,16 +277,6 @@ export function Sidebar({ mobileOpen = false, onMobileClose }) {
             <Settings size={18} />
           </Link>
 
-          <button
-            type="button"
-            className="sidebar-footer-btn sidebar-collapse-btn"
-            onClick={toggleCollapsed}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
-          </button>
         </div>
       </aside>
     </>

@@ -324,7 +324,33 @@
 }
 
 .sidebar-collapse-btn {
-  margin-left: auto;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.sidebar-collapse-btn:focus {
+  outline: none;
+}
+
+.sidebar-collapse-btn:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 /* ── COLLAPSED (desktop only - the drawer always shows labels) ── */
@@ -364,12 +390,9 @@
     display: none;
   }
 
-  .sidebar.collapsed .sidebar-footer {
+  .sidebar.collapsed .sidebar-footer,
+  .sidebar.collapsed .sidebar-brand-row {
     flex-direction: column;
-  }
-
-  .sidebar.collapsed .sidebar-collapse-btn {
-    margin-left: 0;
   }
 }
 
