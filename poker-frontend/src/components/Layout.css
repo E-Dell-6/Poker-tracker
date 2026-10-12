@@ -3,22 +3,35 @@
    sidebar in place - it caps the shell at exactly the viewport height so
    .main-content's own overflow-y:auto is what scrolls, not the page/body.
    With min-height, taller-than-viewport content grows .app-layout past
-   100vh and the whole page (sidebar included) scrolls away instead. */
+   100vh and the whole page (sidebar included) scrolls away instead.
+
+   --content-max-width and --page-gutter are shared with TopHeader.css so
+   the header's contents line up with the page below it. */
 .app-layout {
+  --content-max-width: 1280px;
+  --page-gutter: var(--space-7);
+
   position: relative; /* anchors .layout-drop-overlay to the whole shell,
     not just .main-content, so a page-wide drop is visible no matter where
     over the layout the pointer is. */
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--color-bg);
+}
+
+@media (width <= 900px) {
+  .app-layout {
+    --page-gutter: var(--space-4);
+  }
 }
 
 /* ── PAGE-WIDE DRAG & DROP (any page with the "Import hands" CTA) ──── */
 .layout-drop-overlay {
   position: absolute;
   inset: 0;
-  z-index: 500;
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,9 +39,10 @@
   outline: 2px dashed var(--color-accent);
   outline-offset: -8px;
   pointer-events: none;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--color-accent);
+  font-size: var(--text-md);
+  line-height: var(--leading-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-text);
   text-align: center;
 }
 
@@ -45,7 +59,10 @@
   width: 100%;
   min-height: 0;
   overflow-y: auto;
-  /* Was overridden by App.css (now deleted) - keep its value until the shell
-     is restyled in stage 2. */
-  padding: 20px 40px;
+  padding: var(--space-6) var(--page-gutter) var(--space-9);
+}
+
+.main-content-inner {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
 }

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Check, AlertTriangle, User, Mail, Settings } from "lucide-react";
+import { Check, AlertTriangle, User, Mail, Settings, LogOut, Loader2 } from "lucide-react";
+import { Button } from "./ui/Button";
+import { Tag } from "./ui/Tag";
 import "./LoginButton.css";
 import { getUserData } from "../api/user";
 import { logout } from "../api/auth";
@@ -12,6 +14,7 @@ export function LoginButton() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   // The OTP boxes and the send/verify state machine are shared with the
   // Settings page - see hooks/useEmailVerification.js.
@@ -39,9 +42,19 @@ export function LoginButton() {
         closeDropdown();
       }
     };
+    // Escape closes it too, and hands focus back to the avatar button.
+    const handleKeyDown = (e) => {
+      if (e.key !== "Escape" || !dropdownOpen) return;
+      closeDropdown();
+      buttonRef.current?.focus();
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [closeDropdown]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeDropdown, dropdownOpen]);
 
   const handleButtonClick = () => {
     if (userData) setDropdownOpen((o) => !o);
@@ -57,7 +70,7 @@ export function LoginButton() {
   if (!userData) {
     return (
       <nav className="lb-nav">
-        <Link className="lb-button" to="/login">Login</Link>
+        <Link className="lb-button" to="/login">Log in</Link>
       </nav>
     );
   }
@@ -66,7 +79,14 @@ export function LoginButton() {
 
   return (
     <nav className="lb-nav" ref={dropdownRef}>
-      <button className="lb-button lb-button--user" onClick={handleButtonClick}>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="lb-button lb-button--user"
+        onClick={handleButtonClick}
+        aria-haspopup="true"
+        aria-expanded={dropdownOpen}
+      >
         <span className="lb-avatar">{initial}</span>
         <span className="lb-name">{userData.name}</span>
         <span className={`lb-chevron ${dropdownOpen ? "lb-chevron--open" : ""}`}>
@@ -83,21 +103,21 @@ export function LoginButton() {
             <div className="lb-dropdown-avatar">{initial}</div>
             <div>
               <div className="lb-dropdown-name">{userData.name}</div>
-              <div className={`lb-badge ${userData.isAccountVerified ? "lb-badge--verified" : "lb-badge--unverified"}`}>
-                {userData.isAccountVerified ? <><Check size={12} /> Verified</> : <><AlertTriangle size={12} /> Unverified</>}
-              </div>
+              {userData.isAccountVerified
+                ? <Tag variant="positive"><Check size={12} aria-hidden="true" /> Verified</Tag>
+                : <Tag color="var(--color-warning)"><AlertTriangle size={12} aria-hidden="true" /> Unverified</Tag>}
             </div>
           </div>
 
           <div className="lb-divider" />
 
           <Link className="lb-menu-item" to="/profile" onClick={closeDropdown}>
-            <User size={14} />
+            <User size={16} aria-hidden="true" />
             Profile
           </Link>
 
           <Link className="lb-menu-item" to="/settings" onClick={closeDropdown}>
-            <Settings size={14} />
+            <Settings size={16} aria-hidden="true" />
             Settings
           </Link>
 
@@ -107,15 +127,15 @@ export function LoginButton() {
           {!userData.isAccountVerified && (
             <>
               {verifyState === "idle" && (
-                <button className="lb-menu-item lb-menu-item--verify" onClick={sendOtp}>
-                  <Mail size={14} />
+                <button type="button" className="lb-menu-item lb-menu-item--verify" onClick={sendOtp}>
+                  <Mail size={16} aria-hidden="true" />
                   Verify Email
                 </button>
               )}
 
               {verifyState === "sending" && (
-                <div className="lb-otp-sending">
-                  <span className="lb-spinner" /> Sending code…
+                <div className="lb-otp-status">
+                  <Loader2 size={14} className="spin" aria-hidden="true" /> Sending code…
                 </div>
               )}
 
@@ -130,13 +150,9 @@ export function LoginButton() {
                     hasError={Boolean(otpError)}
                   />
                   {otpError && <p className="lb-otp-error">{otpError}</p>}
-                  <button
-                    className="lb-confirm-btn"
-                    onClick={() => verify()}
-                    disabled={verifyState === "verifying"}
-                  >
-                    {verifyState === "verifying" ? <span className="lb-spinner" /> : "Confirm"}
-                  </button>
+                  <Button variant="primary" size="sm" loading={verifyState === "verifying"} onClick={() => verify()}>
+                    Confirm
+                  </Button>
                 </div>
               )}
 
@@ -145,7 +161,7 @@ export function LoginButton() {
               )}
 
               {otpError && verifyState === "idle" && (
-                <p className="lb-otp-error" style={{ padding: "0 14px 8px" }}>{otpError}</p>
+                <p className="lb-otp-error lb-otp-error--standalone">{otpError}</p>
               )}
 
               <div className="lb-divider" />
@@ -153,13 +169,9 @@ export function LoginButton() {
           )}
 
           {/* Logout */}
-          <button className="lb-menu-item lb-menu-item--logout" onClick={handleLogout}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Log Out
+          <button type="button" className="lb-menu-item lb-menu-item--logout" onClick={handleLogout}>
+            <LogOut size={16} aria-hidden="true" />
+            Log out
           </button>
         </div>
       )}

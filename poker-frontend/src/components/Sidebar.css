@@ -1,217 +1,249 @@
-
-/* ── SIDEBAR ────────────────────────────────────────────── */
+/* ── SIDEBAR ──────────────────────────────────────────────
+   232px, or 68px collapsed. Over 900px it sits beside the page; at 900px
+   and under it's an off-canvas drawer (bottom of this file). */
 .sidebar {
   position: relative;
-  width: 220px;
-  height: 100vh;
-  background: var(--color-bg);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
   flex-shrink: 0;
-  transition: width 0.3s ease;
+  width: 232px;
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--space-4) var(--space-3);
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
   font-family: var(--font-sans);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width var(--dur-slow) var(--ease-out);
 }
 
 .sidebar.collapsed {
-  width: 64px;
+  width: 68px;
 }
 
 /* ── BRAND ──────────────────────────────────────────────── */
+.sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 24px 20px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-  white-space: nowrap;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 6px;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
   text-decoration: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
 }
 
 .sidebar-brand:hover {
-  opacity: 0.8;
+  color: var(--color-text);
 }
 
-.sidebar-brand-icon {
-  font-size: 22px;
-  color: var(--color-accent);
+.sidebar-brand:focus {
+  outline: none;
+}
+
+.sidebar-brand:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.sidebar-brand-mark {
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
-  line-height: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 .sidebar-brand-name {
-  font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: 0.2px;
-  opacity: 1;
-  transition: opacity 0.2s ease;
+  font-size: var(--text-md);
+  line-height: var(--leading-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
 }
 
-.sidebar.collapsed .sidebar-brand {
-  justify-content: center;
-  padding: 24px 0 20px;
-}
-
-.sidebar.collapsed .sidebar-brand-name {
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
+/* Drawer only - see the media query at the bottom. */
+.sidebar-close {
+  display: none;
 }
 
 /* ── NAV ────────────────────────────────────────────────── */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 10px;
+  gap: 2px;
   flex: 1;
 }
 
 .sidebar-link {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
   color: var(--color-text-muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
   text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
-  overflow: hidden;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-surface-2);
   color: var(--color-text);
 }
 
+.sidebar-link:focus {
+  outline: none;
+}
+
+.sidebar-link:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+/* Active: accent wash, accent icon, and a 2px accent bar on the sidebar's
+   edge (the nav's padding is --space-3, so that's where the edge is). */
 .sidebar-link.active {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-  color: var(--color-accent);
-  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  background: var(--color-accent-dim);
+  color: var(--color-text);
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-3) * -1);
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-accent);
 }
 
 .sidebar-icon {
-  font-size: 18px;
   flex-shrink: 0;
-  width: 22px;
-  text-align: center;
-  line-height: 1;
 }
 
-.sidebar-label {
-  font-size: 14px;
-  font-weight: 500;
-  transition: opacity 0.2s ease;
+.sidebar-link.active .sidebar-icon {
+  color: var(--color-accent-text);
 }
 
 /* ── CONTEXTUAL SUB-NAV (e.g. Study > Preflop) ────────── */
+/* The guide line sits under the parent's icon (12px padding + half of an
+   18px icon). */
 .sidebar-subnav {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 4px 0 6px 34px;
+  margin: 2px 0 var(--space-2) 21px;
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border-strong);
 }
 
 .sidebar-sublink {
-  padding: 7px 10px;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
   color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
   text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
 .sidebar-sublink:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-surface-2);
   color: var(--color-text);
 }
 
+.sidebar-sublink:focus {
+  outline: none;
+}
+
+.sidebar-sublink:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
 .sidebar-sublink.active {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-  color: var(--color-accent);
-}
-
-/* ── COLLAPSED NAV ──────────────────────────────────────── */
-.sidebar.collapsed .sidebar-link {
-  justify-content: center;
-  padding: 11px;
-}
-
-.sidebar.collapsed .sidebar-label {
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
+  background: var(--color-accent-dim);
+  color: var(--color-accent-text);
 }
 
 /* ── LIVE SESSION WIDGET ────────────────────────────────── */
 .sidebar-live {
-  padding: 0 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .sidebar-live-heading {
-  padding: 0 4px 8px;
-  font-size: 10px;
-  font-weight: 700;
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-label);
   color: var(--color-text-faint);
 }
 
 .sidebar-live-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-positive) 30%, transparent);
+  border-radius: var(--radius-md);
   background: var(--color-positive-dim);
-  border: 1px solid color-mix(in srgb, var(--color-positive) 25%, transparent);
-  position: relative;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
-.sidebar.collapsed .sidebar-live-card {
-  justify-content: center;
-  padding: 10px;
-}
-
-.sidebar-live-icon {
-  color: var(--color-positive);
-  flex-shrink: 0;
-}
-
-.sidebar-live-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.sidebar-live-stakes {
-  font-size: 13px;
-  font-weight: 700;
+.sidebar-live-card:hover {
+  background: color-mix(in srgb, var(--color-positive) 18%, transparent);
   color: var(--color-text);
 }
 
-.sidebar-live-timer {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  color: var(--color-text-muted);
+.sidebar-live-card:focus {
+  outline: none;
+}
+
+.sidebar-live-card:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .sidebar-live-dot {
-  width: 7px;
-  height: 7px;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--color-positive);
-  flex-shrink: 0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-positive) 25%, transparent);
   animation: sidebar-live-pulse 1.6s ease-in-out infinite;
 }
 
@@ -220,70 +252,211 @@
   50% { opacity: 0.35; }
 }
 
-/* ── FOOTER (profile / starred / settings) ──────────────── */
-/* Sits directly above the collapse button, but deliberately isn't styled
-   like it - no divider rule of its own, and full-strength text colour
-   rather than the chevron's muted grey, so the two rows don't read as one
-   bar. */
+.sidebar-live-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-live-stakes {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.sidebar-live-timer {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  color: var(--color-text-muted);
+}
+
+.sidebar-live-icon {
+  flex-shrink: 0;
+  color: var(--color-positive);
+}
+
+/* ── FOOTER (profile / starred / settings / collapse) ───── */
 .sidebar-footer {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px;
-}
-
-/* Collapsed there's no room for a row of three, so they stack. */
-.sidebar.collapsed .sidebar-footer {
-  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 
 .sidebar-footer-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   border: none;
-  border-radius: 8px;
-  background: none;
-  color: var(--color-text);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sidebar.collapsed .sidebar-footer-btn {
-  flex: none;
-  width: 100%;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
 .sidebar-footer-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--color-accent);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.sidebar-footer-btn:focus {
+  outline: none;
+}
+
+.sidebar-footer-btn:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .sidebar-footer-btn.active {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  color: var(--color-accent-text);
 }
 
-/* ── COLLAPSE BUTTON ────────────────────────────────────── */
-.collapse-btn {
-  width: 100%;
-  padding: 14px;
-  background: none;
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: var(--color-text-muted);
-  font-size: 18px;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sidebar-collapse-btn {
+  margin-left: auto;
 }
 
-.collapse-btn:hover {
-  color: var(--color-text);
-  background: rgba(255, 255, 255, 0.04);
+/* ── COLLAPSED (desktop only - the drawer always shows labels) ── */
+@media (width > 900px) {
+  .sidebar.collapsed .sidebar-brand-row,
+  .sidebar.collapsed .sidebar-link,
+  .sidebar.collapsed .sidebar-live-card {
+    justify-content: center;
+  }
+
+  .sidebar.collapsed .sidebar-link,
+  .sidebar.collapsed .sidebar-live-card {
+    padding: 0;
+  }
+
+  .sidebar.collapsed .sidebar-brand {
+    padding: 0;
+  }
+
+  /* Visually hidden, not removed: the links keep their names for screen
+     readers (the `title` tooltip covers sighted users). */
+  .sidebar.collapsed .sidebar-label,
+  .sidebar.collapsed .sidebar-brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sidebar.collapsed .sidebar-subnav,
+  .sidebar.collapsed .sidebar-live-heading,
+  .sidebar.collapsed .sidebar-live-info,
+  .sidebar.collapsed .sidebar-live-icon {
+    display: none;
+  }
+
+  .sidebar.collapsed .sidebar-footer {
+    flex-direction: column;
+  }
+
+  .sidebar.collapsed .sidebar-collapse-btn {
+    margin-left: 0;
+  }
+}
+
+/* ── DRAWER (900px and under) ─────────────────────────────
+   Off-canvas until the header's menu button opens it. `visibility` keeps
+   the hidden drawer's links out of the tab order; it flips after the
+   slide-out so the exit still animates. */
+@media (width <= 900px) {
+  .sidebar,
+  .sidebar.collapsed {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: var(--z-modal);
+    width: min(280px, 85vw);
+    border-right: none;
+    box-shadow: var(--shadow-overlay);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition:
+      transform var(--dur-slow) var(--ease-out),
+      visibility 0s linear var(--dur-slow);
+  }
+
+  .sidebar.is-mobile-open {
+    transform: none;
+    visibility: visible;
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+
+  .sidebar-close {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+  }
+
+  .sidebar-close:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .sidebar-close:focus {
+    outline: none;
+  }
+
+  .sidebar-close:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+
+  .sidebar-collapse-btn {
+    display: none;
+  }
+}
+
+.sidebar-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--color-scrim);
+  animation: sidebar-scrim-in var(--dur-base) var(--ease-out);
+}
+
+@keyframes sidebar-scrim-in {
+  from { opacity: 0; }
+}
+
+@media (width > 900px) {
+  .sidebar-scrim {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar.collapsed,
+  .sidebar.is-mobile-open {
+    transition: none;
+  }
+
+  .sidebar-live-dot,
+  .sidebar-scrim {
+    animation: none;
+  }
 }

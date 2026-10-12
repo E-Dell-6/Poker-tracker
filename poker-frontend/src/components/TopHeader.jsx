@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TopHeader.css';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Menu as MenuIcon, Search, SlidersHorizontal } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Menu, MenuAnchor, MenuItem } from './ui/Menu';
 import { LoginButton } from './LoginButton';
 import { HandSearchMenu } from './HandSearchMenu';
 
@@ -13,21 +15,24 @@ import { HandSearchMenu } from './HandSearchMenu';
 // key focuses the box (ignored while typing in a form field, so it doesn't
 // hijack normal "/" characters). The pill-filter modal (HandSearchMenu) -
 // also used inline on the History page toolbar - stays reachable here via
-// its own small icon button next to the input.
+// its own small icon button inside the box.
 //
-// `ctaMenu` (optional) turns the CTA into a split-less dropdown trigger:
-// pass [{ label, description, icon, onSelect }] and clicking the button
-// opens a small menu anchored under it instead of firing onCta. That's what
-// lets a single "Import hands" button offer both a file picker and a folder
-// picker - one <input type="file"> can't do both (webkitdirectory makes it
-// folders-only), so the choice has to be made before the picker opens.
-export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }) {
+// `ctaMenu` (optional) turns the CTA into a dropdown trigger: pass
+// [{ label, description, icon, onSelect }] and clicking the button opens a
+// menu anchored under it instead of firing onCta. That's what lets a single
+// "Import hands" button offer both a file picker and a folder picker - one
+// <input type="file"> can't do both (webkitdirectory makes it folders-only),
+// so the choice has to be made before the picker opens.
+//
+// At 900px and under, a menu button on the left opens the sidebar drawer
+// (`onOpenNav`; Layout owns `navOpen`) and the search box is hidden.
+export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu, navOpen = false, onOpenNav }) {
   const [query, setQuery] = useState('');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [ctaMenuOpen, setCtaMenuOpen] = useState(false);
   const inputRef = useRef(null);
-  const ctaRef = useRef(null);
   const navigate = useNavigate();
+  const hasCtaMenu = ctaMenu?.length > 0;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -41,25 +46,6 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Close the CTA menu on an outside click or Escape. Bound only while
-  // open so the listeners aren't live for every page that never uses it.
-  useEffect(() => {
-    if (!ctaMenuOpen) return;
-    const handlePointerDown = (e) => {
-      if (ctaRef.current?.contains(e.target)) return;
-      setCtaMenuOpen(false);
-    };
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setCtaMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handlePointerDown);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [ctaMenuOpen]);
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const trimmed = query.trim();
@@ -70,72 +56,77 @@ export function TopHeader({ title, subtitle, ctaLabel, ctaIcon, onCta, ctaMenu }
   return (
     <>
       <header className="top-header">
-        <div className="top-header-titles">
-          <h1 className="top-header-title">{title}</h1>
-          {subtitle && <p className="top-header-subtitle">{subtitle}</p>}
-        </div>
+        <div className="top-header-inner">
+          <Button
+            variant="ghost"
+            icon={MenuIcon}
+            iconSize={20}
+            className="top-header-menu-btn"
+            aria-label="Open navigation"
+            aria-controls="app-sidebar"
+            aria-expanded={navOpen}
+            onClick={onOpenNav}
+          />
 
-        <div className="top-header-actions">
-          <form className="top-header-search" onSubmit={handleSearchSubmit} role="search">
-            <Search size={16} className="top-header-search-icon" />
-            <input
-              ref={inputRef}
-              type="text"
-              className="top-header-search-input"
-              placeholder="Search hands, players..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search hands or players"
-            />
-            <button
-              type="button"
-              className="top-header-search-filter-btn"
-              onClick={() => setFilterMenuOpen(true)}
-              title="Advanced hand filters"
-              aria-label="Open advanced hand filters"
-            >
-              <SlidersHorizontal size={14} />
-            </button>
-          </form>
+          <div className="top-header-titles">
+            <h1 className="top-header-title">{title}</h1>
+            {subtitle && <p className="top-header-subtitle">{subtitle}</p>}
+          </div>
 
-          {ctaLabel && (
-            <div className="top-header-cta" ref={ctaRef}>
-              <Button
-                variant="primary"
-                icon={ctaIcon}
-                iconSize={13}
-                onClick={ctaMenu?.length ? () => setCtaMenuOpen((open) => !open) : onCta}
-                aria-haspopup={ctaMenu?.length ? 'menu' : undefined}
-                aria-expanded={ctaMenu?.length ? ctaMenuOpen : undefined}
-              >
+          <div className="top-header-actions">
+            <form className="top-header-search" onSubmit={handleSearchSubmit} role="search">
+              <Input
+                ref={inputRef}
+                size="sm"
+                icon={Search}
+                placeholder="Search hands, players…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search hands or players"
+                trailing={(
+                  <>
+                    {!query && <kbd className="top-header-kbd" aria-hidden="true">/</kbd>}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={SlidersHorizontal}
+                      title="Advanced hand filters"
+                      aria-label="Open advanced hand filters"
+                      onClick={() => setFilterMenuOpen(true)}
+                    />
+                  </>
+                )}
+              />
+            </form>
+
+            {ctaLabel && (hasCtaMenu ? (
+              <MenuAnchor>
+                <Button
+                  variant="primary"
+                  icon={ctaIcon}
+                  className="top-header-cta"
+                  aria-haspopup="menu"
+                  aria-expanded={ctaMenuOpen}
+                  onClick={() => setCtaMenuOpen((open) => !open)}
+                >
+                  {ctaLabel}
+                </Button>
+                <Menu open={ctaMenuOpen} onClose={() => setCtaMenuOpen(false)} align="end" aria-label={ctaLabel}>
+                  {ctaMenu.map(({ label, description, icon, onSelect }) => (
+                    <MenuItem key={label} icon={icon} description={description} onSelect={onSelect}>
+                      {label}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </MenuAnchor>
+            ) : (
+              <Button variant="primary" icon={ctaIcon} className="top-header-cta" onClick={onCta}>
                 {ctaLabel}
               </Button>
+            ))}
 
-              {ctaMenu?.length > 0 && ctaMenuOpen && (
-                <div className="top-header-cta-menu" role="menu">
-                  {ctaMenu.map(({ label, description, icon: ItemIcon, onSelect }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      role="menuitem"
-                      className="top-header-cta-menu-item"
-                      onClick={() => { setCtaMenuOpen(false); onSelect(); }}
-                    >
-                      {ItemIcon && <ItemIcon size={15} className="top-header-cta-menu-icon" />}
-                      <span className="top-header-cta-menu-text">
-                        <span className="top-header-cta-menu-label">{label}</span>
-                        {description && (
-                          <span className="top-header-cta-menu-desc">{description}</span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <LoginButton />
+            <LoginButton />
+          </div>
         </div>
       </header>
 

@@ -1,184 +1,124 @@
+/* The header's contents share the page's width and gutter
+   (--content-max-width / --page-gutter, set in Layout.css), so the title
+   lines up with the left edge of the page below. */
 .top-header {
+  flex-shrink: 0;
+  padding: var(--space-5) var(--page-gutter);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.top-header-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 20px 32px;
-  border-bottom: 1px solid var(--color-border);
-  flex-wrap: wrap;
+  gap: var(--space-4);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+/* Drawer trigger - only at 900px and under (see below). */
+.top-header-menu-btn {
+  display: none;
+  flex-shrink: 0;
+  margin-left: calc(var(--space-2) * -1);
 }
 
 .top-header-titles {
+  flex: 1;
   min-width: 0;
 }
 
 .top-header-title {
   font-family: var(--font-sans);
-  font-size: 22px;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: var(--leading-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
   color: var(--color-text);
-  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .top-header-subtitle {
-  font-size: 13px;
+  margin-top: 2px;
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
   color: var(--color-text-muted);
-  margin: 4px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .top-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
 }
 
 .top-header-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 8px 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-elevated);
-  min-width: 220px;
-  font: inherit;
-  transition: border-color 0.18s ease;
+  width: 280px;
 }
 
-.top-header-search:focus-within,
-.top-header-search:hover {
-  border-color: var(--color-border-strong);
-}
-
-.top-header-search-icon {
-  color: var(--color-text-faint);
-  flex-shrink: 0;
-}
-
-.top-header-search-input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  flex: 1;
-  min-width: 0;
-}
-
-.top-header-search-input::placeholder {
+/* The "/" shortcut hint; hidden while the box has focus. */
+.top-header-kbd {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
   color: var(--color-text-faint);
 }
 
-.top-header-search-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border-radius: 7px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-faint);
-  cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease;
+.top-header-search .ui-control:focus-within .top-header-kbd {
+  display: none;
 }
 
-.top-header-search-filter-btn:hover {
-  background: var(--color-accent-dim);
-  color: var(--color-accent);
-}
-
-/* Every page's primary CTA (Import hands, Recompute Stats, ...) shares
-   this floor so the button's width - and everything to its left - stays
-   put across pages instead of shifting with whichever label happens to be
-   longest. Smaller than the base .ui-btn
-   size - at full size, matching the longest label ("Recompute Stats") left
-   the shorter ones looking stretched out with dead space. */
-.top-header-actions .ui-btn--primary {
+/* Every page's primary CTA (Import hands, Recompute Stats, ...) shares this
+   floor so the button's width - and everything to its left - stays put
+   across pages instead of shifting with whichever label is longest. */
+.top-header-cta {
   min-width: 148px;
-  padding: 10px 14px;
-  gap: 5px;
-  font-size: 12px;
-  justify-content: center;
 }
 
-@media (max-width: 768px) {
+@media (width <= 1200px) {
+  .top-header-search {
+    width: 220px;
+  }
+}
+
+@media (width <= 900px) {
+  .top-header {
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+
+  .top-header-menu-btn {
+    display: inline-flex;
+  }
+
   .top-header-search {
     display: none;
   }
 }
 
-/* ── CTA dropdown (see TopHeader's `ctaMenu` prop) ──
-   Anchored to the CTA button itself rather than rendered as a full-screen
-   overlay, so it reads as part of the button it belongs to. */
-.top-header-cta {
-  position: relative;
-  flex-shrink: 0;
-}
+@media (width <= 640px) {
+  .top-header-subtitle {
+    display: none;
+  }
 
-.top-header-cta-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 232px;
-  padding: 6px;
-  background: var(--color-bg-elevated);
-  border: 1.5px solid var(--color-border);
-  border-radius: 14px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  animation: top-header-cta-drop-in 0.18s ease;
-}
+  .top-header-title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
 
-@keyframes top-header-cta-drop-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.top-header-cta-menu-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.top-header-cta-menu-item:hover,
-.top-header-cta-menu-item:focus-visible {
-  background: var(--color-bg-elevated-hover);
-  outline: none;
-}
-
-.top-header-cta-menu-icon {
-  flex-shrink: 0;
-  margin-top: 1px;
-  color: var(--color-text-muted);
-}
-
-.top-header-cta-menu-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.top-header-cta-menu-label {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.top-header-cta-menu-desc {
-  font-size: 11px;
-  color: var(--color-text-muted);
+  .top-header-cta {
+    min-width: 0;
+  }
 }
