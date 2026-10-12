@@ -39,6 +39,20 @@
   box-shadow: var(--focus-ring);
 }
 
+/* A Table placed directly in a Card runs to the card's edges instead of
+   drawing a second frame inside the card's own. */
+.ui-card--pad-sm > .ui-table-wrap { --card-pad: var(--space-4); }
+.ui-card--pad-md > .ui-table-wrap { --card-pad: var(--space-5); }
+.ui-card--pad-lg > .ui-table-wrap { --card-pad: var(--space-6); }
+
+.ui-card > .ui-table-wrap {
+  margin: 0 calc(var(--card-pad, 0px) * -1) calc(var(--card-pad, 0px) * -1);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: transparent;
+}
+
 /* ── Header ── */
 .ui-card-header {
   display: flex;

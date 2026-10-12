@@ -16,6 +16,8 @@ import { Table, TableHead, TableBody, TableRow, TableCell } from '../../componen
 import { Pagination } from '../../components/ui/Pagination';
 import { Modal } from '../../components/ui/Modal';
 import { Menu, MenuAnchor, MenuItem, MenuSeparator } from '../../components/ui/Menu';
+import { HandClassBreakdown } from '../Stats/HandClassBreakdown';
+import { HAND_CLASS_FIXTURE, HAND_CLASS_CATEGORY_FIXTURE } from './handClassFixture';
 import './UiGallery.css';
 
 const VARIANTS = ['primary', 'secondary', 'ghost', 'danger'];
@@ -243,6 +245,12 @@ export default function UiGallery() {
           </TableBody>
         </Table>
         <Pagination page={page} totalPages={5} onPageChange={setPage} />
+      </Section>
+
+      <Section title="Study › Hands" note="The real page components with sample data (the dev database has no imported hands).">
+        <div className="uig-study-hands">
+          <HandClassBreakdown byHandClass={HAND_CLASS_FIXTURE} byHandClassCategory={HAND_CLASS_CATEGORY_FIXTURE} />
+        </div>
       </Section>
 
       <Section title="Overlays" note="Escape closes either one; focus goes back to the button that opened it.">

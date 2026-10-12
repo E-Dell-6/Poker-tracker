@@ -1,6 +1,5 @@
-/* Shared visual language for hand-class value cells, sample-size dimming,
-   and position badges - used by both HandClassBreakdown.css and
-   HandClassLeaks.css. */
+/* Shared value cells, sample-size dimming and position badges - used by
+   HandClassBreakdown and HandClassLeaks. */
 
 .hcb-value-mono {
   font-family: var(--font-mono);
@@ -20,21 +19,21 @@
 
 .hcb-toggle {
   vertical-align: -2px;
-  margin-right: 6px;
+  margin-right: var(--space-2);
   color: var(--color-text-muted);
-  transition: transform 0.15s ease;
+  transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
 
 .hcb-toggle--expanded {
   transform: rotate(90deg);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .hcb-detail-positions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .hcb-detail-positions .ui-tag {

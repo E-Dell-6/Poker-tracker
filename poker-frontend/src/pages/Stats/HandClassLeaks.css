@@ -1,62 +1,27 @@
-/* Card chrome (background/border/radius/padding) comes from
-   .matrix-table-card - only the bits specific to this card live here. */
-.hand-class-leaks {
-  margin: 24px 0;
-}
-
-/* Every other card header pairs a title with static text and so aligns on
-   the baseline; this one carries an interactive control, which reads
-   straight only when centered against the title. */
-.hand-class-leaks .matrix-table-header {
-  align-items: center;
-}
-
-.hcl-header-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* Same select as the Stakes filter (.study-filter-select in Stats.css),
-   sized down a notch to sit inside a card header rather than the page-level
-   filter bar. */
-.hcl-context-select {
-  padding: 6px 10px;
-  font-size: 12px;
-}
-
-.hcl-empty,
-.hcl-note {
-  font-size: 11px;
-  color: var(--color-text-faint);
-  font-style: italic;
-  margin: 10px 2px 0;
-}
-
-.hcl-list .ui-table-cell {
-  padding-top: 12px;
-  padding-bottom: 12px;
+.hcl-empty {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-muted);
 }
 
 .hcl-rank {
+  width: 1%;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-faint);
-  width: 1%;
 }
 
+/* Hand token on top, its category underneath as quieter context. */
 .hcl-token {
+  display: block;
   font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--color-text);
+  font-weight: var(--weight-bold);
 }
 
-/* Category rides along with the hand token as a secondary label rather
-   than claiming a column of its own - it's context, not a value to scan. */
 .hcl-category {
-  margin-left: 8px;
-  font-size: 11.5px;
+  display: block;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
   color: var(--color-text-muted);
 }
 
