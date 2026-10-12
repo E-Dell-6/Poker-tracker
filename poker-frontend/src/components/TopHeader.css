@@ -16,8 +16,9 @@
   margin: 0 auto;
 }
 
-/* Drawer trigger - only at 900px and under (see below). */
-.top-header-menu-btn {
+/* Drawer trigger - only at 900px and under (see below). Scoped under
+   .top-header so it outranks .ui-btn's display, which loads later. */
+.top-header .top-header-menu-btn {
   display: none;
   flex-shrink: 0;
   margin-left: calc(var(--space-2) * -1);
@@ -99,7 +100,7 @@
     padding-bottom: var(--space-3);
   }
 
-  .top-header-menu-btn {
+  .top-header .top-header-menu-btn {
     display: inline-flex;
   }
 
